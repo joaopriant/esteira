@@ -35,6 +35,7 @@ export function MedicaoView({ estado, recarregar }: { estado: EstadoApp; recarre
       <Erro texto={erro} />
       {estado.stories.length === 0 && <Vazio>Rode uma story na Esteira. A contagem aparece aqui, por bloco.</Vazio>}
       {estado.stories.length > 0 && (
+        <div className="tabela">
         <table className="lista">
           <thead>
             <tr>
@@ -50,9 +51,9 @@ export function MedicaoView({ estado, recarregar }: { estado: EstadoApp; recarre
           <tbody>
             {estado.stories.map((story) => (
               <tr key={story.id}>
-                <td>
+                <td style={{ minWidth: 280 }}>
                   {story.titulo || 'Story sem título'}
-                  <small style={{ display: 'block', color: 'var(--muted)' }}>
+                  <small>
                     {story.produtoNome}
                     {story.porBloco.length > 0
                       ? ` · ${story.porBloco.map((bloco) => `${bloco.blocoNome} ${bloco.aceitos} ${bloco.aceitos === 1 ? 'aceito' : 'aceitos'}, ${bloco.descartados} ${bloco.descartados === 1 ? 'descartado' : 'descartados'}`).join(' · ')}`
@@ -82,6 +83,7 @@ export function MedicaoView({ estado, recarregar }: { estado: EstadoApp; recarre
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </>
   )

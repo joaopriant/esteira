@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { Achado, EstadoApp, LinhaDiff, StoryRun, StoryTexto } from '../../shared/tipos'
 import { STORY_VAZIA } from '../../shared/tipos'
 import { chamar } from '../api'
@@ -119,13 +119,28 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
               {ocupado === 'Continuando' ? 'Continuando' : 'Continuar'}
             </button>
           )}
+          {!nova && story?.estado === 'pronta' && !story.diffPendente && !story.publicacao && (
+            // A seção do board fica abaixo da story; este botão leva até ela quando publicar vira a ação principal.
+            <button
+              className={pendentes === 0 ? 'btn' : 'btn-sec'}
+              type="button"
+              disabled={Boolean(ocupado)}
+              onClick={() => {
+                const secao = document.getElementById('board')
+                secao?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                secao?.querySelector<HTMLElement>('input, button')?.focus({ preventScroll: true })
+              }}
+            >
+              Publicar no board
+            </button>
+          )}
         </div>
       </div>
       <p className="sub">{nova ? 'A ideia entra aqui. A esteira escreve no modelo e confronta com a wiki, o código e o backlog.' : sublinha(story, pendentes)}</p>
       <Erro texto={erro} />
 
       {!nova && estado.stories.length > 1 && (
-        <label className="campo">
+        <label className="campo estreito">
           <span>Story aberta</span>
           <select value={storyId} onChange={(evento) => setStoryId(evento.target.value)}>
             {estado.stories.map((item) => (
@@ -139,6 +154,7 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
 
       {nova ? (
         <form
+          className="medida"
           onSubmit={(evento) => {
             evento.preventDefault()
             void agir('Rodando', async () => {
@@ -153,7 +169,7 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
             <textarea className="alto" value={ideia} onChange={(evento) => setIdeia(evento.target.value)} required placeholder="O que o cliente precisa conseguir fazer" />
           </label>
           <p className="sub">Use @pagamentos-api ou @Contas para estreitar. Sem @, entra o produto inteiro e o que ele declara depender.</p>
-          <label className="campo">
+          <label className="campo estreito">
             <span>Produto</span>
             <select value={produtoId} onChange={(evento) => setProdutoId(evento.target.value)}>
               {estado.produtos.map((produto) => (
@@ -172,7 +188,7 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
           <>
             <ol className="trilho">
               {story.passos.map((passo) => (
-                <li key={passo.blocoId} className={passo.estado}>
+                <li key={passo.blocoId} className={passo.estado} aria-current={passo.estado === 'rodando' || passo.estado === 'pausado' ? 'step' : undefined}>
                   <strong>{passo.nome}</strong>
                   <small>
                     {passo.modo === 'por-clique' ? 'por clique' : 'automático'}
@@ -185,7 +201,7 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
             </ol>
             {story.avisos.length > 0 && <p className="sub">{story.avisos.join(' ')}</p>}
             {story.diffPendente && (
-              <section>
+              <section className="ajuste">
                 <h2>Ajuste para aprovar</h2>
                 <p className="sub">A story só muda depois deste clique. Cancelar deixa o texto como está.</p>
                 <Diff linhas={story.diffPendente.linhas} />
@@ -288,9 +304,10 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
                   <span className="num">{pendentes} pendentes</span>
                 </header>
                 {achados.length === 0 && <Vazio>Nenhum achado nesta story.</Vazio>}
-                {achados.map((achado) => (
+                {achados.map((achado, indice) => (
+                  <Fragment key={achado.id}>
+                  {achado.estado !== 'pendente' && achados[indice - 1]?.estado === 'pendente' && <p className="achados-resolvidos">Decididos</p>}
                   <AchadoCard
-                    key={achado.id}
                     achado={achado}
                     travado={Boolean(ocupado) || Boolean(story.diffPendente)}
                     aoAceitar={() =>
@@ -301,6 +318,7 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
                     }
                     aoDescartar={() => void agir('Descartando', async () => aplicar(await chamar<StoryRun>('descartarAchado', { id: story.id, achadoId: achado.id })))}
                   />
+                  </Fragment>
                 ))}
               </section>
             </div>
@@ -362,18 +380,19 @@ function AchadoCard({
   aoDescartar: () => void
 }) {
   return (
-    <article className="achado">
+    <article className={achado.estado === 'pendente' ? 'achado' : 'achado resolvido'}>
       <header>
-        <strong>{achado.blocoNome}</strong>
+        {/* O que foi achado lidera; o bloco que achou é metadado. */}
+        <span className="origem">{achado.blocoNome}</span>
+        {/* Pendente não leva pílula: os botões Aceitar e Descartar já dizem que falta decidir. */}
         <span>
-          <span className="pilula">{TIPO_ACHADO[achado.tipo]}</span>{' '}
-          {achado.semProva && <span className="pilula aviso">sem prova</span>}{' '}
+          <span className="pilula">{TIPO_ACHADO[achado.tipo]}</span>
+          {achado.semProva && <span className="pilula aviso">sem prova</span>}
           {achado.estado === 'aceito' && <span className="pilula ok">aceito</span>}
           {achado.estado === 'descartado' && <span className="pilula nao">descartado</span>}
-          {achado.estado === 'pendente' && <span className="pilula">pendente</span>}
         </span>
       </header>
-      <p>{achado.texto}</p>
+      <p className="frase">{achado.texto}</p>
       <Prova achado={achado} />
       {achado.estado === 'pendente' && (
         <div className="acoes">
@@ -390,30 +409,37 @@ function AchadoCard({
 }
 
 function Prova({ achado }: { achado: Achado }) {
+  const ev = achado.evidencia
+  // Sem prova vem antes do tipo: o que foi citado e não conferiu nunca aparece como prova.
+  if (achado.semProva) {
+    const motivo =
+      ev.tipo === 'arquivo'
+        ? `o trecho citado não está em ${ev.caminho || 'nenhum arquivo lido'}.`
+        : ev.tipo === 'work-item'
+          ? `o card ${ev.id ? `#${ev.id}` : 'citado'} não está no backlog.`
+          : 'nenhum arquivo ou card sustenta este achado.'
+    return <p className="prova sem">Sem prova: {motivo}</p>
+  }
   if (achado.evidencia.tipo === 'arquivo') {
     return (
       <p className="prova">
-        <small>
+        <span className="caminho">
           {achado.evidencia.repositorio ? `${achado.evidencia.repositorio} · ` : ''}
           {achado.evidencia.caminho || 'arquivo'}
-        </small>
-        {achado.semProva ? 'sem prova' : achado.evidencia.trecho}
+        </span>
+        {achado.evidencia.trecho}
       </p>
     )
   }
   if (achado.evidencia.tipo === 'work-item') {
     return (
       <p className="prova">
-        <small>{achado.evidencia.projeto}</small>
+        <span className="caminho">{achado.evidencia.projeto}</span>
         #{achado.evidencia.id} {achado.evidencia.titulo}
       </p>
     )
   }
-  return (
-    <p className="prova">
-      <small>{achado.semProva ? 'sem prova' : 'não encontrei'}</small>
-    </p>
-  )
+  return <p className="prova sem">Não encontrei no código nem no backlog.</p>
 }
 
 function Publicar(props: {
@@ -437,26 +463,35 @@ function Publicar(props: {
   aoVoto: (voto: 'passou' | 'voltou') => void
 }) {
   return (
-    <section className="bloco">
+    <section className="bloco" id="board">
       <h2>Board</h2>
-      {props.publicada && (
+      {props.publicada ? (
         <>
           <p className="sub">{props.registro}. A descrição do card não foi alterada.</p>
-          <p>
-            Passou <span className="num">{props.passou}</span>
-            {' · '}
-            Voltou <span className="num">{props.voltou}</span>
-          </p>
-          <div className="acoes">
+          <p className="rotulo">Quando o card voltar do time, registre o resultado.</p>
+          <div className="acoes votos">
             <button className="btn-sec" type="button" disabled={Boolean(props.ocupado)} onClick={() => props.aoVoto('passou')}>
-              Passou
+              Passou <span className="num">{props.passou}</span>
             </button>
             <button className="btn-sec" type="button" disabled={Boolean(props.ocupado)} onClick={() => props.aoVoto('voltou')}>
-              Voltou
+              Voltou <span className="num">{props.voltou}</span>
             </button>
           </div>
+          <details className="publicar-de-novo">
+            <summary>Publicar de novo</summary>
+            <FormPublicar {...props} />
+          </details>
         </>
+      ) : (
+        <FormPublicar {...props} />
       )}
+    </section>
+  )
+}
+
+function FormPublicar(props: Parameters<typeof Publicar>[0]) {
+  return (
+    <>
       <p className="sub">Criar abre um card novo. Comentar menciona o responsável e não mexe na descrição.</p>
       <div className="escolha">
         <button type="button" className="btn-sec" aria-pressed={props.acao === 'comentar'} onClick={() => props.setAcao('comentar')}>
@@ -497,6 +532,6 @@ function Publicar(props: {
       <button className="btn" type="button" disabled={Boolean(props.ocupado) || (props.acao === 'comentar' ? !props.cardId : !props.projeto.trim())} onClick={props.aoPublicar}>
         {props.ocupado === 'Publicando' ? 'Publicando' : 'Publicar no board'}
       </button>
-    </section>
+    </>
   )
 }

@@ -5,7 +5,7 @@ import { Erro, mensagemDe } from '../ui'
 
 function SeletorSkill({ skillId, skills, aoMudar }: { skillId: string; skills: SkillDisponivel[]; aoMudar: (skillId: string) => void }) {
   return (
-    <label className="campo">
+    <label className="campo estreito">
       <span>Skill</span>
       <select value={skillId} onChange={(evento) => aoMudar(evento.target.value)}>
         {!skills.some((skill) => skill.id === skillId) && <option value={skillId}>{skillId}</option>}
@@ -86,7 +86,11 @@ export function FluxoView() {
       </div>
       <p className="sub">A ordem da esquerda para a direita na esteira é a ordem desta lista. Automático segue sozinho. Por clique espera você.</p>
       <Erro texto={erro} />
-      {ok && <p className="sub">{ok}</p>}
+      {ok && (
+        <p className="sub status ok" role="status">
+          {ok}
+        </p>
+      )}
       {blocos.map((bloco, indice) => (
         <article className="bloco" key={bloco.id}>
           <header>

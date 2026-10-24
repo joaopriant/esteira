@@ -88,7 +88,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
       </p>
       <Erro texto={erro} />
       {estado.produtos.length > 1 && (
-        <label className="campo">
+        <label className="campo estreito">
           <span>Produto</span>
           <select
             value={produtoId}
@@ -124,7 +124,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
           </div>
         </div>
       )}
-      <form className="bloco" onSubmit={(evento) => void perguntar(evento)}>
+      <form className="bloco medida" onSubmit={(evento) => void perguntar(evento)}>
         <h2>Perguntar à wiki</h2>
         <p className="sub">A resposta cita o trecho ou diz que não encontrou.</p>
         <label className="campo">
@@ -139,11 +139,9 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
             <p>{resposta.resposta}</p>
             {resposta.afirmacoes.length === 0 && <p className="sub">Não encontrei prova para esta pergunta.</p>}
             {resposta.afirmacoes.map((afirmacao, indice) => (
-              <p className="prova" key={`${afirmacao.caminho}-${indice}`}>
-                <small>
-                  {afirmacao.semProva ? 'sem prova' : afirmacao.caminho}
-                </small>
-                {afirmacao.semProva ? afirmacao.texto : afirmacao.trecho}
+              <p className={afirmacao.semProva ? 'prova sem' : 'prova'} key={`${afirmacao.caminho}-${indice}`}>
+                {!afirmacao.semProva && <span className="caminho">{afirmacao.caminho}</span>}
+                {afirmacao.semProva ? `Sem prova: ${afirmacao.texto}` : afirmacao.trecho}
               </p>
             ))}
           </div>
@@ -180,10 +178,14 @@ function Modulo({ modulo }: { modulo: ModuloWiki }) {
             <strong>{afirmacao.texto}</strong>
             {afirmacao.semProva && <span className="pilula aviso">sem prova</span>}
           </header>
-          <p className="prova">
-            <small>{afirmacao.caminho || 'sem arquivo'}</small>
-            {afirmacao.semProva ? 'sem prova' : afirmacao.trecho}
-          </p>
+          {afirmacao.semProva ? (
+            <p className="prova sem">Sem prova: {afirmacao.caminho ? `nenhum trecho de ${afirmacao.caminho} sustenta isto.` : 'nenhum arquivo sustenta isto.'}</p>
+          ) : (
+            <p className="prova">
+              <span className="caminho">{afirmacao.caminho}</span>
+              {afirmacao.trecho}
+            </p>
+          )}
         </article>
       ))}
     </>

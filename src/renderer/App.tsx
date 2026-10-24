@@ -86,9 +86,19 @@ export function App() {
           <p>
             {org} · {nomeTela}
           </p>
-          <p>
-            {estado?.ajustes.modo === 'falso' ? 'Exemplo local' : 'Nesta máquina'} · {conexao}
-          </p>
+          {estado && !estado.ajustes.conectado && tela !== 'ajustes' ? (
+            // Sem organização nada roda; o aviso leva direto para onde se resolve.
+            <p className="alerta-conexao">
+              Nenhuma organização conectada.
+              <button className="btn-texto" type="button" onClick={() => ir('ajustes')}>
+                Conectar em Ajustes
+              </button>
+            </p>
+          ) : (
+            <p>
+              {estado?.ajustes.modo === 'falso' ? 'Exemplo local' : 'Nesta máquina'} · {conexao}
+            </p>
+          )}
         </header>
         <main className="sheet">
           {carregando && <p>Carregando a Esteira.</p>}

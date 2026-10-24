@@ -15,23 +15,34 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
   const [iteracao, setIteracao] = useState(inicial.iteracaoPadrao)
   const [claudeBin, setClaudeBin] = useState(inicial.claudeBin)
   const [timeoutSeg, setTimeoutSeg] = useState(String(Math.round(inicial.timeoutBlocoMs / 1000)))
-  const [erro, setErro] = useState('')
-  const [ok, setOk] = useState('')
+  const [retorno, setRetorno] = useState<{ secao: string; ok: boolean; texto: string } | null>(null)
   const [ocupado, setOcupado] = useState('')
 
-  async function agir(rotulo: string, trabalho: () => Promise<void>) {
+  // O retorno aparece ao lado do botão que o pediu, não no topo da página.
+  async function agir(secao: string, rotulo: string, trabalho: () => Promise<void>, sucesso = 'Guardado nesta máquina.') {
     setOcupado(rotulo)
-    setErro('')
-    setOk('')
+    setRetorno(null)
     try {
       await trabalho()
       await recarregar()
-      setOk('Guardado nesta máquina.')
+      setRetorno({ secao, ok: true, texto: sucesso })
     } catch (falha) {
-      setErro(mensagemDe(falha))
+      setRetorno({ secao, ok: false, texto: mensagemDe(falha) })
     } finally {
       setOcupado('')
     }
+  }
+
+  // Função comum, não componente: um componente declarado aqui dentro seria recriado a cada render,
+  // e o span de status nasceria já com o texto, sem ser anunciado pelo leitor de tela.
+  function mostrarRetorno(secao: string) {
+    if (retorno?.secao !== secao) return <span className="status" role="status" />
+    if (!retorno.ok) return <Erro texto={retorno.texto} />
+    return (
+      <span className="status ok" role="status">
+        {retorno.texto}
+      </span>
+    )
   }
 
   async function salvar(parcial: Partial<Ajustes>) {
@@ -45,8 +56,6 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
         {inicial.conectado ? `${inicial.orgUrl} está conectada.` : 'Nenhuma organização conectada.'} O PAT não volta para esta tela.
         {inicial.modo === 'falso' ? ' Esta prévia usa Azure e Claude de exemplo.' : ''}
       </p>
-      <Erro texto={erro} />
-      {ok && <p className="sub">{ok}</p>}
 
       <section className="secao">
         <div>
@@ -57,10 +66,15 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
           className="painel"
           onSubmit={(evento) => {
             evento.preventDefault()
-            void agir('Conectando', async () => {
-              await chamar('conectar', { orgUrl, pat })
-              setPat('')
-            })
+            void agir(
+              'org',
+              'Conectando',
+              async () => {
+                await chamar('conectar', { orgUrl, pat })
+                setPat('')
+              },
+              'Conectada. O token foi para o cofre da máquina.',
+            )
           }}
         >
           <label className="campo">
@@ -81,14 +95,20 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
                 type="button"
                 disabled={Boolean(ocupado)}
                 onClick={() =>
-                  void agir('Desconectando', async () => {
-                    await chamar('desconectar')
-                  })
+                  void agir(
+                    'org',
+                    'Desconectando',
+                    async () => {
+                      await chamar('desconectar')
+                    },
+                    'Desconectada. O token saiu do cofre.',
+                  )
                 }
               >
-                Desconectar
+                {ocupado === 'Desconectando' ? 'Desconectando' : 'Desconectar'}
               </button>
             )}
+            {mostrarRetorno('org')}
           </div>
         </form>
       </section>
@@ -102,7 +122,7 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
           className="painel"
           onSubmit={(evento) => {
             evento.preventDefault()
-            void agir('Salvando modelo', async () => {
+            void agir('modelo', 'Salvando modelo', async () => {
               await salvar({ modeloStory: modelo })
             })
           }}
@@ -111,9 +131,12 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
             <span>Modelo</span>
             <textarea className="alto" value={modelo} onChange={(evento) => setModelo(evento.target.value)} />
           </label>
-          <button className="btn" type="submit" disabled={Boolean(ocupado)}>
-            Salvar modelo
-          </button>
+          <div className="acoes">
+            <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || modelo === inicial.modeloStory}>
+              {ocupado === 'Salvando modelo' ? 'Salvando' : 'Salvar modelo'}
+            </button>
+            {mostrarRetorno('modelo')}
+          </div>
         </form>
       </section>
 
@@ -126,7 +149,7 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
           className="painel"
           onSubmit={(evento) => {
             evento.preventDefault()
-            void agir('Salvando board', async () => {
+            void agir('board', 'Salvando board', async () => {
               await salvar({
                 tipoWorkItem: tipo,
                 campoDescricao,
@@ -161,9 +184,12 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
               <input value={iteracao} onChange={(evento) => setIteracao(evento.target.value)} />
             </label>
           </div>
-          <button className="btn" type="submit" disabled={Boolean(ocupado)}>
-            Salvar board
-          </button>
+          <div className="acoes">
+            <button className="btn-sec" type="submit" disabled={Boolean(ocupado)}>
+              {ocupado === 'Salvando board' ? 'Salvando' : 'Salvar board'}
+            </button>
+            {mostrarRetorno('board')}
+          </div>
         </form>
       </section>
 
@@ -176,7 +202,7 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
           className="painel"
           onSubmit={(evento) => {
             evento.preventDefault()
-            void agir('Salvando Claude', async () => {
+            void agir('claude', 'Salvando Claude', async () => {
               const segundos = Number(timeoutSeg)
               if (!Number.isFinite(segundos)) throw new Error('O tempo limite precisa ser um número de segundos.')
               await salvar({ claudeBin, timeoutBlocoMs: Math.round(segundos * 1000) })
@@ -191,9 +217,12 @@ export function AjustesView({ estado, recarregar }: { estado: EstadoApp; recarre
             <span>Tempo limite de cada bloco, em segundos</span>
             <input value={timeoutSeg} onChange={(evento) => setTimeoutSeg(evento.target.value)} inputMode="numeric" />
           </label>
-          <button className="btn" type="submit" disabled={Boolean(ocupado)}>
-            Salvar Claude
-          </button>
+          <div className="acoes">
+            <button className="btn-sec" type="submit" disabled={Boolean(ocupado)}>
+              {ocupado === 'Salvando Claude' ? 'Salvando' : 'Salvar Claude'}
+            </button>
+            {mostrarRetorno('claude')}
+          </div>
         </form>
       </section>
     </div>

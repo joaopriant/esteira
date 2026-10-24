@@ -89,6 +89,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
       {!estado.ajustes.conectado && <Vazio>Conecte a organização em Ajustes para listar os repositórios.</Vazio>}
       {estado.ajustes.conectado && lista.length === 0 && <Vazio>A organização não devolveu repositório.</Vazio>}
       {lista.length > 0 && (
+        <div className="tabela">
         <table className="lista">
           <thead>
             <tr>
@@ -109,7 +110,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
                   </td>
                   <td>{repo.nome}</td>
                   <td>{repo.projeto}</td>
-                  <td>
+                  <td style={{ width: 240 }}>
                     <input
                       value={branches[repo.id] ?? daqui?.branchAcompanhada ?? repo.branchPadrao}
                       onChange={(evento) => setBranches({ ...branches, [repo.id]: evento.target.value })}
@@ -122,6 +123,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
             })}
           </tbody>
         </table>
+        </div>
       )}
       <div className="acoes" style={{ marginTop: 12 }}>
         <button
@@ -148,6 +150,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
         </div>
         {estado.produtos.length === 0 && <Vazio>Nenhum produto. Escolha repositórios já clonados e dê um nome.</Vazio>}
         {estado.produtos.length > 0 && (
+          <div className="tabela">
           <table className="lista">
             <thead>
               <tr>
@@ -163,9 +166,9 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
                 const prontos = wiki?.modulos.filter((modulo) => modulo.estado === 'pronto').length ?? 0
                 const total = wiki?.modulos.length ?? 0
                 return (
-                  <tr key={produto.id}>
+                  <tr key={produto.id} aria-current={produto.id === editando ? 'true' : undefined}>
                     <td>
-                      <button className="btn-texto" type="button" onClick={() => setEditando(produto.id)}>
+                      <button className="link" type="button" aria-current={produto.id === editando ? 'true' : undefined} onClick={() => setEditando(produto.id)}>
                         {produto.nome}
                       </button>
                     </td>
@@ -177,6 +180,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
               })}
             </tbody>
           </table>
+          </div>
         )}
         <Editor
           produto={estado.produtos.find((item) => item.id === editando)}
@@ -191,11 +195,14 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
           }
           aoRemover={
             editando
-              ? () =>
+              ? () => {
+                  const nome = estado.produtos.find((item) => item.id === editando)?.nome ?? 'este produto'
+                  if (!window.confirm(`Remover o produto ${nome}? Os clones continuam na máquina; o conjunto e a ligação com outros produtos saem.`)) return
                   void agir('Removendo', async () => {
                     await chamar('removerProduto', { id: editando })
                     setEditando('')
                   })
+                }
               : undefined
           }
         />

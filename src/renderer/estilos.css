@@ -29,6 +29,9 @@
   --pill-warning-ink: #6a4510;
   --pill-neutral-bg: #e7eef0;
   --pill-neutral-ink: #24343a;
+  --selection: #d3e4ea;
+  --disabled-bg: #c8ccce;
+  --disabled-ink: #4d5558;
   --font: "IBM Plex Sans", "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   --sidebar-width: 228px;
@@ -57,9 +60,9 @@ button { cursor: pointer; }
 h1, h2, p { margin: 0; }
 h2 { font-size: 16px; font-weight: 500; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-::selection { background: #d3e4ea; }
-::placeholder { color: #5c6b71; opacity: 1; }
-* { scrollbar-width: thin; scrollbar-color: #c5cacc transparent; }
+::selection { background: var(--selection); }
+::placeholder { color: var(--faint); opacity: 1; }
+* { scrollbar-width: thin; scrollbar-color: var(--control) transparent; }
 .num { font-variant-numeric: tabular-nums; }
 
 .app { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 100%; }
@@ -121,10 +124,22 @@ h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line
   border: 1px solid transparent;
 }
 .btn { background: var(--primary); color: var(--primary-ink); }
-.btn:disabled { background: #c8ccce; color: #4d5558; cursor: not-allowed; }
+.btn:disabled { background: var(--disabled-bg); color: var(--disabled-ink); cursor: not-allowed; }
 .btn-sec { background: var(--surface); border-color: var(--control); }
 .btn-texto { background: transparent; color: var(--text); padding: 0 8px; }
 .btn-perigo { color: var(--negative); }
+.btn:not(:disabled):hover { background: #000; }
+.btn-sec:not(:disabled):hover { border-color: var(--muted); background: var(--raised); }
+.btn-texto:not(:disabled):hover { background: var(--active); }
+.btn-sec:disabled, .btn-texto:disabled { color: var(--disabled-ink); cursor: not-allowed; }
+.btn:not(:disabled):active, .btn-sec:not(:disabled):active, .btn-texto:not(:disabled):active { transform: translateY(1px); }
+/* Nome clicável dentro de tabela: alinhado com o texto das outras colunas. */
+.link { padding: 0; border: 0; background: transparent; color: var(--text); font-weight: 500; text-align: left; text-decoration: underline; text-decoration-color: var(--control); text-underline-offset: 3px; }
+.link:hover { text-decoration-color: var(--text); }
+.link[aria-current='true'] { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.status { color: var(--muted); font-size: var(--fs-small); }
+.status.ok { color: var(--positive); }
+.acoes .erro { margin: 0; padding: 6px 10px; }
 
 .trilho {
   display: flex;
@@ -170,10 +185,32 @@ input, select { height: 36px; }
 .achados { border-top: 1px solid var(--border); }
 .achado { padding: 14px 0; border-bottom: 1px solid var(--rule); }
 .achado header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.achado header > span { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .achado p { margin-top: 6px; }
-.prova { margin-top: 8px; font-family: var(--mono); font-size: var(--fs-small); line-height: 18px; color: var(--text); overflow-wrap: anywhere; }
-.prova small { display: block; color: var(--muted); font-family: var(--font); }
+.achado .acoes { margin-top: 10px; }
+/* Achado já decidido: continua legível, mas cede o peso aos pendentes. */
+.achado .origem { color: var(--muted); font-size: var(--fs-small); }
+.achado .frase { margin-top: 4px; font-weight: 500; }
+.achado.resolvido .frase { color: var(--muted); font-weight: 400; }
+.achados-resolvidos { margin-top: 20px; color: var(--muted); font-size: var(--fs-small); }
+/* A prova é a promessa do produto: o trecho citado aparece como citação de código, com o caminho na cor do produto. */
+.prova {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--raised);
+  border-radius: var(--radius-control);
+  font-family: var(--mono);
+  font-size: var(--fs-small);
+  line-height: 18px;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.prova .caminho { display: block; margin-bottom: 4px; color: var(--accent); font-family: var(--font); font-size: var(--fs-small); font-weight: 500; white-space: normal; }
+.prova.sem { background: var(--pill-warning-bg); color: var(--pill-warning-ink); font-family: var(--font); }
 .pilula {
+  flex: none;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   height: 20px;
@@ -207,17 +244,24 @@ input, select { height: 36px; }
   font-size: var(--fs-small);
 }
 
-.diff { font-family: var(--mono); font-size: var(--fs-small); line-height: 18px; border-top: 1px solid var(--border); margin: 8px 0 12px; }
-.diff div { padding: 2px 0; white-space: pre-wrap; }
-.diff .entrou { color: var(--positive); }
-.diff .saiu { color: var(--negative); }
+.diff { font-family: var(--mono); font-size: var(--fs-small); line-height: 18px; border: 1px solid var(--border); border-radius: var(--radius-control); margin: 8px 0 12px; padding: 4px 0; overflow: hidden; }
+.diff div { padding: 1px 10px; white-space: pre-wrap; }
+.diff .entrou { background: var(--pill-positive-bg); color: var(--pill-positive-ink); }
+.diff .saiu { background: var(--pill-negative-bg); color: var(--pill-negative-ink); text-decoration: line-through; text-decoration-color: rgb(110 36 36 / 0.4); }
+.ajuste { margin-bottom: var(--gap); }
 
+/* A tabela rola dentro do próprio quadro; a página nunca rola de lado. */
+.tabela { overflow-x: auto; }
 .lista { width: 100%; border-collapse: collapse; }
-.lista th { text-align: left; font-weight: 400; color: var(--muted); font-size: var(--fs-small); padding: 0 8px 8px 0; }
-.lista td { padding: 12px 8px 12px 0; border-top: 1px solid var(--rule); vertical-align: top; }
+.lista th { text-align: left; font-weight: 400; color: var(--muted); font-size: var(--fs-small); padding: 0 16px 8px 0; white-space: nowrap; }
+.lista td { padding: 12px 16px 12px 0; border-top: 1px solid var(--rule); vertical-align: top; }
 .lista td.num, .lista th.num { text-align: right; font-variant-numeric: tabular-nums; }
-.lista th.num { padding-right: 0; }
-.lista td.num:last-child, .lista th.num:last-child { padding-right: 0; }
+.lista td small { display: block; margin-top: 2px; color: var(--muted); font-size: var(--fs-small); }
+.lista tr[aria-current='true'] td { background: var(--raised); }
+/* Números à direita, com o respiro do lado de onde vem a coluna anterior. */
+.lista td.num, .lista th.num { padding-left: 24px; padding-right: 0; }
+.lista td:last-child, .lista th:last-child { padding-right: 0; }
+.lista td.num + td:not(.num), .lista th.num + th:not(.num) { padding-left: 24px; }
 
 .ajustes { max-width: 1152px; }
 .secao { display: grid; grid-template-columns: minmax(220px, 380px) minmax(0, 1fr); gap: var(--gap); padding: 28px 0; border-top: 1px solid var(--border); }
@@ -244,6 +288,22 @@ legend { padding: 0; }
 .escolha button[aria-pressed='true'] { border-color: var(--text); background: var(--active); }
 .bloco { padding: 16px 0; border-top: 1px solid var(--border); }
 .bloco header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 12px; }
+.bloco > h2, .bloco > .titulo { margin-bottom: 12px; }
+/* Campos que não precisam da folha inteira: um seletor de 1.154px parece barra, não escolha. */
+.estreito { max-width: 420px; }
+.medida { max-width: 760px; }
+/* Num bloco, a regra de cima continua de ponta a ponta; só o conteúdo fica na medida. */
+.bloco.medida { max-width: none; }
+.bloco.medida > * { max-width: 760px; }
+.publicar-de-novo { margin-top: 16px; }
+.publicar-de-novo summary { cursor: pointer; color: var(--muted); padding: 4px 0; }
+.publicar-de-novo summary:hover { color: var(--text); }
+.publicar-de-novo[open] summary { margin-bottom: 12px; }
+.votos { margin: 4px 0 8px; }
+.alerta-conexao { display: inline-flex; align-items: center; gap: 8px; color: var(--pill-warning-ink); }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-sec, .btn-texto { transform: none !important; }
+}
 .resposta { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .marca svg { display: block; flex: none; }
 .fechar-menu { display: none; }
