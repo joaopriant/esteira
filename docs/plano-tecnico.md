@@ -92,9 +92,21 @@ Estilo decidido pelo sorteio do design de app: **framed sheet**, semente 1617297
 
 Telas: Esteira, Wiki, Produtos, Fluxo, Medição, Ajustes. Estados vazio, carregando e erro em cada uma. Largura de notebook e de telefone (a barra vira menu).
 
+## Incremento — Radar e Fluxo v2
+
+Data: 24/10/2026. Spec: `docs/superpowers/specs/2026-10-24-radar-e-fluxo-v2-design.md`. ADR 0006.
+
+O PM liga fontes de leitura (Teams, Slack, WhatsApp, Granola, Plaud) a um produto. `sincronizarRadar` pede os sinais ao leitor, passa por `prepararSinais` (ruído e injeção saem antes do modelo) e chama `claude -p` com papel `radar`. A citação só entra se for substring do texto sanitizado. Sem isso, a sugestão não nasce.
+
+`enviarParaEsteira` grava a prova na story e dispara os blocos do fluxo salvo. Descartar é local. Nenhum leitor tem método de envio.
+
+O fluxo deixa de ser formulário empilhado. A tela monta três zonas (fontes, blocos, saída) com conectores. Presets, inserção entre índices e duplicação passam por `validarFluxo` no `salvarFluxo`. O inspetor edita o bloco selecionado e lê a contagem de achados já gravada nas stories. A ordem nova vale para a próxima story; a story aberta guarda o fluxo com que nasceu.
+
+Testes novos: `tests/radar.test.ts` (cinco fontes, prova, envio, injeção, leitura local, presets). Os testes da v1 continuam iguais.
+
 ## Fora deste plano
 
-Servidor, telemetria, Jira, outros provedores, canvas com ramificação, login de vários PMs, assinatura digital do instalador.
+Servidor, telemetria, Jira, canvas com ramificação ou condição, login de vários PMs, assinatura digital do instalador, escrever em Teams, Slack ou WhatsApp.
 
 ## Marcos
 

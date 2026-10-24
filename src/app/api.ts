@@ -69,6 +69,34 @@ const esquemas: Record<string, z.ZodTypeAny> = {
     ]),
   }),
   registrarVolta: id.extend({ voto: z.enum(['passou', 'voltou']) }),
+  fontesRadar: vazio,
+  salvarFonteRadar: z.object({
+    id: z.string().max(80),
+    produtoId: z.string().min(1).max(80),
+    provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']),
+    nome: z.string().min(1).max(120),
+    referencia: z.string().min(1).max(300),
+    ativa: z.boolean(),
+  }),
+  removerFonteRadar: id,
+  catalogoRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']) }),
+  importarTranscricao: z.object({
+    produtoId: z.string().min(1).max(80),
+    provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']),
+    autor: z.string().min(1).max(120),
+    local: z.string().min(1).max(160),
+    texto: z.string().min(1).max(20_000),
+    em: z.string().max(40).optional(),
+  }),
+  sincronizarRadar: z.object({ fonteId: z.string().min(1).max(80).optional() }),
+  sugestoesRadar: vazio,
+  descartarSugestao: id,
+  enviarParaEsteira: id,
+  conectarRadar: z.object({ provedor: z.enum(['teams', 'slack']), token: z.string().min(8).max(500) }),
+  credenciaisRadar: vazio,
+  lerSkillTexto: z.object({ id: z.string().min(1).max(80) }),
+  estatisticasBlocos: vazio,
+  presetsFluxo: vazio,
   salvarAjustes: z.object({
     tipoWorkItem: z.string().min(1).max(80).optional(),
     campoDescricao: z.string().min(1).max(120).optional(),
@@ -155,6 +183,35 @@ async function executar(app: EsteiraApp, canal: string, corpo: unknown): Promise
       return app.registrarVolta(dados.id, dados.voto)
     case 'salvarAjustes':
       return app.salvarAjustes(dados)
+    case 'fontesRadar':
+      return app.fontesRadar()
+    case 'salvarFonteRadar':
+      return app.salvarFonteRadar(dados)
+    case 'removerFonteRadar':
+      await app.removerFonteRadar(dados.id)
+      return { ok: true }
+    case 'catalogoRadar':
+      return app.catalogoRadar(dados.provedor)
+    case 'importarTranscricao':
+      return app.importarTranscricao(dados)
+    case 'sincronizarRadar':
+      return app.sincronizarRadar(dados.fonteId)
+    case 'sugestoesRadar':
+      return app.sugestoesRadar()
+    case 'descartarSugestao':
+      return app.descartarSugestao(dados.id)
+    case 'enviarParaEsteira':
+      return app.enviarParaEsteira(dados.id)
+    case 'conectarRadar':
+      return app.conectarRadar(dados.provedor, dados.token)
+    case 'credenciaisRadar':
+      return app.credenciaisRadar()
+    case 'lerSkillTexto':
+      return app.lerSkillTexto(dados.id)
+    case 'estatisticasBlocos':
+      return app.estatisticasBlocos()
+    case 'presetsFluxo':
+      return app.presetsFluxo()
     default:
       throw new Error('Canal desconhecido.')
   }

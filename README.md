@@ -65,7 +65,7 @@ Apagar essa pasta zera a Esteira. Não apaga nada no Azure.
 
 ## O que a v1 não faz
 
-Não abre Jira, não tem canvas com ramificação, não atende outro PM na mesma instalação e não atualiza sozinha. Fechar o app no meio de um bloco deixa a story no último passo gravado.
+Não abre Jira, o fluxo é um canvas linear (sem ramificação) e não atende outro PM na mesma instalação. Não atualiza sozinha. Fechar o app no meio de um bloco deixa a story no último passo gravado. O Radar lê Teams, Slack, WhatsApp, Granola e Plaud; não envia mensagem em nome de ninguém.
 
 ## Testes
 

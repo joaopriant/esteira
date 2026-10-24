@@ -6,7 +6,7 @@ import { Erro, TIPO_ACHADO, Vazio, mensagemDe, rotuloStory } from '../ui'
 
 const ORDEM = { pendente: 0, aceito: 1, descartado: 2 }
 
-export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarregar: () => Promise<void> }) {
+export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp; recarregar: () => Promise<void>; abrirId?: string }) {
   const [storyId, setStoryId] = useState(estado.stories[0]?.id ?? '')
   const [nova, setNova] = useState(estado.stories.length === 0)
   const [story, setStory] = useState<StoryRun | null>(null)
@@ -20,6 +20,12 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
   const [area, setArea] = useState(estado.ajustes.areaPadrao)
   const [iteracao, setIteracao] = useState(estado.ajustes.iteracaoPadrao)
   const [cardId, setCardId] = useState('')
+
+  useEffect(() => {
+    if (!abrirId) return
+    setNova(false)
+    setStoryId(abrirId)
+  }, [abrirId])
 
   useEffect(() => {
     if (nova || !storyId) {
@@ -186,6 +192,20 @@ export function EsteiraView({ estado, recarregar }: { estado: EstadoApp; recarre
       ) : (
         story && (
           <>
+            {story.provasOrigem && story.provasOrigem.length > 0 && (
+              <section className="ajuste">
+                <h2>Veio do Radar</h2>
+                <p className="sub">A ideia entrou com o trecho original. A esteira escreve e confronta em cima disso.</p>
+                {story.provasOrigem.map((prova, indice) => (
+                  <blockquote className="prova" key={`${prova.em}-${indice}`}>
+                    <span className="caminho">
+                      {prova.local} · {prova.autor} · {prova.em}
+                    </span>
+                    {prova.citacao}
+                  </blockquote>
+                ))}
+              </section>
+            )}
             <ol className="trilho">
               {story.passos.map((passo) => (
                 <li key={passo.blocoId} className={passo.estado} aria-current={passo.estado === 'rodando' || passo.estado === 'pausado' ? 'step' : undefined}>

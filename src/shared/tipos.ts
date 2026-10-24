@@ -83,6 +83,61 @@ export interface Publicacao {
   em: string
 }
 
+export type ProvedorRadar = 'teams' | 'slack' | 'whatsapp' | 'granola' | 'plaud'
+export type TipoSugestao = 'nova-story' | 'melhoria' | 'bug'
+
+export interface FonteRadar {
+  id: string
+  produtoId: string
+  provedor: ProvedorRadar
+  nome: string
+  referencia: string
+  ativa: boolean
+}
+
+export interface SinalBruto {
+  id: string
+  provedor: ProvedorRadar
+  fonteRef: string
+  fonteNome: string
+  autor: string
+  local: string
+  em: string
+  texto: string
+  fio: string
+}
+
+export interface ProvaRadar {
+  provedor: ProvedorRadar
+  fonteNome: string
+  autor: string
+  local: string
+  em: string
+  citacao: string
+}
+
+export interface SugestaoRadar {
+  id: string
+  produtoId: string
+  produtoNome: string
+  tipo: TipoSugestao
+  titulo: string
+  resumo: string
+  provas: ProvaRadar[]
+  estado: 'nova' | 'enviada' | 'descartada'
+  storyId?: string
+  criadaEm: string
+}
+
+export interface EstatisticaBloco {
+  blocoId: string
+  blocoNome: string
+  gerados: number
+  aceitos: number
+  descartados: number
+  pendentes: number
+}
+
 export interface StoryRun {
   id: string
   ideia: string
@@ -102,6 +157,8 @@ export interface StoryRun {
   criadaEm: string
   atualizadaEm: string
   erro?: string
+  provasOrigem?: ProvaRadar[]
+  sugestaoId?: string
 }
 
 export interface Produto {
@@ -211,6 +268,7 @@ export interface EstadoApp {
   repositorios: Repositorio[]
   stories: ResumoStory[]
   filaWiki: { produtoId: string; pendentes: number; gerando: boolean }
+  radarPendentes: number
 }
 
 export interface ResumoStory {

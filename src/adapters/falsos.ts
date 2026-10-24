@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
+import { melhorCitacao, classificarTipo } from '../core/radar'
 import type { Achado, StoryTexto, WorkItem } from '../shared/tipos'
 import type { AzurePort, ClaudePort, GitPort, PedidoClaude } from '../ports'
 import { caminhoSeguro } from './seguro'
@@ -185,6 +186,21 @@ export function criarClaudeFalso(): ClaudePort & { modulosGerados: string[] } {
           json: { titulo: pedido.blocoId, resumo: 'Leitura do módulo a partir dos arquivos.', afirmacoes: afirmacoes.slice(0, 4) },
           bruto: '',
         }
+      }
+      if (pedido.papel === 'radar') {
+        const sugestoes = (pedido.sinais ?? []).flatMap((sinal) => {
+          const citacao = melhorCitacao(sinal.texto)
+          if (!citacao) return []
+          const tipo = classificarTipo(sinal.texto)
+          return [{
+            sinalId: sinal.id,
+            tipo,
+            titulo: citacao.slice(0, 90),
+            resumo: citacao,
+            citacao,
+          }]
+        })
+        return { json: { sugestoes }, bruto: '' }
       }
       if (pedido.papel === 'pergunta') {
         const prova = pedido.wiki.find((item) => !item.semProva && item.trecho)

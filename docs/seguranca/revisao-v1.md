@@ -35,3 +35,17 @@ Método: leitura do código que toca PAT, processo, caminho, IPC e board; testes
 6. **`npm audit` e a varredura.** Na revisão o audit apontou Electron 33, o `tar` do empacotador, Zod 3 e o `diff`. Subimos para Electron 45, electron-builder 26, Zod 4, diff 9 e Vitest 5. `npm audit --audit-level=high` ficou limpo, e a varredura de segredo também. Se uma advisory nova quebrar o CI, a correção é atualizar o lock, não ignorar o job.
 
 Nada em aberto que permita publicar sozinho, gravar o PAT em JSON ou marcar palpite como prova.
+
+## Incremento — Radar e canvas
+
+Data: 24/10/2026. Conferido contra a seção 8 de `modelo-de-ameacas.md` e o ADR 0006.
+
+| Ameaça | Onde | Estado |
+|---|---|---|
+| Token do Radar em arquivo | `conectarRadar` grava só no cofre (`radar:teams`, `radar:slack`). O teste varre o diretório de dados e não acha o token de exemplo. `credenciaisRadar` devolve booleano. | ok, com teste |
+| Envio em canal | `pedidoLeitura` só devolve GET para `graph.microsoft.com` ou `slack.com`, ou `null` para WhatsApp, Granola e Plaud. Não há método de postar mensagem. Sem token, o leitor real não chama a rede. | ok, com teste |
+| Caminho da importação | `lerPasta` usa `caminhoSeguro`. `../` volta lista vazia e não lê o arquivo de fora. | ok, com teste |
+| Prompt injection | Linha de ordem sai em `sanitizarTextoExterno` antes do Claude. Citação que não é substring não vira prova. O teste de importação mista não deixa o segredo na sugestão; texto só de injeção não gera sugestão. O contexto do `claude -p` marca o sinal como dado e diz para não enviar mensagem. | ok, com teste |
+| Publicar a partir do Radar | `enviarParaEsteira` chama `iniciarEsteira`. O único caminho de escrita no board continua sendo `publicar`. | ok |
+
+Aceito: o nome de quem fala no Slack real pode ser o id da conta, porque não fazemos uma segunda chamada para resolver o perfil. A transcrição colada continua podendo trazer dado pessoal; ela fica no JSON local da máquina do PM, como a story.

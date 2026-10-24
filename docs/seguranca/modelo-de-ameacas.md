@@ -7,8 +7,9 @@ O app roda na máquina do fundador, com o PAT dele e o código da empresa dele. 
 ## Ativos
 
 - PAT do Azure DevOps (Code Read, Work Items Read & Write).
+- Tokens de leitura do Teams (Microsoft Graph) e do Slack, se o PM colar.
 - Código clonado e a wiki gerada dele.
-- Texto das stories.
+- Texto das stories e o texto cru de chat, reunião e nota de voz que o Radar lê.
 - Login da assinatura do Claude (não é nosso; não podemos lê-lo nem copiá-lo).
 
 ## O que não pode acontecer
@@ -69,7 +70,18 @@ O app roda na máquina do fundador, com o PAT dele e o código da empresa dele. 
 - O ramo "comentar" não tem campo de descrição e não chama atualização de work item.
 - Aceitar achado e aprovar diff são locais.
 
-### 8. O que aceitamos de risco na v1
+### 8. Radar (Teams, Slack, WhatsApp, Granola, Plaud)
+
+Atualizado em 24/10/2026, com o ADR 0006.
+
+- Token de leitura só no cofre, contas `radar:teams` e `radar:slack`. Não entra em `fontes-radar.json`, `radar-sugestoes.json`, story, log ou resposta de IPC. `conectarRadar` devolve `{ conectado: true }`.
+- WhatsApp, Granola e Plaud não têm token de envio. A leitura real é arquivo dentro de `radar-import/<provedor>`, com o mesmo `caminhoSeguro` do clone. `..` não sai da pasta.
+- Teams e Slack, quando há token, fazem um GET. Hosts fechados: `graph.microsoft.com` e `slack.com`. Referência que não casa com o formato do canal não vira URL. Não há POST, resposta em thread nem envio em nome do PM.
+- Texto de chat e transcrição é dado hostil. `sanitizarTextoExterno` tira caractere de controle, quebra de delimitador `<<<` `>>>` e linha que tenta dar ordem (`ignore as instruções`, `publique no board`, `PAT=`). O que sobra vai ao `claude -p` dentro de `<<<SINAL>>>`, com a frase fixa de que aquilo não é ordem e de que nada é enviado ao canal.
+- A prova não depende do modelo obedecer: a citação tem de ser substring do texto já sanitizado. Senão a sugestão não entra na fila. O resumo que traz ordem ou segredo que não está na fonte é descartado.
+- Mandar para a Esteira copia a prova para a story local e roda os blocos. Não publica no Azure e não escreve no canal.
+
+## 9. O que aceitamos de risco na v1
 
 - O CLI do Claude, fora do `--bare`, pode ler a configuração global do usuário. É a máquina dele.
 - Não há assinatura de código no instalador (o spec manda assim). O fundador precisa saber de onde veio o instalador.

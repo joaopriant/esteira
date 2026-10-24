@@ -57,6 +57,10 @@ export function contaDoPat(orgUrl: string): string {
   return `azure-devops:${validarOrgUrl(orgUrl).origin}${validarOrgUrl(orgUrl).pathname.replace(/\/$/, '')}`
 }
 
+export function contaRadar(provedor: 'teams' | 'slack'): string {
+  return `radar:${provedor}`
+}
+
 export function redigirSegredo(texto: string): string {
   return texto
     .replace(/Authorization:\s*Basic\s+\S+/gi, 'Authorization: Basic [redigido]')

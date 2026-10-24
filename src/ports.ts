@@ -1,4 +1,4 @@
-import type { Ajustes, ArquivoLido, StoryTexto, WorkItem, AfirmacaoWiki, Achado } from './shared/tipos'
+import type { Ajustes, ArquivoLido, ProvedorRadar, SinalBruto, StoryTexto, WorkItem, AfirmacaoWiki, Achado } from './shared/tipos'
 
 export interface AzurePort {
   listarRepositorios(): Promise<
@@ -20,8 +20,15 @@ export interface AzurePort {
   comentar(projeto: string, id: number, texto: string): Promise<void>
 }
 
+export interface SinalParaClaude {
+  id: string
+  autor: string
+  local: string
+  texto: string
+}
+
 export interface PedidoClaude {
-  papel: 'escrever' | 'confrontar' | 'aplicar' | 'wiki' | 'pergunta'
+  papel: 'escrever' | 'confrontar' | 'aplicar' | 'wiki' | 'pergunta' | 'radar'
   blocoId: string
   instrucao: string
   ideia: string
@@ -32,8 +39,15 @@ export interface PedidoClaude {
   arquivos: { repositorio: string; caminho: string; conteudo: string }[]
   cards: WorkItem[]
   pergunta?: string
+  sinais?: SinalParaClaude[]
   diretorios: string[]
   timeoutMs: number
+}
+
+export interface LeitorRadar {
+  provedor: ProvedorRadar
+  listarCanais(): Promise<{ referencia: string; nome: string }[]>
+  ler(referencia: string): Promise<SinalBruto[]>
 }
 
 export interface RespostaClaude {
@@ -88,6 +102,7 @@ export interface Dependencias {
   segredos: SecretStore
   skillsDir: string
   skillsUsuario?: string
+  radares: LeitorRadar[]
   pat?: () => Promise<string | null>
 }
 

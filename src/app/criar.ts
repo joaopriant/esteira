@@ -1,8 +1,12 @@
 import path from 'node:path'
 import os from 'node:os'
-import type { AzurePort, ClaudePort, GitPort } from '../ports'
+import type { AzurePort, ClaudePort, GitPort, LeitorRadar, SecretStore } from '../ports'
 import { criarDisco } from '../adapters/disco'
 import { AzureFalso, criarClaudeFalso, criarGitFalso } from '../adapters/falsos'
+import { leitoresFalsos } from '../adapters/radar-falso'
+import { criarLeitorReal } from '../adapters/radar-leitura'
+import { contaRadar } from '../adapters/seguro'
+import type { ProvedorRadar } from '../shared/tipos'
 import { criarGit } from '../adapters/git-cli'
 import { criarProcesso } from '../adapters/processo'
 import { cofreMemoria, cofreSistema } from '../adapters/segredos'
@@ -34,6 +38,7 @@ export async function criarAplicacao(opcoes: {
   const azure = opcoes.azure ?? (modo === 'falso' ? new AzureFalso(itensExemplo(agora())) : azureRealInerte())
   const claude = opcoes.claude ?? (modo === 'falso' ? criarClaudeFalso() : claudeInerte())
   const git = opcoes.git ?? (modo === 'falso' ? criarGitFalso(path.join(process.cwd(), 'fixtures'), path.join(dataDir, 'repos')) : criarGit(criarProcesso(), path.join(dataDir, 'repos')))
+  const segredos = modo === 'falso' ? cofreMemoria() : cofreSistema()
   const app = new EsteiraApp({
     dataDir,
     modo,
@@ -42,12 +47,28 @@ export async function criarAplicacao(opcoes: {
     azure,
     claude,
     git,
-    segredos: modo === 'falso' ? cofreMemoria() : cofreSistema(),
+    segredos,
     skillsDir,
     skillsUsuario,
+    radares: modo === 'falso' ? leitoresFalsos() : leitoresReais(dataDir, segredos),
   })
-  if (opcoes.semear && modo === 'falso' && (await app.produtos()).length === 0) await semearExemplo(app)
+  if (opcoes.semear && modo === 'falso') {
+    if ((await app.produtos()).length === 0) await semearExemplo(app)
+    await app.semearRadarSeVazio()
+  }
   return app
+}
+
+function leitoresReais(dataDir: string, segredos: SecretStore): LeitorRadar[] {
+  const pasta = path.join(dataDir, 'radar-import')
+  const provedores: ProvedorRadar[] = ['teams', 'slack', 'whatsapp', 'granola', 'plaud']
+  return provedores.map((provedor) =>
+    criarLeitorReal({
+      provedor,
+      pasta,
+      token: async () => (provedor === 'teams' || provedor === 'slack' ? segredos.ler(contaRadar(provedor)) : Promise.resolve(null)),
+    }),
+  )
 }
 
 function azureRealInerte(): AzurePort {

@@ -6,13 +6,15 @@ import { EsteiraView } from './telas/Esteira'
 import { FluxoView } from './telas/Fluxo'
 import { MedicaoView } from './telas/Medicao'
 import { ProdutosView } from './telas/Produtos'
+import { RadarView } from './telas/Radar'
 import { WikiView } from './telas/Wiki'
 import { Erro, Marca, mensagemDe, nomeOrg } from './ui'
 
-type Tela = 'esteira' | 'wiki' | 'produtos' | 'fluxo' | 'medicao' | 'ajustes'
+type Tela = 'esteira' | 'radar' | 'wiki' | 'produtos' | 'fluxo' | 'medicao' | 'ajustes'
 
 const TELAS: { id: Tela; nome: string }[] = [
   { id: 'esteira', nome: 'Esteira' },
+  { id: 'radar', nome: 'Radar' },
   { id: 'wiki', nome: 'Wiki' },
   { id: 'produtos', nome: 'Produtos' },
   { id: 'fluxo', nome: 'Fluxo' },
@@ -25,6 +27,7 @@ export function App() {
   const [estado, setEstado] = useState<EstadoApp | null>(null)
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [abrirStory, setAbrirStory] = useState('')
 
   const recarregar = useCallback(async () => {
     try {
@@ -69,6 +72,7 @@ export function App() {
           {TELAS.map((item) => (
             <button key={item.id} type="button" aria-current={tela === item.id ? 'page' : undefined} onClick={() => ir(item.id)}>
               {item.nome}
+              {item.id === 'radar' && (estado?.radarPendentes ?? 0) > 0 && <span className="selo num">{estado?.radarPendentes}</span>}
             </button>
           ))}
         </nav>
@@ -100,7 +104,7 @@ export function App() {
             </p>
           )}
         </header>
-        <main className="sheet">
+        <main className={tela === 'fluxo' ? 'sheet estudio' : 'sheet'}>
           {carregando && <p>Carregando a Esteira.</p>}
           {!carregando && erro && !estado && (
             <>
@@ -110,7 +114,17 @@ export function App() {
               </button>
             </>
           )}
-          {estado && tela === 'esteira' && <EsteiraView estado={estado} recarregar={recarregar} />}
+          {estado && tela === 'esteira' && <EsteiraView estado={estado} recarregar={recarregar} abrirId={abrirStory} />}
+          {estado && tela === 'radar' && (
+            <RadarView
+              estado={estado}
+              recarregar={recarregar}
+              aoEnviar={(id) => {
+                setAbrirStory(id)
+                setTela('esteira')
+              }}
+            />
+          )}
           {estado && tela === 'wiki' && <WikiView estado={estado} />}
           {estado && tela === 'produtos' && <ProdutosView estado={estado} recarregar={recarregar} />}
           {estado && tela === 'fluxo' && <FluxoView />}
