@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O preço é irrisório perto do custo de horas de dev, e rodar no meu ambiente com código aberto tira a objeção de segurança. Mas não assino nada antes de ver o piloto: no primeiro mês eu rodo os 30 dias grátis, não pago.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com um trecho de código que parece sustentar, o PM leva isso para a planning e eu perco a confiança do time. Também tenho medo de os testes Playwright gerados serem frágeis e o QA gastar mais tempo consertando do que escrevendo.",
+  "would_change_my_mind": "Um piloto em que meus devs confirmem pelo menos 90% das afirmações e o número de stories reabertas caia de forma clara contra o baseline dos últimos 3 meses.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4500,
+  "price_too_expensive": 9000
+}

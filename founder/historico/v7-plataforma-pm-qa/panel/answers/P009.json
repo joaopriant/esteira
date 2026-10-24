@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, minha cobertura de Playwright está atrasada, então eu até rodaria o piloto grátis. Mas pagar R$ 2.500 mais o token no primeiro mês, sem ver o custo no nosso monorepo e sem o CTO aprovar, não rola: eu corto SaaS todo trimestre, não vou assinar mais um no escuro.",
+  "objection": "Esse US$ 0,40 por story foi medido em 'repositório de referência', não no nosso. Numa base grande, quanto contexto ele manda pra IA por story? Se virar US$ 3 por story, somado aos R$ 2.500, o ROI some. E os testes Playwright gerados vão rodar de verdade ou meu QA vai passar a semana consertando?",
+  "would_change_my_mind": "O piloto de 30 dias rodando no nosso repositório real, mostrando o custo de token por story com teto ligado e quantos testes Playwright gerados passaram sem retrabalho, convertido em horas de QA/dev economizadas que eu consiga levar pro CTO.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3000,
+  "price_too_expensive": 5500
+}

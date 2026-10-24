@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O preço é irrelevante para o meu orçamento, o problema é que é um fundador solo pedindo acesso ao código de uma fintech regulada. Nem o piloto grátis sai este mês: só a aprovação de segurança e jurídico de um fornecedor novo leva uns 3 meses, e eu já me queimei com IA alucinando.",
+  "objection": "Startup de uma pessoa só com acesso de leitura ao nosso código-fonte: onde o código e os dados são processados, qual LLM roda por trás, tem SOC 2/ISO 27001 e DPA para LGPD, e o que acontece com a gente se o fundador sumir? E ainda quero saber quanto isso custa em tokens e se não alucina regra de negócio numa base grande.",
+  "would_change_my_mind": "Uma opção self-hosted/on-premise (ou na nossa própria nuvem com nossa chave de LLM) que o código nunca saia do nosso ambiente, mais um questionário de segurança respondido e uma referência de outra empresa regulada que já rodou o piloto.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 8000,
+  "price_too_expensive": 20000
+}

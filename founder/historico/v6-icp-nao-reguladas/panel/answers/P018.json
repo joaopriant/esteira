@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "O piloto grátis com baseline de stories reabertas resolve exatamente o meu problema de não ter métrica de retrabalho, e roda com a chave de IA que já pagamos, então entro no piloto essa semana. R$ 2.500 é troco perto do que acabei de renegociar de Jira e Copilot, mas só viro pagante se os PMs e QAs realmente usarem.",
+  "objection": "Adoção: já vi muita ferramenta de IA morrer no primeiro mês porque PM não abre e QA continua escrevendo teste na mão. E não sei se uma startup em fase inicial aguenta suporte de verdade quando a Action quebrar no nosso pipeline.",
+  "would_change_my_mind": "Se ao fim do piloto o antes/depois não mostrar queda clara de stories reabertas ou se menos da metade dos PMs tiver usado, eu cancelo.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

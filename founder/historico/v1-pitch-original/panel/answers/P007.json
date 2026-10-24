@@ -1,0 +1,13 @@
+{
+  "id": "P007",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O problema é real e o board me cobra uso de IA, mas um fundador solo em fase inicial lendo todo o nosso código não passa no time de segurança em 30 dias. Nem o piloto grátis roda no código de verdade antes de DPA, questionário de fornecedor e aprovação do CTO.",
+  "objection": "Quem garante onde meu código fica, quem tem acesso e o que acontece se a empresa de uma pessoa só fechar? E se o agente afirmar uma regra de negócio errada com confiança, o PM leva isso para a planning e eu perco a credibilidade com o time.",
+  "would_change_my_mind": "Um pacote de segurança pronto (DPA, questionário respondido, dados hospedados no Brasil sem retenção nem uso do código para treino, de preferência opção self-hosted) mais cada regra apontando o trecho exato do código como evidência, para eu conseguir levar ao CTO um piloto num repositório não crítico.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

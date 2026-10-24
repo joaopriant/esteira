@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "This is the first one of these that actually fits my stack and my security team: Azure Pipelines, Azure OpenAI, code never leaves, source open for audit. But nothing gets paid for here in month one. Security and legal will take one to three months even on the free pilot, and I'll only sign once the pilot shows fewer reopened stories.",
+  "objection": "My PMs won't adopt another tool, and I doubt an early-stage Brazilian startup holds up through our vendor due diligence (LGPD, contract, support SLA). The guarantee that the code gets released if you shut down helps, but I'd want to see it in the contract.",
+  "would_change_my_mind": "A 30-day pilot on Azure Boards in which my own devs confirm most of the claims and the reopened-story rate drops in a measurable way, plus a ready security package (architecture, data flow, contract with the continuity clause) that cuts approval to a few weeks.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "quality",
+  "reason": "Rodar no nosso ambiente com a nossa IA e escrow resolve boa parte do meu medo de dar o código para uma startup de um fundador só, então eu até toparia o piloto grátis. Mas pagar R$ 2.500/mês todo mês, num trimestre em que estou cortando SaaS, só depois de ver em número que isso economiza horas de dev, e hoje isso é promessa.",
+  "objection": "Não sei se a análise acerta no nosso código real, que é bagunçado e cheio de legado. Se os devs gastarem tempo conferindo afirmação errada ou o QA tiver que reescrever os testes Playwright, vira custo, não economia. E ainda tenho que passar um container fechado pelo time de segurança.",
+  "would_change_my_mind": "O piloto de 30 dias mostrar, nos nossos repositórios, queda clara de stories reabertas e uma estimativa de horas de dev economizadas que pague com folga os R$ 2.500 mais o custo de LLM, com a maioria das afirmações confirmada pelos devs.",
+  "price_too_cheap": 300,
+  "price_cheap": 900,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

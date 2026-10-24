@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Minha dor hoje é cobertura de testes Playwright atrasada, e vocês mesmos dizem que geração de testes não faz parte do produto. Revisar story contra o código é dor do PM, não minha, e eu não vou pagar por uma ferramenta que meus PMs talvez nem abram depois da segunda semana.",
+  "objection": "Um dev meu monta um agente que lê a story do Jira e cruza com o repositório usando Claude Code num fim de semana. Não vejo o que vocês têm que justifique contrato, fora o kit de segurança.",
+  "would_change_my_mind": "Se o piloto grátis mostrar, com os números do nosso próprio Jira, que as stories reabertas caíram de forma clara e que os PMs usaram toda semana sem eu precisar cobrar; aí eu pago, porque R$ 2.500 é troco. Gerar casos de teste a partir da story revisada também viraria o jogo.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 10000
+}

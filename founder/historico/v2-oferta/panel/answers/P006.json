@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "A dor é real, tive duas stories voltando na última sprint, mas isso é exatamente o tipo de coisa que meu time monta em algumas semanas com Claude, MCP do Jira e acesso ao repo. Não vejo por que pagar uma startup em fase inicial para algo que consigo construir e controlar dentro de casa.",
+  "objection": "Mesmo com o Modo Cofre, é uma startup pequena sem SOC 2 tocando nosso código-fonte e nosso Jira; se ela some ou muda de rumo em um ano, eu fiquei dependente de um fornecedor frágil por algo que poderia ser nosso.",
+  "would_change_my_mind": "Ver no piloto gratuito, rodando com a nossa chave e dentro da nossa nuvem, uma queda medida de stories reabertas que meu time claramente não conseguiria replicar internamente em um mês de trabalho.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

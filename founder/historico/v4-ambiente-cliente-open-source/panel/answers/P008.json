@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "other",
+  "reason": "Eu entro no piloto grátis sem pensar duas vezes, mas não pago agora: o motor é open source e roda com a minha chave, então a parte que me interessa (gerar Playwright a partir da story e do código) um dev meu pluga no pipeline sem a licença. Os R$ 2.500 não pesam no orçamento; o que eu não vejo ainda é por que pagar pela camada de PM.",
+  "objection": "O valor real está no motor, que é aberto; o que vocês cobram é a interface do PM e o painel. Se os PMs não abrirem isso toda semana, eu cancelo no primeiro mês, como faço com quase tudo que testo.",
+  "would_change_my_mind": "Ver no fim do piloto que os PMs usaram sozinhos, sem eu cobrar, e que os testes Playwright gerados entraram na suíte e passaram em CI sem retrabalho grande do QA. Aí eu pago, e no preço de fundador fecho na hora.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

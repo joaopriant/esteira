@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, na última sprint duas stories voltaram porque a regra já existia, e R$ 2.500 por mês é troco pro nosso orçamento. Mas uma startup em fase inicial e sem SOC 2 lendo o código de uma fintech regulada não passa pelo meu time de segurança em um mês. No máximo eu abro o processo de fornecedor e peço o piloto com o container rodando na nossa nuvem, e isso leva um trimestre, não algumas semanas.",
+  "objection": "É uma startup sem SOC 2 pedindo acesso ao nosso código e ao Jira. Se ela fechar ou for comprada, o que acontece com o que ela viu? E sinceramente acho que a Atlassian ou o GitHub vão colocar algo parecido dentro do Jira e do Copilot, já aprovado pelo jurídico, antes da gente terminar a homologação.",
+  "would_change_my_mind": "Um relatório SOC 2 Tipo I, ou pelo menos um pentest independente, mais uma referência de outra fintech ou seguradora brasileira que já rode o container dentro da própria nuvem, para o meu CISO falar direto com o CISO deles.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 7000,
+  "price_too_expensive": 15000
+}

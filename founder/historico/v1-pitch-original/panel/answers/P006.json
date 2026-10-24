@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, tive duas stories voltando na última sprint por regra que já existia, mas não vou dar leitura do nosso código inteiro para uma startup de um fundador só. E o núcleo disso eu monto em casa com Claude e um MCP do GitHub e do Jira em poucas semanas.",
+  "objection": "Segurança e continuidade: quem garante onde meu código vai parar, qual LLM processa, se tem SOC 2 ou ao menos um DPA decente, e o que acontece se o fundador desistir daqui a seis meses?",
+  "would_change_my_mind": "Rodar self-hosted dentro da nossa nuvem, com nosso próprio endpoint de LLM, sem o código sair do nosso ambiente, e o piloto provando que pega regra duplicada que meu protótipo interno não pega.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

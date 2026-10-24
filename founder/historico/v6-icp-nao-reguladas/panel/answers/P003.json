@@ -1,0 +1,13 @@
+{
+  "id": "P003",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação virar retrabalho, então não assino nada nem levo ao CTO no primeiro mês. Eu topo o piloto grátis de 30 dias no nosso repositório, mas pagar R$ 2.500 só depois de ver o antes/depois com números.",
+  "objection": "Se a ferramenta citar um arquivo e um trecho que existem mas tirar a regra de negócio errada dali, meus PMs sem background técnico não vão perceber, levam isso para a planning e eu queimo a confiança do time de novo. Trecho de código como evidência não garante que a interpretação esteja certa.",
+  "would_change_my_mind": "O piloto no nosso próprio código mostrar que os devs confirmaram quase todas as afirmações (acima de 90%), com 'não encontrei' quando não havia evidência, e queda mensurável de stories reabertas em relação ao baseline, em números que eu consiga mostrar ao CTO.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

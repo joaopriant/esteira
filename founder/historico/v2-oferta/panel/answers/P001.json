@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Preço não é o problema, R$ 2.500 é troco perto do que já gastei com Copilot. Mas é uma startup em fase inicial, sem SOC 2, pedindo acesso ao Jira e aos repositórios. Meu time de segurança levou 3 meses no último fornecedor, então este mês não tem compra, no máximo eu abro a conversa sobre um piloto.",
+  "objection": "Já paguei por IA que alucinava e o time largou em semanas. Essa promessa de 'arquivo e trecho para cada afirmação' eu só acredito vendo no nosso código legado, e mesmo que funcione, meus PMs não vão adotar mais uma ferramenta se ela não estiver dentro do próprio Jira.",
+  "would_change_my_mind": "Rodar o piloto num repo nosso, com o container dentro da nossa nuvem e a nossa chave de LLM, para a segurança aprovar rápido, e ver os devs confirmarem a maioria das afirmações com o número de stories reabertas caindo de verdade.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 8000,
+  "price_too_expensive": 15000
+}

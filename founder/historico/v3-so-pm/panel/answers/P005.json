@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O preço é irrelevante para nós, o problema é que uma startup em fase inicial sem SOC 2 vai ler nosso código, e meu jurídico e segurança levam três meses para aprovar até fornecedor grande. Até toparia discutir o piloto com o container rodando na nossa nuvem e a nossa chave de LLM, mas nada de pagar no primeiro mês; já paguei Copilot e ChatGPT Enterprise e vi alucinação.",
+  "objection": "Sem SOC 2 e com empresa nova, quem garante que o 'não encontrei' é verdade e que o modelo não vai inventar regra de negócio num sistema regulado? E quanto vai me custar em tokens na nossa chave quando rodar contra um monorepo enorme, isso não está escrito em lugar nenhum.",
+  "would_change_my_mind": "Um piloto rodando 100% dentro da nossa nuvem com a nossa chave, aprovado pela segurança, mostrando em stories reais nossas que os devs confirmaram acima de 85% das afirmações, mais uma estimativa clara de custo de tokens por story no nosso repositório.",
+  "price_too_cheap": 500,
+  "price_cheap": 2000,
+  "price_expensive": 8000,
+  "price_too_expensive": 20000
+}

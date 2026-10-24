@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Finalmente algo de IA que roda em Azure Pipelines, lê Azure Repos, escreve no Azure Boards e usa o nosso Azure OpenAI; o board me cobra uso de IA e R$ 2.500/mês é troco perto da folha de 150 devs. Entro no piloto com baseline e, se o antes/depois de retrabalho aparecer, assino como cliente fundador.",
+  "objection": "Esses US$ 0,40 por story foram medidos em repositório de referência, não no nosso monólito .NET de dez anos; tenho medo de a conta de tokens explodir e de as 'evidências' serem fracas justamente no código legado onde o problema está. E é uma startup em fase inicial, com código fechado.",
+  "would_change_my_mind": "Se no piloto o custo real por story no nosso repositório passar de uns US$ 2 ou se os devs confirmarem menos da metade das afirmações, eu não assino.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

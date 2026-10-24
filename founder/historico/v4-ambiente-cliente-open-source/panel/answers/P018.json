@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Para variar, o suporte a Azure Boards, Azure Repos e Azure OpenAI aparece logo de cara, e isso me chamou atenção. Mas acabei de fechar Jira e Copilot, e não vou colocar mais uma linha no orçamento por causa de uma startup em fase inicial antes de ver números do meu próprio time. No máximo eu topo o piloto grátis.",
+  "objection": "Hoje eu não tenho métrica de retrabalho, então não sei se o antes e depois deles vai ser confiável ou só um número bonito. Também desconfio que a parte de Azure seja de segunda classe perto da de GitHub, e que meus devs parem de confirmar as afirmações depois da segunda semana.",
+  "would_change_my_mind": "Um piloto de 30 dias rodando no nosso Azure DevOps que mostre uma queda clara de stories reabertas contra o baseline dos últimos 3 meses, com a maior parte das afirmações confirmada pelos devs.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

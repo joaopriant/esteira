@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação, então não assino nada antes de ver funcionar no meu código. Eu toparia o piloto grátis, mas pagar no primeiro mês não: segurança ainda precisa ler a Action e as permissões no repo e no Jira, e da última vez isso levou 3 meses.",
+  "objection": "Não tenho métrica de retrabalho hoje. Se o baseline de stories reabertas sair de um Jira bagunçado, o antes/depois vira número de vendedor e eu não consigo defender a renovação. E uma startup em fase inicial com acesso de escrita aos meus cards me preocupa.",
+  "would_change_my_mind": "Um piloto no nosso repo principal em que meus devs confirmem a maioria das afirmações com arquivo e trecho, e uma queda mensurável de stories reabertas contra o baseline dos últimos 3 meses, com o time de segurança aprovando a Action em semanas, não em meses.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

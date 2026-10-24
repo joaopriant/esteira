@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Eu toparia o piloto grátis, mas não assino nada no primeiro mês: R$ 2.500 mais uns R$ 450 de LLM é pouco perto do meu time, só que eu corto SaaS todo trimestre e preciso ver em horas de dev economizadas que vale. Startup em fase inicial, sem nenhum caso real ainda, entra como teste, não como compra.",
+  "objection": "Se a ferramenta afirmar uma regra de negócio errada com cara de evidência, o PM leva isso para a planning e eu queimo a confiança do time. Mostrar arquivo e trecho ajuda, mas um trecho fora de contexto também engana, e ninguém vai conferir tudo.",
+  "would_change_my_mind": "O piloto de 30 dias no nosso repositório mostrar queda clara de stories reabertas contra o baseline e meus devs confirmando a grande maioria das afirmações, com poucos erros de regra de negócio.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

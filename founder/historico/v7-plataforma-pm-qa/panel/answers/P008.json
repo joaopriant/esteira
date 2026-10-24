@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "A cobertura de Playwright do meu QA está atrasada e R$ 2.500 por mês é troco perto do custo de um dev; piloto grátis, roda no meu ambiente com a minha chave de IA, então entro no piloto sem pensar muito. Mas só sigo pagando se o time usar de verdade no primeiro mês.",
+  "objection": "Um dev meu monta algo parecido com Claude Code num fim de semana; não sei se o diferencial (evidência com arquivo e trecho, histórico, painel de retrabalho) justifica uma licença em vez de um script interno. E se os testes gerados forem frágeis, o QA larga em duas semanas.",
+  "would_change_my_mind": "Se no piloto os testes Playwright gerados não rodarem verdes no nosso CI sem retrabalho pesado, ou se ninguém do time abrir o painel depois da segunda semana, eu cancelo.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

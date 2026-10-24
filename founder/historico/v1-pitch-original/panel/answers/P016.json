@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Explorador de repositório, confrontador de spec e gerador de Playwright a partir da story é exatamente o tipo de coisa que meu time monta com Claude e um MCP do Jira e do GitHub em duas sprints, sem depender de uma startup de um fundador só. E acabei de passar semanas renegociando Jira e Copilot; não vou levar ao CTO mais uma linha de R$ 30 mil por ano sem conseguir mostrar retorno.",
+  "objection": "Não tenho métrica de retrabalho hoje, então não consigo provar ao CTO que isso paga os R$ 2.500 por mês. E um fundador solo com acesso de leitura ao nosso código inteiro é risco de segurança e de continuidade: se ele sumir em seis meses, o fluxo morre junto.",
+  "would_change_my_mind": "Um piloto que entregue um número de antes e depois no nosso próprio código, tipo quantos bugs de spec ou de regra de negócio pegou antes do dev, que eu possa levar ao CTO, junto com garantia de que o código não sai do nosso ambiente (self-hosted ou na nossa conta de LLM).",
+  "price_too_cheap": 300,
+  "price_cheap": 900,
+  "price_expensive": 2000,
+  "price_too_expensive": 4000
+}

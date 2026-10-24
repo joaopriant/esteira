@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Acabei de fechar o orçamento de ferramentas com Jira e Copilot, então não tem dinheiro novo este mês. Eu toparia o piloto grátis, porque finalmente é algo que roda em Azure Pipelines e Azure Boards e não só em GitHub, mas pagar agora, não.",
+  "objection": "Como provo o retorno? Hoje não meço retrabalho, e um baseline de stories reabertas montado por vocês mesmos não convence o meu CFO. Também não sei se a análise funciona bem no nosso legado .NET ou se só brilha nos repositórios de referência.",
+  "would_change_my_mind": "Um piloto de 30 dias no nosso Azure DevOps mostrando queda clara de stories reabertas, com os números validados pelo meu time e o gasto real de LLM no nosso Azure OpenAI dentro do previsto.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

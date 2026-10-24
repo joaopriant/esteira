@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Eu até toparia o piloto grátis, porque medir as stories reabertas no meu próprio Jira resolve meu problema de não ter métrica de retrabalho. Mas pagar no primeiro mês não acontece: startup em fase inicial sem SOC 2 pedindo acesso ao nosso código vai passar meses na fila do meu time de segurança, e eu já me queimei com IA que alucina.",
+  "objection": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação. Uma startup sem SOC 2 e sem clientes de referência dizendo que 'não supõe' é exatamente o que todo fornecedor de IA promete. E mesmo com o Modo Cofre, meu time de segurança vai travar o acesso ao código por meses.",
+  "would_change_my_mind": "Um piloto rodando no container dentro da nossa nuvem, com a nossa chave de LLM, que a segurança aprove rápido, e que mostre queda real de stories reabertas e acima de 85% de afirmações confirmadas pelos meus devs no nosso repositório.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

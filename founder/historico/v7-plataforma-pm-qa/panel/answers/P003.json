@@ -1,0 +1,13 @@
+{
+  "id": "P003",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação; não assino nada nem levo ao CTO antes de ver isso rodando no nosso repositório. Topo o piloto grátis de 30 dias, mas pagar no primeiro mês, não.",
+  "objection": "Startup em fase inicial dizendo que 'toda afirmação vem com o trecho de código'. Se ela citar um arquivo real mas tirar a regra de negócio errada, meus 2 PMs sem background técnico vão acreditar e levar isso para a planning, e quem perde a confiança do time sou eu.",
+  "would_change_my_mind": "O piloto no nosso código mostrar que os devs confirmam a grande maioria das afirmações (algo acima de 90%), quase nenhuma regra inventada, e uma queda medida em stories reabertas contra o baseline que eu consiga mostrar ao CTO.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O desenho é o certo para mim: roda no nosso ambiente, usa a nossa chave, código aberto para auditoria e o preço é irrelevante perto do que já gastei com Copilot. Mas não assino nada no primeiro mês: já me queimei com IA que alucina, e uma startup em fase inicial ainda tem que passar pelo nosso jurídico e segurança, que levaram 3 meses no último fornecedor.",
+  "objection": "Os US$ 0,40 por story foram medidos em repositórios de referência, não no nosso monorepo legado gigante. Quero ver se o 'toda afirmação vem com arquivo e trecho' se sustenta no nosso código e quanto isso realmente custa em tokens antes de acreditar em qualquer número.",
+  "would_change_my_mind": "O piloto de 30 dias rodando no nosso próprio repositório, com o gasto real de tokens visível e a maioria das afirmações confirmadas pelos meus devs; se o resultado for bom, levo para compra, mas a assinatura só sai depois da aprovação de segurança.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 7000,
+  "price_too_expensive": 15000
+}

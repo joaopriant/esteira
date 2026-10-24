@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "quality",
+  "reason": "Rodar na nossa Action com a nossa chave e código aberto derruba minha objeção de segurança, então eu topo o piloto grátis. Mas pagar R$ 2.500/mês eu não pago no primeiro mês: corto SaaS todo trimestre e só renovo o que prova horas de dev economizadas, e isso o piloto ainda não provou.",
+  "objection": "Não sei se a análise acerta em código real e bagunçado como o nosso, ou se vira mais um comentário no card que o time ignora. Menos story reaberta é legal, mas eu preciso ver horas de dev e retrabalho em reais, senão não justifico pro board.",
+  "would_change_my_mind": "Um piloto no nosso repositório mostrando queda clara de stories reabertas e devs confirmando a maioria das afirmações, traduzido em horas economizadas que paguem a licença pelo menos 3x.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 3000,
+  "price_too_expensive": 5500
+}

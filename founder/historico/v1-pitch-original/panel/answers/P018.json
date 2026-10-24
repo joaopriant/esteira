@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Acabei de fechar Jira e Copilot e não tenho como provar para o CFO que isso reduz retrabalho, porque hoje nem meço retrabalho. Talvez rode o piloto grátis por curiosidade, mas pagar R$ 2.500 por mês sem número na mão eu não assino.",
+  "objection": "Como vou medir o retorno? Sem uma métrica de retrabalho ou de spec que volta, é mais uma ferramenta de IA bonita. E ainda é um fundador solo pedindo acesso de leitura a todo o nosso código no Azure Repos, o que eu vou ter que justificar para segurança.",
+  "would_change_my_mind": "Um piloto que entregue antes e depois com números do meu próprio Azure Boards, tipo quantas stories voltaram de QA ou foram reabertas, mostrando queda clara de retrabalho em 30 dias.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

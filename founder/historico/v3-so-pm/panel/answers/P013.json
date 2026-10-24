@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint perdi duas stories porque a regra já existia de outro jeito, e um piloto grátis de 30 dias com antes/depois medido no meu próprio Jira é exatamente o tipo de teste que eu topo na hora. R$ 2.500 por mês é troco perto do custo de uma story que volta; se os PMs usarem, eu pego o preço de Cliente Fundador.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande? Se rodar com a nossa chave de LLM, a conta da Azure/Anthropic pode sair maior que a assinatura e ninguém me disse quanto. E se os PMs não abrirem a ferramenta depois da segunda semana, eu cancelo.",
+  "would_change_my_mind": "Se no piloto o custo de tokens por story num monorepo grande passar de algumas dezenas de reais, ou se menos da metade dos PMs usar toda semana, eu não converto para o pago.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

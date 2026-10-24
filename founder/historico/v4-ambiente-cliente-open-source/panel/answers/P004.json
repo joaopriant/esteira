@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Rodar dentro do nosso ambiente com motor open source tira o meu medo de entregar o código, então eu até rodaria o piloto grátis. Mas pagar R$ 2.500/mês mais o LLM para uma startup de um fundador só, sem ver economia de horas de dev no nosso time, eu não assino agora; no próximo corte trimestral isso cairia.",
+  "objection": "Não sei se a análise acerta de verdade no nosso código bagunçado, nem se essa empresa ainda existe daqui a um ano. Menos stories reabertas é bom, mas eu preciso traduzir isso em horas de dev economizadas para defender no board.",
+  "would_change_my_mind": "Um piloto no nosso repositório que mostre queda clara de stories reabertas convertida em horas de dev economizadas por mês, valendo bem mais que R$ 3.000/mês, com os devs confirmando a maioria das afirmações.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 2500,
+  "price_too_expensive": 4500
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Minha cobertura de Playwright está atrasada e um piloto grátis de 30 dias, rodando na nossa chave e no nosso ambiente, eu consigo aprovar com o CTO sem briga de segurança. Se o time usar, R$ 1.500 de fundador é troco perto do custo de um QA.",
+  "objection": "US$ 0,40 por story medido em repositório de referência não é o meu monorepo; quero ver o gasto real com a nossa base grande, e se os testes Playwright gerados vão rodar sem virar flaky que ninguém mantém. Se no primeiro mês o time não usar, eu cancelo.",
+  "would_change_my_mind": "Se no piloto o custo por story na nossa base passar de uns US$ 2 ou os testes gerados precisarem ser reescritos em mais da metade dos casos, eu viro um não.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo aqui roda em Jira, Confluence e Bitbucket, e a minha aposta para o board é o Rovo, que já está no contrato e lê o mesmo contexto. Não vou colocar uma ferramenta avulsa de um fundador solo no meio do fluxo antes de ver o que a Atlassian entrega nos próximos meses.",
+  "objection": "Dar acesso de leitura a todo o nosso código para uma startup de uma pessoa só, sem saber quanto custa em tokens numa base grande nem o que acontece com o código se ela fechar. E por que isso seria melhor que o Rovo ou um Copilot que já pagamos?",
+  "would_change_my_mind": "Um piloto no nosso maior repositório mostrando, lado a lado com o Rovo, que a confrontação story vs código e os testes Playwright saem certos e economizam horas medidas, com custo de tokens previsível incluso no preço e garantias de segurança por escrito (sem retenção de código, SOC 2 ou equivalente).",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

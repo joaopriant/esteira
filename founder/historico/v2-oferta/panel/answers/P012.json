@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O problema é real, tive duas stories voltando na última sprint por regra que já existia. Mas não coloco uma startup em fase inicial, sem SOC 2, lendo nosso código só porque o preço é baixo, e o Rovo já está no nosso roadmap para cruzar Jira, Confluence e repositório.",
+  "objection": "Mesmo com Modo Cofre e chave própria, é uma empresa nova sem SOC 2 e sem histórico tendo acesso de leitura aos nossos repositórios. Se der problema, quem responde no comitê de segurança sou eu. E a Atlassian tende a entregar algo parecido dentro do Rovo.",
+  "would_change_my_mind": "O container rodando 100% dentro da nossa nuvem, sem nenhuma saída de código, validado pelo nosso time de segurança, mais um caso de outra empresa do nosso porte mostrando queda real de stories reabertas que o Rovo não conseguiu entregar.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 8000,
+  "price_too_expensive": 20000
+}

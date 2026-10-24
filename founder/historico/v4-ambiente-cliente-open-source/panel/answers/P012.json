@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "A dor é real, perdi stories na última sprint por regra duplicada, e rodar no nosso ambiente com motor open source tira boa parte do meu medo de código. Mas tudo aqui é Atlassian e minha aposta é que o Rovo cubra isso em alguns meses; não vou colocar outro app de fornecedor pequeno no fluxo agora, no máximo deixo alguém do time olhar o repositório open source.",
+  "objection": "Startup de fundador só: se ela fechar em um ano, fico com um app no Jira sem suporte e um processo de PM montado em cima dele. E não sei se faz algo que o Rovo não vai entregar de graça no plano que já pagamos.",
+  "would_change_my_mind": "Um piloto no nosso repositório em que meus devs confirmem as afirmações e o retrabalho caia de forma mensurável contra o baseline, junto com uma comparação lado a lado mostrando que o Rovo não faz o mesmo cruzamento story x código.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

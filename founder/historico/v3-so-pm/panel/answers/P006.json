@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "A dor é real, tive duas stories voltando na última sprint por isso, mas é exatamente o tipo de coisa que meu time monta em duas ou três semanas com Claude, MCP do Jira e do GitHub, dentro de casa. Não vejo por que pagar R$ 2.500 por mês a uma startup inicial pelo que vira um script interno.",
+  "objection": "Mesmo com o Modo Cofre e a chave LLM nossa, o conector ainda lê o repositório inteiro, e é uma empresa em fase inicial, sem SOC 2, que pode sumir em um ano. Não quero meu código e meu processo dependendo disso.",
+  "would_change_my_mind": "Ver no piloto, no nosso próprio Jira, uma queda clara de stories devolvidas que o protótipo interno do meu time não conseguiu entregar, com o container rodando inteiramente na nossa nuvem.",
+  "price_too_cheap": 300,
+  "price_cheap": 800,
+  "price_expensive": 1800,
+  "price_too_expensive": 3500
+}

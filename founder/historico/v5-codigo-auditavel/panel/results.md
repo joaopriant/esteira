@@ -1,0 +1,68 @@
+# Buyer panel: Esteira: revisor de user story contra o código para PMs (SaaS B2B, Brasil)
+
+**4 buy · 16 pass** (20% buy) out of 20 simulated buyers. Seed 677932, so the same cards can be dealt again.
+
+These are simulated buyers, not customers. Use this to find objections and weak spots, then confirm the big ones with real people before you spend.
+
+## By segment
+
+| group | buyers | buy rate |
+| --- | ---: | ---: |
+| CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$) | 6 | 33%  (thin) |
+| Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$) | 4 | 25%  (thin) |
+| Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$) | 7 | 14%  (thin) |
+| Head de Produto em empresa regulada (fintech/seguros) com 80 a 200 devs, processo de compra com segurança e jurídico (salário anual em R$) | 3 | 0%  (thin) |
+
+## By buying behaviour
+
+| group | buyers | buy rate |
+| --- | ---: | ---: |
+| Early adopter de ferramentas de IA | 3 | 100%  (thin) |
+| Stack Microsoft (Azure DevOps) | 3 | 33%  (thin) |
+| Já testou IA e se decepcionou | 4 | 0%  (thin) |
+| Cuidadoso com orçamento | 2 | 0%  (thin) |
+| Constrói internamente | 2 | 0%  (thin) |
+| Segurança em primeiro lugar | 2 | 0%  (thin) |
+| Preso ao ecossistema Atlassian | 4 | 0%  (thin) |
+
+## By income
+
+| group | buyers | buy rate |
+| --- | ---: | ---: |
+| $518,000 and up | 8 | 25% |
+| under $376,000 | 6 | 17%  (thin) |
+| $376,000 to $518,000 | 6 | 17%  (thin) |
+
+## Why they pass
+
+| reason | buyers | in their words |
+| --- | ---: | --- |
+| trust | 7 | "Já paguei Copilot e ChatGPT Enterprise e vi alucinação em produção; não assino nada de uma startup em fase inicial só porque o pitch diz que 'toda afirmação vem com o trecho de código'. O piloto grátis rodando no nosso ambiente com a nossa chave até me interessa, mas isso é teste, não compra, e mesmo o piloto vai passar pela fila de segurança antes." (P001) · "O preço é irrisório perto do custo de horas de dev, e rodar no meu ambiente com código aberto tira a objeção de segurança. Mas não assino nada antes de ver o piloto: no primeiro mês eu rodo os 30 dias grátis, não pago." (P002) |
+| habit | 6 | "Rodar no nosso ambiente e com código aberto resolve meu medo de entregar o código, mas aí mesmo é que penso: isso é uma Action chamando Claude com o repo e o card, meu time monta uma versão boa o bastante em uma ou duas sprints. Talvez eu topasse o piloto grátis por curiosidade, mas não assino R$ 2.500/mês agora." (P006) · "Rodar na nossa pipeline com a nossa chave de LLM resolve a minha objeção de código saindo de casa, e o problema de story voltando é real. Mas a nossa aposta é Atlassian e Rovo; antes de colocar mais um app avulso no Jira eu quero ver o Rovo falhar nisso, e no máximo topo o piloto grátis, não assino nada no primeiro mês." (P012) |
+| timing | 2 | "This is the first one of these that actually fits my stack and my security team: Azure Pipelines, Azure OpenAI, code never leaves, source open for audit. But nothing gets paid for here in month one. Security and legal will take one to three months even on the free pilot, and I'll only sign once the pilot shows fewer reopened stories." (P017) · "Acabei de fechar o orçamento de ferramentas com Jira e Copilot, então não tem dinheiro novo este mês. Eu toparia o piloto grátis, porque finalmente é algo que roda em Azure Pipelines e Azure Boards e não só em GitHub, mas pagar agora, não." (P018) |
+| quality | 1 | "Rodar na nossa Action com a nossa chave e código aberto derruba minha objeção de segurança, então eu topo o piloto grátis. Mas pagar R$ 2.500/mês eu não pago no primeiro mês: corto SaaS todo trimestre e só renovo o que prova horas de dev economizadas, e isso o piloto ainda não provou." (P004) |
+
+## Why they buy
+
+| reason | buyers | in their words |
+| --- | ---: | --- |
+| need | 4 | "Cobertura de Playwright atrasada é dor real aqui, roda no nosso ambiente com a nossa chave e o código é auditável, então o piloto de 30 dias entra essa semana sem briga com segurança. R$ 2.500 é troco perto do custo de um QA; travo o preço de fundador se o piloto rodar." (P008) · "Minha cobertura Playwright está atrasada e piloto de 30 dias grátis rodando na nossa própria Action com a nossa chave de LLM é fácil de aprovar com o CTO e com segurança. R$ 1.500 no plano Fundador é troco perto de um QA, então eu instalo essa semana; se o time adotar, viro pagante." (P009) |
+
+## What would flip a no
+
+- O piloto de 30 dias no nosso próprio repositório mostrando que os devs confirmaram a grande maioria das afirmações e que as stories reabertas caíram de forma mensurável, com os PMs usando sem eu precisar empurrar.
+- Um piloto em que meus devs confirmem pelo menos 90% das afirmações e o número de stories reabertas caia de forma clara contra o baseline dos últimos 3 meses.
+- O piloto de 30 dias no nosso repositório mostrar que os devs confirmaram quase todas as afirmações (algo acima de 90%), com queda mensurável de stories reabertas no antes/depois, em números que eu consiga mostrar ao CTO.
+- Um piloto no nosso repositório mostrando queda clara de stories reabertas e devs confirmando a maioria das afirmações, traduzido em horas economizadas que paguem a licença pelo menos 3x.
+- O piloto de 30 dias rodando no nosso próprio repositório, com o gasto real de tokens visível e a maioria das afirmações confirmadas pelos meus devs; se o resultado for bom, levo para compra, mas a assinatura só sai depois da aprovação de segurança.
+- Um piloto no nosso repo mostrando que pegou as stories que voltaram na última sprint, com evidência que os devs confirmaram, e uma queda clara de retrabalho que eu não conseguiria replicar barato em casa.
+- Um piloto em que os devs confirmem pelo menos 90% das afirmações e o antes/depois mostre queda real de stories reabertas, com o time de segurança aprovando o código do motor sem ressalvas.
+- Uma fintech ou seguradora brasileira de referência que já passou pelo processo de segurança e topa conversar comigo, junto com um pacote de segurança pronto (questionário de fornecedor respondido, DPA, arquitetura e lista exata do que é enviado ao LLM) para o meu time de segurança aprovar o piloto em semanas, não meses.
+- Um piloto em um repositório nosso mostrando que reduziu de forma clara as stories reabertas e que o Rovo, testado lado a lado, não consegue apontar arquivo e trecho de código do mesmo jeito.
+- Um piloto no nosso repositório real mostrando queda clara de stories reabertas e custo de token por story perto do prometido, lado a lado com o que o Rovo entrega hoje na mesma story.
+- Um piloto em que a maioria das afirmações seja confirmada pelos devs e o baseline mostre queda clara de stories reabertas; com isso e o aval do time de segurança depois de ler o código, eu assino.
+- Um piloto que mostre, com os nossos dados, uma queda clara de stories reabertas (tipo 20% ou mais) e um número em reais de horas economizadas que eu consiga levar pronto pro CTO.
+
+Buyers say they would buy **1.0 times** in the first month on average.
+
+20 buyers gave all four price answers. Run founder-pricing's van_westendorp.py on the answers folder.

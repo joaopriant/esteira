@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de renegociar Jira e Copilot e a aposta da casa é o Rovo cruzar story com código dentro do Atlassian; meu tech lead já faz isso no refinamento, então não vejo dor que justifique mais um fornecedor avulso.",
+  "objection": "Startup de fundador solo pedindo acesso de leitura ao nosso código inteiro: risco de segurança e de continuidade, e em seis meses Rovo ou Copilot entregam algo parecido sem contrato novo.",
+  "would_change_my_mind": "Um piloto no nosso repo mostrando que pega divergências entre spec e código que o refinamento deixou passar, com redução mensurável de retrabalho, mais garantias de segurança (SOC 2, nada sai do nosso ambiente).",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

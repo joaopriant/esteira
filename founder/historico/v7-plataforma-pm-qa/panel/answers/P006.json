@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "O fato de rodar no nosso ambiente com a nossa IA tira meu medo do código sair de casa, mas pelo mesmo motivo eu penso: então é um prompt bem feito com Jira e repositório via MCP, e meu time monta isso em uma ou duas sprints com Claude. Não pago R$ 2.500 por mês, para sempre, por algo que dá para construir aqui dentro.",
+  "objection": "Não vejo o que tem de difícil de copiar. Se o valor está na IA que eu já pago e no meu próprio código, o que sobra para a Esteira é uma interface no Jira e um painel, e eu não sei se uma startup de um fundador vai estar de pé daqui a um ano, mesmo com escrow.",
+  "would_change_my_mind": "Ver no piloto, no nosso próprio repositório, uma queda medida nas stories que voltam do dev que meu time não consiga reproduzir com um protótipo interno em duas semanas.",
+  "price_too_cheap": 300,
+  "price_cheap": 800,
+  "price_expensive": 2000,
+  "price_too_expensive": 4000
+}

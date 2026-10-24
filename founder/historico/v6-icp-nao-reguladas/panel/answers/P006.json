@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "O fato de rodar no nosso ambiente com o código aberto tira o meu medo de entregar o código-fonte, mas isso também mostra que é basicamente uma Action chamando o nosso LLM. Um dev meu monta isso em duas sprints com Claude e o MCP do Jira, e eu não pago R$ 30 mil por ano para uma startup de um fundador só.",
+  "objection": "O que eu estaria pagando, de fato, além de um prompt bem montado e de um painel? Se o motor é aberto e a IA é nossa, o valor que sobra é pequeno, e eu dependo de um fornecedor minúsculo para algo que entra no fluxo de todas as stories.",
+  "would_change_my_mind": "Um piloto em que o baseline mostre queda clara das stories devolvidas (algo como 30% ou mais) e uma taxa alta de afirmações confirmadas pelos devs, que o nosso protótipo interno não consiga igualar no mesmo período.",
+  "price_too_cheap": 300,
+  "price_cheap": 800,
+  "price_expensive": 2000,
+  "price_too_expensive": 4000
+}

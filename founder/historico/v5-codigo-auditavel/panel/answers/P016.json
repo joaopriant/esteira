@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de renegociar Jira e Copilot e o CTO não vai querer mais uma linha no orçamento agora; e meu time já monta esse tipo de fluxo com Claude e MCP dentro de casa, ainda mais com o motor aberto pra gente ler. Talvez eu topasse o piloto grátis pela baseline de retrabalho, mas pagar R$ 2.500 por mês hoje, não.",
+  "objection": "Não tenho métrica de retrabalho hoje, então não consigo provar ao CTO que isso se paga melhor do que dois devs meus montando algo parecido com a nossa própria chave de LLM.",
+  "would_change_my_mind": "Um piloto que mostre, com os nossos dados, uma queda clara de stories reabertas (tipo 20% ou mais) e um número em reais de horas economizadas que eu consiga levar pronto pro CTO.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

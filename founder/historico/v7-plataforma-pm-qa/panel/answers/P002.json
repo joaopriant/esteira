@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Entro no piloto grátis porque a cobertura de Playwright está atrasada e R$ 2.500 é menos que um dia de dev por mês; só sigo pagando se o antes/depois mostrar menos stories reabertas e horas de dev economizadas de verdade.",
+  "objection": "Se a IA afirmar uma regra de negócio errada e o PM levar isso para a planning, eu perco a confiança do time; preciso ver quantas afirmações os devs realmente confirmaram, não só o que a ferramenta diz.",
+  "would_change_my_mind": "Se no piloto a taxa de afirmações confirmadas pelos devs for baixa ou os testes Playwright gerados precisarem ser reescritos pelo QA, eu corto na revisão do trimestre.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

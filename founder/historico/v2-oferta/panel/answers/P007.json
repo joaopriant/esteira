@@ -1,0 +1,13 @@
+{
+  "id": "P007",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O Modo Cofre e o kit de segurança me fazem topar levar o piloto grátis para o time de segurança, mas pagar no primeiro mês não acontece: é uma startup em fase inicial, sem SOC 2, e entre questionário, DPA e aprovação do CTO isso leva semanas. Só pago depois de ver o antes/depois no nosso próprio Jira.",
+  "objection": "Sem SOC 2 e com uma empresa recém-nascida lendo nosso código, o time de segurança vai travar ou atrasar; e se a ferramenta afirmar uma regra de negócio errada com cara de evidência, o PM leva isso para a planning e eu é que perco a credibilidade com o time.",
+  "would_change_my_mind": "Um piloto que passe no nosso time de segurança rodando no container dentro da nossa nuvem e que termine com os devs confirmando acima de 85% das afirmações e uma queda mensurável de stories reabertas, com números que eu possa levar ao CTO e ao board.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

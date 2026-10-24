@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "R$ 2.500 is cheap next to what a dev costs me, so price isn't the issue. But I'm not giving a solo-founder startup read access to all our repos, and I'm not letting an AI hand my PMs business rules nobody has checked, not this quarter.",
+  "objection": "If the AI states a business rule wrong and the PM takes it to planning as fact, I lose the team's trust. And a one-person company with read access to our source code won't get past security or legal.",
+  "would_change_my_mind": "A pilot on one repo where every business rule it states points to the exact file and line, checked by my tech lead, with at least 90% correct, plus a clear security answer (where the code is processed, retention, SOC 2 or equivalent) and Playwright tests my QA actually merges without rewriting.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4500,
+  "price_too_expensive": 8000
+}

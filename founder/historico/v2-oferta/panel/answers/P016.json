@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de fechar Jira e Copilot e meu time já monta esse tipo de coisa com Claude e MCP aqui dentro; cruzar story com código e gerar Playwright é algo que eu acho que conseguimos prototipar em poucas semanas. Até topo olhar o piloto grátis, mas pagar uma startup pequena agora eu não levo para o CTO.",
+  "objection": "Não sei por que pagaria R$ 2.500 por mês a uma empresa de cinco pessoas sem SOC 2 por algo que meu próprio time monta com a nossa chave de LLM. E mesmo com o antes/depois de stories reabertas, reabertura não é retrabalho, então ainda não sei como provar o retorno para o CTO.",
+  "would_change_my_mind": "Ver o piloto no nosso repositório mais bagunçado mostrando uma queda clara de stories reabertas e acerto acima de 85% confirmado pelos meus devs, e que isso daria mais trabalho para replicar internamente do que custa por ano.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3000,
+  "price_too_expensive": 6000
+}

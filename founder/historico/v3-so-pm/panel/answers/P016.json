@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de fechar Jira e Copilot e o CTO não vai querer mais uma linha no orçamento de uma startup de quatro pessoas para algo que meu time monta em duas sprints com Claude, MCP do Jira e acesso de leitura ao GitHub. No máximo eu aceitaria o piloto grátis só para roubar a ideia da medição de reabertura.",
+  "objection": "Hoje eu não meço retrabalho, então não tenho como provar retorno para o CTO; e pagar R$ 2.500 por mês por um wrapper de LLM que eu consigo construir dentro de casa, sem SOC 2, de uma empresa que pode sumir em um ano, é difícil de defender.",
+  "would_change_my_mind": "Um piloto que mostre, no nosso próprio Jira, uma queda clara de stories reabertas (tipo 30% ou mais) com números que eu leve direto para o CTO, e uma comparação honesta mostrando que a versão caseira com Claude erra muito mais nas afirmações.",
+  "price_too_cheap": 300,
+  "price_cheap": 900,
+  "price_expensive": 2000,
+  "price_too_expensive": 4000
+}

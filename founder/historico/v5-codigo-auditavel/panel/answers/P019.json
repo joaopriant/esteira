@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo aqui roda em Atlassian e eu já pago Rovo; antes de colocar mais um app avulso no Jira e mais uma conta de LLM para gerenciar, quero ver se o Rovo resolve isso. No máximo eu topo o piloto grátis, mas pagar agora, não.",
+  "objection": "Tenho dois PMs sem background técnico: se a ferramenta mostrar um trecho de código como 'evidência' de uma regra que não é bem aquilo, eles não vão saber contestar, levam para a planning e quem perde credibilidade sou eu. Citar o arquivo não garante que a interpretação está certa.",
+  "would_change_my_mind": "Um piloto no nosso repositório em que os devs confirmem a grande maioria das afirmações e o antes/depois mostre queda real de stories reabertas, comparado lado a lado com o que o Rovo entrega na mesma story.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

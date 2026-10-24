@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi o time perder tempo com alucinação; não assino contrato de mais uma ferramenta de IA sem ver funcionar no nosso código. Talvez eu peça o piloto grátis, mas comprar no primeiro mês não acontece: o CTO precisa aprovar e a segurança leva meses.",
+  "objection": "Esse US$ 0,40 por story foi medido em repositório de referência, não no nosso monorepo gigante. Tenho medo de a conta de tokens explodir e de o 'arquivo e trecho' citado estar errado do mesmo jeito que as outras IAs erravam.",
+  "would_change_my_mind": "Um piloto no nosso próprio repositório maior, com o custo real de tokens medido, os devs confirmando a maior parte das afirmações e uma queda clara de stories reabertas, num formato que a segurança aprove rápido com o pentest e o SBOM já prontos.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

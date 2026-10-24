@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação em produção; não assino nada com uma startup em fase inicial antes de ver funcionar no meu repositório. No máximo libero o piloto grátis num time pequeno, e isso não é compra.",
+  "objection": "Meus PMs não vão adotar mais uma ferramenta, mesmo dentro do Jira. E se o tal 'não encontrei' virar ruído ou as afirmações erradas passarem, o time perde a confiança na primeira semana e o painel vira mais um dashboard que ninguém abre.",
+  "would_change_my_mind": "Um piloto no nosso repositório em que meus devs confirmem a maioria das afirmações e os PMs usem sem eu precisar cobrar, com queda medida de stories reabertas contra o baseline.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

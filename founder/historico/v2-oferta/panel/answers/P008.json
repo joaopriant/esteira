@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Minha cobertura de Playwright está atrasada e R$ 1.500 a 2.500 por mês é troco perto do custo de um QA; piloto grátis de 30 dias com métrica no meu próprio Jira eu topo na hora. Mas assino só se o time de QA realmente usar os testes gerados no piloto, senão cancelo no primeiro mês como faço com tudo.",
+  "objection": "Um dev meu monta algo parecido com Claude Code num fim de semana; o que eu pago aqui tem que ser a parte chata que o protótipo interno não faz: manter os testes rodando sem flakiness no nosso CI e o cruzamento confiável story-código. Startup em fase inicial, sem SOC 2, também pode sumir.",
+  "would_change_my_mind": "Se no piloto os testes Playwright gerados quebrarem no nosso CI ou o QA parar de usar depois da segunda semana, eu não pago.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

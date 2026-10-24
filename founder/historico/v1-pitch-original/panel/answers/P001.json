@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O preço é irrelevante pro meu orçamento; o problema é dar acesso de leitura a todos os nossos repositórios pra uma startup de fundador solo. Meu time de segurança levou 3 meses no último fornecedor e não vai aprovar isso em um mês, nem pro piloto, e eu já paguei por IA que alucinou no nosso código.",
+  "objection": "Fundador solo em fase inicial com acesso ao código-fonte inteiro: sem SOC 2, sem clareza de onde o código é processado e retido, e sem garantia de que a empresa existe daqui a um ano. E mesmo passando por segurança, meus PMs não vão adotar mais uma ferramenta.",
+  "would_change_my_mind": "Uma opção de rodar dentro da nossa infraestrutura (self-hosted ou na nossa nuvem, sem o código sair) mais um piloto onde ele mostre, em stories reais nossas, que acerta as regras de negócio sem alucinar.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 8000,
+  "price_too_expensive": 15000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Cobertura de Playwright atrasada é dor real aqui, e R$ 1.500 a 2.500 por mês é menos que um dia de um dev sênior; com piloto grátis rodando no nosso ambiente e baseline de retrabalho, eu topo testar e entro como Cliente Fundador se os números fecharem. Não pago nada antes de ver o antes/depois.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com cara de evidência, o PM leva isso para a planning e eu perco a confiança do time; e é uma startup em fase inicial, então tenho medo de ela sumir em um ano e eu ficar com um processo dependente dela.",
+  "would_change_my_mind": "Se no piloto os devs rejeitarem mais de uma em cada cinco afirmações, ou se os testes Playwright gerados precisarem ser reescritos em vez de só ajustados, eu cancelo e não pago.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

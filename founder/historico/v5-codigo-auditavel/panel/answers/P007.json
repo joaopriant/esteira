@@ -1,0 +1,13 @@
+{
+  "id": "P007",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Rodar no nosso ambiente com a nossa chave de LLM e código auditável tira o maior bloqueio de segurança, então eu topo o piloto grátis. Mas não pago nada no primeiro mês: ainda tem DPA, questionário de fornecedor e o OK do CTO, e eu não vou defender a compra antes de ver a taxa de acerto nas nossas stories.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com um trecho de código que parece convincente, o PM leva isso pra planning e quem perde a confiança do time sou eu. Citar arquivo ajuda, mas não garante que a interpretação está certa. E é uma startup em fase inicial, a gente nem sabe se vai existir daqui a um ano.",
+  "would_change_my_mind": "Um piloto em que os devs confirmem pelo menos 90% das afirmações e o antes/depois mostre queda real de stories reabertas, com o time de segurança aprovando o código do motor sem ressalvas.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

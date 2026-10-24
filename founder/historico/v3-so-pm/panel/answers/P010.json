@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "O board me cobra uso de IA e eficiência, e é raro ver algo que suporte Azure Boards + Azure Repos de primeira. R$ 2.500/mês é ruído no meu orçamento e o piloto grátis com baseline de stories reabertas me dá um número para levar ao board, então eu topo o piloto e provavelmente fecho como Cliente Fundador se os números aparecerem.",
+  "objection": "Vocês não dizem quanto isso custa em tokens na nossa chave Azure OpenAI quando o repositório é grande. Se cada story revisada queimar uma fortuna de contexto num monorepo, o R$ 2.500 vira o menor custo da conta. E startup inicial sem SOC 2 lendo nosso código ainda vai dar trabalho com o jurídico, mesmo no Modo Cofre.",
+  "would_change_my_mind": "Se no piloto o custo de tokens por story numa base nossa de verdade ficar alto ou imprevisível, ou se os devs confirmarem bem menos que 85% das afirmações, eu não pago.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

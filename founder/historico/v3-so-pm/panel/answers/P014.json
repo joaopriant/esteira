@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo aqui roda em Jira e Confluence, e a minha aposta é que o Rovo vai fazer essa leitura de story contra código dentro do que já pagamos. Até ver o Rovo falhar nisso, não coloco mais um fornecedor com acesso ao repositório, ainda mais uma startup sem SOC 2. No máximo eu topo o piloto grátis para ter um número para mostrar ao board, mas isso não é compra.",
+  "objection": "Quanto isso custa em tokens numa base de código grande? No Modo Cofre a conta de LLM cai na nossa chave e ninguém me disse quanto custa analisar uma story num monorepo. Além disso, por que isso seria melhor que o Rovo, que já está dentro do Jira?",
+  "would_change_my_mind": "Um piloto no nosso Jira mostrando queda clara de stories reabertas, com o custo de tokens por story medido, e uma comparação lado a lado em que o Rovo não consegue fazer o mesmo.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

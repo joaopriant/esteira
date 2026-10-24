@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Eu rodaria o piloto grátis, porque é exatamente o tipo de prova no meu código que eu exijo, mas não assino nada no primeiro mês. Já paguei Copilot e ChatGPT Enterprise para o time e vi alucinação; só contrato depois de ver o antes/depois e os meus devs confirmando as afirmações.",
+  "objection": "O US$ 0,40 por story foi medido em repositórios de referência, não no meu. Com um monorepo grande e várias stories cruzando serviços, quanto isso vira em tokens? E o 'não encontrei' aparece de verdade ou ele inventa um arquivo plausível?",
+  "would_change_my_mind": "Um piloto de 30 dias no nosso repositório principal em que os devs confirmem a maioria das afirmações, o custo real de LLM fique perto do prometido com o teto funcionando, e a taxa de stories reabertas caia de forma mensurável contra o baseline.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo meu roda no Atlassian e a minha aposta é que o Rovo cubra boa parte disso nos próximos meses; não vou colocar mais uma ferramenta avulsa, com GitHub Action e chave de LLM para configurar, de uma startup em fase inicial antes de ver o que a Atlassian entrega. A evidência com arquivo e trecho é o que mais me atrai, mas não basta para eu comprar agora.",
+  "objection": "Mesmo com o trecho de código citado, meus 2 PMs sem background técnico não sabem conferir se a regra de negócio está certa; se a IA errar, o erro vai para a planning do mesmo jeito e quem perde credibilidade com o time sou eu. Também me preocupa uma startup de 5 clientes sumir no meio do caminho.",
+  "would_change_my_mind": "Um piloto em um repositório nosso mostrando taxa de acerto alta das afirmações confirmada pelos meus devs e queda real de stories reabertas, e ver que o Rovo não faz essa confrontação story-código até lá.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

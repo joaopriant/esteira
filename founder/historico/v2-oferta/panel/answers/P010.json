@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "R$ 2.500 é troco perto do que gasto com 100+ devs, então o preço não me trava; o que me trava é ser uma startup em fase inicial, sem SOC 2, e eu não assino nada antes de ver funcionar no meu Azure Repos. Topo o piloto grátis, mas não pago no primeiro mês.",
+  "objection": "\"Sem cobrança por token\" é bonito, mas no Modo Cofre a conta de tokens cai na minha Azure OpenAI. Numa base de código grande, quanto isso vai custar por story analisada? Ninguém me deu esse número, e eu ainda desconfio que o suporte a Azure DevOps é de segunda classe perto do GitHub.",
+  "would_change_my_mind": "Um piloto no nosso Azure Boards + Azure Repos que mostre queda real nas stories reabertas, com a fatura de tokens da nossa Azure OpenAI medida e previsível durante o piloto.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 7000,
+  "price_too_expensive": 15000
+}

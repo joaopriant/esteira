@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Acabei de renegociar Jira e Copilot e meus tech leads já confrontam a story com o código no refinamento; não tenho uma dor de retrabalho medida que justifique mais uma ferramenta agora. Gostei de rodar no Azure Pipelines com a nossa chave de Azure OpenAI, mas isso só tira a objeção de segurança, não cria a necessidade.",
+  "objection": "Não vejo a dor: o refinamento já cumpre esse papel, e mais uma camada de IA comentando no card pode virar ruído que meu time ignora, além de uma startup inicial ainda por cima.",
+  "would_change_my_mind": "Se o piloto grátis mostrar com nossos próprios números que uma fatia relevante das stories volta ou é reaberta por divergência com o código, e que os devs confirmam a maioria das afirmações.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

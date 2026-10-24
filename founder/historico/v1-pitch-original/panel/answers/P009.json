@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Minha cobertura de Playwright está atrasada e R$ 2.500 por mês custa menos que uma fração de um QA; eu entro no piloto de 30 dias na semana que vem. Mas só viro assinatura se o time de QA realmente rodar os testes gerados sem reescrever metade, senão cancelo como cancelo tudo que ninguém usa.",
+  "objection": "Duas coisas: se os testes Playwright gerados vão rodar de verdade na nossa base grande ou vão ser lixo que meu time precisa consertar, e convencer o CTO a dar acesso de leitura a todos os repositórios para uma startup de um fundador só. Quem paga os tokens quando o repo é enorme também não está claro.",
+  "would_change_my_mind": "Se no piloto os testes gerados não passarem no nosso CI na primeira semana, ou se o CTO vetar o acesso ao código por segurança, eu saio.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de renegociar Jira e Copilot, e minha aposta é que o Rovo e o próprio Copilot cubram isso dentro do ecossistema que já pago. Meus tech leads já confrontam a story com o código no refinamento; não vou abrir mais um fornecedor com acesso ao repositório por uma dor que não sinto.",
+  "objection": "Startup em fase inicial, sem SOC 2, lendo todo o nosso código para resolver algo que o tech lead já faz e que a Atlassian provavelmente vai entregar no Rovo. É mais um contrato e mais uma revisão de segurança para o meu time.",
+  "would_change_my_mind": "O baseline do piloto mostrar no nosso Jira uma taxa alta de stories reabertas por divergência com o código, e o Rovo comprovadamente não fazer essa checagem contra o repositório.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

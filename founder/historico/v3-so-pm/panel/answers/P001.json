@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação; não assino nada antes de ver funcionando no nosso código. No máximo topo o piloto grátis, e mesmo isso passa pelo meu time de segurança, que levou 3 meses no último fornecedor, então nada de contrato este mês.",
+  "objection": "Startup em fase inicial, sem SOC 2, lendo nosso repositório, e no fim meus PMs podem simplesmente não usar mais uma ferramenta. O preço não é o problema; o problema é gastar meses de segurança e de adoção numa coisa que pode não durar.",
+  "would_change_my_mind": "Rodar o Modo Cofre com a nossa chave de LLM e ver no piloto os meus devs confirmando mais de 85% das afirmações e uma queda real nas stories reabertas, com os PMs usando sem eu precisar cobrar.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

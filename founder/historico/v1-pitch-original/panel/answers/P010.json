@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "R$ 2.500 is small change for an engineering org my size, and I like that it finally supports Azure Boards and Azure Repos. But I won't give a solo-founder startup read access to our whole codebase before security and legal sign off. At most I'd run the free pilot on a non-critical repo, and that's not a purchase.",
+  "objection": "Where does our code go and who pays for the tokens? If a flat fee has to cover LLM calls over a monorepo with millions of lines, either the analysis gets shallow, or the price goes up, or the company runs out of cash. And if a solo founder disappears, I've built workflows on top of something that's gone.",
+  "would_change_my_mind": "A pilot on our biggest Azure Repos repo that shows real, accurate story-to-code mapping, plus a clear answer on data handling (no training on our code, Brazil or Azure hosting, an LGPD DPA) and on token limits at scale.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

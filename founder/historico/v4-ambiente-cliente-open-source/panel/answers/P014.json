@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "A gente vive dentro do Atlassian e a minha aposta para IA em cima de Jira e código é o Rovo, que já está no contrato; não vou colocar mais um app avulso de startup em fase inicial só porque o board pede IA. Talvez topasse o piloto grátis por curiosidade, mas pagar R$ 2.500 por mês agora, não.",
+  "objection": "Esses US$ 0,40 por story foram medidos em repositório de referência, não no nosso monolito; com base de código grande o custo de tokens pode multiplicar, e ainda tenho que justificar por que não esperar o Rovo fazer o mesmo cruzamento story x código.",
+  "would_change_my_mind": "Um piloto rodando no nosso repositório real mostrando custo de tokens por story dentro do teto e queda medida de stories reabertas, comparado lado a lado com o que o Rovo entrega hoje.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

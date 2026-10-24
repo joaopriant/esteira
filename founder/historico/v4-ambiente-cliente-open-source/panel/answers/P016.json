@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Se o motor é open source e roda com a nossa chave de LLM, meu time pega o motor, pluga no nosso Jira via MCP e resolve internamente; não vou levar mais uma licença ao CTO logo depois de renegociar Jira e Copilot. No máximo topo o piloto grátis para ver o baseline.",
+  "objection": "Não tenho métrica de retrabalho hoje, então não sei provar o retorno de R$ 2.500/mês para o CTO, e o que eu pagaria é basicamente uma interface em cima de algo que posso rodar de graça.",
+  "would_change_my_mind": "Um piloto que mostre, com os nossos dados, queda clara de stories reabertas que eu consiga apresentar ao CTO, e que a interface/histórico economize mais tempo do que meu time gastaria montando e mantendo a versão interna.",
+  "price_too_cheap": 300,
+  "price_cheap": 800,
+  "price_expensive": 1800,
+  "price_too_expensive": 3500
+}

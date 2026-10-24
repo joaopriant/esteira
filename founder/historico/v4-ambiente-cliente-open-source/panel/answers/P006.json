@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Rodar no nosso ambiente com a nossa chave resolve meu medo de entregar o código, mas se o motor é open source e roda com a nossa LLM, meu time pega o motor, pluga um MCP do Jira e monta isso em duas sprints. Não vou pagar R$ 2.500 por mês por uma interface e um painel de uma startup de um fundador só.",
+  "objection": "O valor de verdade está no motor aberto e na LLM que eu já pago; o que sobra pra pagar é UI e suporte de uma empresa que pode não existir daqui a um ano, e aí eu fico com um app no Jira órfão.",
+  "would_change_my_mind": "Um piloto no nosso repo que mostre as stories que voltaram caindo de verdade, com meus devs confirmando a maioria das afirmações, e um custo bem menor do que eu gastaria pondo um dev pra construir e manter isso internamente.",
+  "price_too_cheap": 300,
+  "price_cheap": 800,
+  "price_expensive": 1800,
+  "price_too_expensive": 3500
+}

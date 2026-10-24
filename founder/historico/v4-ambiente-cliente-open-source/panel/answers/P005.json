@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Rodar no nosso ambiente com a nossa chave e motor open source é exatamente o que eu queria ouvir, e o preço é irrelevante pro meu orçamento. Mas já paguei Copilot e ChatGPT Enterprise e vi alucinação; não fecho contrato com startup em fase inicial sem ver funcionar no nosso código, e segurança e jurídico não aprovam nada em um mês.",
+  "objection": "É uma startup sem histórico: se ela fechar em um ano, fico com uma Action open source sem suporte num ambiente regulado. E o 'US$ 0,40 por story' foi medido em repositório de referência, não no nosso monorepo legado; quero ver o custo real em tokens e quantas afirmações os meus devs de fato confirmam.",
+  "would_change_my_mind": "Um piloto de 30 dias no nosso próprio repositório, liberado pela segurança, mostrando queda real de stories reabertas, alta taxa de afirmações confirmadas pelos devs e o custo de LLM medido na nossa conta. Com isso eu levo para compra no trimestre seguinte.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

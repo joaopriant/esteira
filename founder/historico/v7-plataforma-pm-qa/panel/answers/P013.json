@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint duas stories voltaram porque a regra já existia de outro jeito, e é exatamente isso que eles dizem resolver; piloto de 30 dias grátis rodando na nossa IA eu ligo na semana que vem. R$ 2.500 por mês é troco perto de uma sprint perdida, mas só pago depois do piloto se os PMs usarem de verdade.",
+  "objection": "US$ 0,40 por story medido em repositório de referência não me diz nada sobre o nosso monorepo; quero ver o gasto real de tokens na nossa base grande e se os PMs abrem isso depois da segunda semana, senão cancelo como cancelei as outras.",
+  "would_change_my_mind": "Se no piloto o custo por story na nossa base passar de uns US$ 2 ou se menos da metade dos PMs usar na segunda quinzena, eu não converto.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4500,
+  "price_too_expensive": 8000
+}

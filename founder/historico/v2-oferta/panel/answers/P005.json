@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O piloto com container na nossa nuvem e a nossa chave de LLM é a primeira proposta de IA que eu levaria ao time de segurança, mas sem SOC 2 e sendo uma startup em fase inicial isso é um processo de meses, e eu não pago nada antes de ver o resultado no nosso próprio código. No primeiro mês, no máximo eu peço o kit de segurança e brigo internamente pelo piloto.",
+  "objection": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação. 'Sem cobrança por token' é da parte de vocês, mas no Modo Cofre a conta de tokens cai no nosso Azure OpenAI ou Bedrock, e ninguém me disse quanto custa analisar um monorepo grande. Somando isso a um fornecedor sem SOC 2 que pode não existir daqui a dois anos, o jurídico vai travar.",
+  "would_change_my_mind": "Um piloto rodando dentro da nossa nuvem que mostre a taxa de afirmações confirmadas pelos meus devs acima de 85% e uma estimativa real do custo de tokens na nossa base, com o questionário de segurança aprovado pelo nosso time.",
+  "price_too_cheap": 800,
+  "price_cheap": 2500,
+  "price_expensive": 12000,
+  "price_too_expensive": 30000
+}

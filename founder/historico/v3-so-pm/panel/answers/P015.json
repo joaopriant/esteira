@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação, então não assino nada antes de ver funcionando no meu código. O piloto com medição de stories reabertas é a primeira proposta que responde ao meu problema de métrica, mas startup sem SOC 2 lendo nosso repositório vai pegar meses no time de segurança. Neste mês não sai contrato pago.",
+  "objection": "Startup em fase inicial, sem SOC 2, pedindo acesso de leitura ao repositório. Minha segurança levou 3 meses no último fornecedor, e eu não sei se a taxa de acerto se sustenta no nosso código legado ou se é só demo bonita.",
+  "would_change_my_mind": "Rodar o piloto no Modo Cofre com a nossa chave Azure OpenAI e o código sem sair da nossa nuvem, e ver os meus devs confirmarem pelo menos 85% das afirmações, com queda medida de stories reabertas no antes/depois.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

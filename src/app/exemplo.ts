@@ -1,0 +1,102 @@
+import type { WorkItem } from '../shared/tipos'
+import { dataMesesAtras } from '../core/texto'
+
+export const REPOS_EXEMPLO = [
+  {
+    id: 'repo-pagamentos',
+    nome: 'pagamentos-api',
+    projeto: 'Pagamentos',
+    remoteUrl: 'https://dev.azure.com/fintech/Pagamentos/_git/pagamentos-api',
+    branchPadrao: 'main',
+  },
+  {
+    id: 'repo-app-pix',
+    nome: 'app-pix',
+    projeto: 'Pagamentos',
+    remoteUrl: 'https://dev.azure.com/fintech/Pagamentos/_git/app-pix',
+    branchPadrao: 'main',
+  },
+  {
+    id: 'repo-contas',
+    nome: 'contas-api',
+    projeto: 'Contas',
+    remoteUrl: 'https://dev.azure.com/fintech/Contas/_git/contas-api',
+    branchPadrao: 'main',
+  },
+]
+
+export function itensExemplo(agora: Date): WorkItem[] {
+  const iso = (meses: number) => dataMesesAtras(agora, meses).toISOString()
+  return [
+    {
+      id: 1042,
+      projeto: 'Pagamentos',
+      tipo: 'User Story',
+      titulo: 'Estorno total de PIX',
+      descricao: 'O cliente estorna o valor integral de um PIX liquidado.',
+      criterios: 'O valor estornado é igual ao valor original.',
+      estado: 'Closed',
+      areaPath: 'Empresa\\Pagamentos',
+      iterationPath: 'Empresa\\Pagamentos\\Sprint 12',
+      atribuidoA: { nome: 'Ana Lima', id: 'ana-lima' },
+      fechadoEm: iso(6),
+      alteradoEm: iso(6),
+    },
+    {
+      id: 1300,
+      projeto: 'Pagamentos',
+      tipo: 'User Story',
+      titulo: 'Estorno parcial do PIX em análise',
+      descricao: 'Permitir estorno parcial enquanto a história ainda está aberta.',
+      criterios: 'O valor parcial não passa do original. Avisar o responsável.',
+      estado: 'Active',
+      areaPath: 'Empresa\\Pagamentos',
+      iterationPath: 'Empresa\\Pagamentos\\Sprint 20',
+      atribuidoA: { nome: 'Bruno Dias', id: 'bruno-dias' },
+      fechadoEm: null,
+      alteradoEm: iso(0),
+    },
+    {
+      id: 1108,
+      projeto: 'Pagamentos',
+      tipo: 'User Story',
+      titulo: 'Limite diário de PIX',
+      descricao: 'Teto de valor por dia para pessoa física.',
+      criterios: 'Acima do teto, a transação é recusada.',
+      estado: 'Active',
+      areaPath: 'Empresa\\Pagamentos',
+      iterationPath: 'Empresa\\Pagamentos\\Sprint 20',
+      atribuidoA: { nome: 'Clara Nunes', id: 'clara-nunes' },
+      fechadoEm: null,
+      alteradoEm: iso(1),
+    },
+    {
+      id: 880,
+      projeto: 'Pagamentos',
+      tipo: 'User Story',
+      titulo: 'Estorno de TED',
+      descricao: 'Estorno de TED liquidada há mais de um ano.',
+      criterios: 'Fora da janela de doze meses.',
+      estado: 'Closed',
+      areaPath: 'Empresa\\Pagamentos',
+      iterationPath: 'Empresa\\Pagamentos\\Sprint 2',
+      atribuidoA: { nome: 'Ana Lima', id: 'ana-lima' },
+      fechadoEm: iso(18),
+      alteradoEm: iso(18),
+    },
+    {
+      id: 1201,
+      projeto: 'Contas',
+      tipo: 'User Story',
+      titulo: 'Ajuste de tarifa de conta',
+      descricao: 'Tarifa mensal da conta corrente.',
+      criterios: 'A tarifa não incide sobre estorno.',
+      estado: 'Closed',
+      areaPath: 'Empresa\\Contas',
+      iterationPath: 'Empresa\\Contas\\Sprint 18',
+      atribuidoA: { nome: 'Davi Souza', id: 'davi-souza' },
+      fechadoEm: iso(2),
+      alteradoEm: iso(2),
+    },
+  ]
+}

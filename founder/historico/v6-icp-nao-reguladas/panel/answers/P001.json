@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação em produção; não assino contrato com startup em fase inicial antes de ver isso acertar no meu próprio código. Talvez eu deixe um time rodar o piloto grátis, já que roda no nosso ambiente e o código é auditável, mas comprar agora, não.",
+  "objection": "Meus PMs não vão adotar mais uma ferramenta, e mesmo com o trecho de código anexado, se a análise errar algumas vezes eles param de confiar e o card vira ruído. E 'cerca de US$ 0,40 por story em repositório de referência' não diz nada sobre o meu monorepo legado.",
+  "would_change_my_mind": "Um piloto no nosso repositório real mostrando queda medida de stories reabertas e a maioria das afirmações confirmadas pelos meus devs, com os PMs usando sem eu precisar cobrar.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Finalmente algo que trata Azure Boards e Azure Repos como cidadãos de primeira classe, e os meus 2 PMs sem background técnico são exatamente quem leva story furada para a planning. Com piloto grátis, código rodando no nosso ambiente e cada afirmação com arquivo e trecho, eu topo testar; R$ 2.500/mês é troco perto do custo de uma sprint de retrabalho.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com um trecho de código que parece convincente, o PM não técnico não vai saber contestar, leva para a planning e eu perco a confiança do time. Também desconfio que a versão Azure Pipelines seja a prima pobre da GitHub Action, e que é uma startup em fase inicial.",
+  "would_change_my_mind": "Se no piloto a taxa de afirmações confirmadas pelos devs ficar baixa ou aparecer uma regra de negócio inventada que chegou à planning, eu não converto para a licença paga.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

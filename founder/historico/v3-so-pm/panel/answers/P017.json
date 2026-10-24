@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Gostei de suportarem Azure Boards e Azure Repos e do container rodando na nossa nuvem com nossa chave do Azure OpenAI, mas uma startup em fase inicial sem SOC 2 pedindo acesso ao nosso código não passa pela segurança e pelo jurídico em um mês. O último fornecedor levou 3 meses, e até o piloto grátis precisa dessa aprovação.",
+  "objection": "Dar leitura do repositório de uma fintech regulada para uma startup sem SOC 2 e sem histórico. E mesmo que a segurança aprove, meus PMs não vão adotar mais uma ferramenta se ela não viver dentro do card do Azure Boards.",
+  "would_change_my_mind": "O container rodando 100% no nosso tenant Azure, sem nenhum dado saindo, com o Kit de Segurança passando no nosso questionário de primeira, e uma referência de outra empresa regulada que já usa.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O problema é real, tive duas stories voltando na última sprint por regra que já existia, e o modelo de rodar no nosso ambiente com código aberto passa no meu filtro de segurança melhor que a maioria. Mas no primeiro mês eu no máximo levo o piloto grátis ao CTO e ao time de segurança; pagar R$ 2.500 a uma startup em fase inicial sem ver o antes/depois com os nossos números não sai da minha mão.",
+  "objection": "É uma startup muito nova num espaço onde a Atlassian e o GitHub podem embutir algo parecido de graça no Jira ou no Copilot daqui a alguns meses, e eu não quero gastar capital político com o CTO e com segurança (DPA, questionário, revisão do código) numa ferramenta que pode virar redundante.",
+  "would_change_my_mind": "Um piloto de 30 dias no nosso repositório mostrando queda clara de stories reabertas contra o baseline e afirmações confirmadas pelos devs, com o pacote de segurança pronto (DPA, questionário respondido, SBOM) para o CTO aprovar sem fricção.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

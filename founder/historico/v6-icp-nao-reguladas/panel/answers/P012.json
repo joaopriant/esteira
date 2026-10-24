@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Story voltando porque a regra já existia de outro jeito custa muito mais que R$ 2.500 por mês em hora de dev, e finalmente alguém suporta Azure Boards + Azure Repos rodando no nosso pipeline, com o nosso Azure OpenAI. Faço o piloto e, se o antes/depois mostrar menos retrabalho, assino a licença de fundador.",
+  "objection": "Ainda é uma startup de um fundador só: meu time de segurança vai ler o código do motor e eu quero ver se ele funciona de verdade num monorepo .NET grande no Azure Repos, e não só nos repositórios de referência dele no GitHub. Se as afirmações vierem com muito 'não encontrei' ou com trecho errado, o PM para de usar em duas semanas.",
+  "would_change_my_mind": "Se no piloto a taxa de afirmações confirmadas pelos devs ficar baixa ou a tarefa de Azure Pipelines for gambiarra comparada à GitHub Action, eu não assino.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

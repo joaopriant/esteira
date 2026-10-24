@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "R$ 2.500 não é o problema, é troco perto do que já gastei com Copilot. O problema é que já paguei por IA que alucinou no nosso código, e uma startup em fase inicial que ninguém conhece não entra em contrato aqui antes de provar no nosso repositório, e isso não acontece em um mês com o meu time de segurança.",
+  "objection": "Já vi IA inventar coisa com muita confiança. Mostrar arquivo e trecho ajuda, mas quem vai conferir se o trecho sustenta mesmo a afirmação? Se os devs tiverem que revisar tudo, virou mais trabalho. E meus PMs não vão adotar mais uma ferramenta; se não viver dentro do card sem esforço, morre em duas semanas.",
+  "would_change_my_mind": "Um piloto no nosso repo de verdade em que os devs confirmem a grande maioria das afirmações e o baseline mostre queda real de stories reabertas, com o time de segurança aprovando rápido porque é open source e roda com a nossa chave.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

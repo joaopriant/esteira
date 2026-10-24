@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "R$ 2.500 é trocado pro meu orçamento e o custo de token por story finalmente responde minha primeira pergunta, mas minha regra é ver se o Rovo resolve antes de pendurar mais um app avulso no Jira. No máximo eu topo o piloto grátis pra ter número pro board; pagar no primeiro mês, não.",
+  "objection": "A Atlassian vai entregar algo parecido dentro do Rovo, nativo e já contratado, e aí eu fico com uma startup em fase inicial plugada no meu fluxo. E os US$ 0,40 por story foram medidos em repositório de referência, não no meu monorepo grande.",
+  "would_change_my_mind": "Um piloto no nosso repositório real mostrando queda clara de stories reabertas e custo de token por story perto do prometido, lado a lado com o que o Rovo entrega hoje na mesma story.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 4500,
+  "price_too_expensive": 9000
+}

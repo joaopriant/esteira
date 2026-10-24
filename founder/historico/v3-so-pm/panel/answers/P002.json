@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Até toparia o piloto grátis, mas pagar agora não: minha dor hoje é cobertura de testes no QA, e isso eles dizem que não fazem. E uma ferramenta que fala para o PM o que o código faz, se errar uma regra de negócio, vira discussão na planning e queima a confiança do time em mim.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com cara de evidência, o PM leva isso como verdade e meus devs perdem horas desmentindo. 85% de acerto ainda significa uma afirmação errada a cada sete, e o PM não tem como saber qual é.",
+  "would_change_my_mind": "Um piloto no nosso Jira que mostre queda real de stories reabertas, com os meus devs confirmando bem acima de 85% das afirmações, convertido em horas de dev economizadas por mês.",
+  "price_too_cheap": 400,
+  "price_cheap": 1200,
+  "price_expensive": 3500,
+  "price_too_expensive": 6000
+}

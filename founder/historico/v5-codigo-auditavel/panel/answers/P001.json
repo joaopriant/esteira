@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação em produção; não assino nada de uma startup em fase inicial só porque o pitch diz que 'toda afirmação vem com o trecho de código'. O piloto grátis rodando no nosso ambiente com a nossa chave até me interessa, mas isso é teste, não compra, e mesmo o piloto vai passar pela fila de segurança antes.",
+  "objection": "Meus PMs não vão adotar mais uma ferramenta, e eu não confio que a precisão no meu monorepo bagunçado vai ser igual à dos 'repositórios de referência'. Se metade das afirmações vier errada, eu queimo credibilidade com o time por nada.",
+  "would_change_my_mind": "O piloto de 30 dias no nosso próprio repositório mostrando que os devs confirmaram a grande maioria das afirmações e que as stories reabertas caíram de forma mensurável, com os PMs usando sem eu precisar empurrar.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

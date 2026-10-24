@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo aqui roda no Atlassian e a minha primeira pergunta é se o Rovo já não faz isso lendo o Bitbucket/GitHub; antes de colocar mais um fornecedor avulso com acesso ao código, vou testar o que já pago. Gosto de cada afirmação vir com arquivo e trecho, mas isso ainda não me faz assinar agora.",
+  "objection": "Se a ferramenta afirmar uma regra de negócio errada com cara de evidência, meus dois PMs sem background técnico não vão saber contestar, levam isso para a planning e eu queimo minha credibilidade com os devs. Startup em fase inicial, sem SOC 2, também vira briga com segurança.",
+  "would_change_my_mind": "Ver o Rovo falhar nas nossas stories reais e, no piloto grátis, os devs confirmarem pelo menos 85% das afirmações com queda medida nas stories reabertas; aí eu pagaria.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

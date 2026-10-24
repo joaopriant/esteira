@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Pelo menos suporta Azure Boards e Azure Pipelines, o que já é raro, e R$ 2.500 não pesa no meu orçamento. Mas meu tech lead já cruza a story com o código no refinamento, e acabei de fechar o Copilot, então não vou abrir outra ferramenta e outro fornecedor para uma dor que eu não sinto.",
+  "objection": "Não vejo a dor: o refinamento já resolve isso, e não sei se o retrabalho por story mal especificada é grande o bastante para justificar mais uma ferramenta, mais um custo de LLM e mais um fornecedor early-stage para homologar.",
+  "would_change_my_mind": "O baseline do piloto mostrar nos meus próprios dados do Azure Boards que uma fatia relevante das stories volta ou é reaberta, e os devs confirmando a maioria das afirmações, com o tech lead dizendo que economizou tempo de refinamento.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

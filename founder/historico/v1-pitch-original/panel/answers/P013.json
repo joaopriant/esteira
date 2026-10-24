@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint duas stories voltaram porque a regra já existia de outro jeito, então a dor é real e o piloto grátis no meu código não me custa nada para testar. R$ 2.500 por mês é troco perto de uma sprint perdida, mas só pago depois do piloto se os PMs usarem de verdade.",
+  "objection": "Se numa base grande ele vai achar a regra certa ou alucinar, e quanto isso custa em tokens e tempo de resposta; e, de quebra, dar acesso de leitura ao código para uma startup de fundador solo vai precisar passar pelo CTO e pela segurança.",
+  "would_change_my_mind": "Se no piloto pelo menos metade dos PMs não estiver usando toda semana ou a crítica errar regra no nosso monorepo, eu cancelo no primeiro mês.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

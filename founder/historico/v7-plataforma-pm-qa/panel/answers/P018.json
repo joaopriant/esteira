@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "O piloto grátis com baseline de stories reabertas resolve justamente o que eu não consigo medir hoje, e R$ 2.500 é troco perto do que acabei de renegociar com Jira e Copilot. Entro no piloto amanhã, mas só pago se os PMs usarem de verdade no primeiro mês.",
+  "objection": "Adoção: já vi dezenas de ferramentas de IA morrerem em três semanas porque o PM não abre o card para ler o comentário. Se a análise virar mais um texto longo ignorado no Jira, eu cancelo, e o baseline de retrabalho de 3 meses pode ser ruidoso demais para provar alguma coisa em 30 dias.",
+  "would_change_my_mind": "Se no fim do piloto menos da metade dos PMs tiver aberto e usado a spec revisada, ou se os devs confirmarem poucas afirmações, eu não renovo.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

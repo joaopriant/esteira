@@ -1,0 +1,13 @@
+{
+  "id": "P003",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Eu aceitaria o piloto grátis porque roda no nosso ambiente e cita o arquivo e o trecho, que é exatamente a prova que eu exijo, mas não assino nem levo ao CTO um contrato pago no primeiro mês. Já paguei Copilot e ChatGPT Enterprise e vi alucinação; só pago depois de ver no nosso código.",
+  "objection": "Se a ferramenta afirmar uma regra de negócio errada com um trecho de código que parece sustentar, os meus 2 PMs sem background técnico não vão perceber, levam o erro para a planning e eu perco a confiança do time. Citar o arquivo não garante que a interpretação está certa.",
+  "would_change_my_mind": "O piloto de 30 dias no nosso repositório mostrar que os devs confirmaram quase todas as afirmações (algo acima de 90%), com queda mensurável de stories reabertas no antes/depois, em números que eu consiga mostrar ao CTO.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Acabei de fechar orçamento de ferramentas com Jira e Copilot, então não pago nada novo este mês. O que me interessa é o piloto grátis: finalmente alguém suporta Azure Boards e Azure Repos e mede retrabalho por mim, mas pagar só depois de ver o antes/depois.",
+  "objection": "Não tenho métrica de retrabalho hoje, e 'stories reabertas' no nosso Azure Boards é um dado sujo, porque o time nem sempre reabre, cria item novo. Se o antes/depois for montado em cima disso, não sei se consigo defender o ROI para o CFO. E é uma startup sem SOC 2 mexendo no nosso código.",
+  "would_change_my_mind": "Um piloto de 30 dias no nosso Azure Repos que mostre queda clara de retrabalho, com uma métrica que eu consiga apresentar, e o Modo Cofre rodando com a nossa chave Azure OpenAI.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

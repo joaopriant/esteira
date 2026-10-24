@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Acabei de renegociar Jira e Copilot e a minha aposta é o Rovo cobrir isso dentro do ecossistema Atlassian. Meu tech lead já cruza story com código no refinamento, então não vou colocar mais um fornecedor avulso, early-stage e sem SOC 2, pra uma dor que eu nem sinto.",
+  "objection": "Não vejo a dor: stories reabertas não são o meu gargalo, e o que vocês prometem é exatamente o que a Atlassian e o GitHub estão empurrando no roadmap. Daqui a seis meses isso pode virar feature do Rovo ou do Copilot que eu já pago.",
+  "would_change_my_mind": "Um diagnóstico no meu próprio Jira mostrando que uma fatia relevante das stories volta por divergência com o código, e uma comparação lado a lado em que o Rovo não consegue fazer o mesmo cruzamento com evidência de arquivo.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 3500,
+  "price_too_expensive": 7000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, tive duas stories voltando na última sprint, mas não vou colocar uma startup de um fundador só, sem SOC 2, lendo o nosso código-fonte. E antes de comprar ferramenta avulsa eu quero ver se o Rovo, que já pago, resolve isso dentro do Jira e do Confluence.",
+  "objection": "Acesso de leitura ao nosso repositório por uma empresa em fase inicial que pode sumir em um ano. O Modo Cofre ajuda no papel, mas o container na nossa nuvem ainda é código de terceiro rodando perto do nosso código, e o meu time de segurança vai travar sem SOC 2.",
+  "would_change_my_mind": "Rodar o container dentro da nossa nuvem com a nossa chave do Bedrock, sem nenhum tráfego saindo, auditado pelo meu time de segurança, e um piloto em um repositório não crítico mostrando que faz o que o Rovo não faz.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 10000
+}

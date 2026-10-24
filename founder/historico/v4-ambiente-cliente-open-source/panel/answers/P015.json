@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação, então não assino nada antes de ver funcionar no nosso código. O piloto grátis com baseline e a evidência por trecho de código me interessam, mas no primeiro mês o máximo que faço é pedir o piloto, e só a aprovação do meu time de segurança pode levar meses, mesmo sendo open source.",
+  "objection": "Não tenho métrica de retrabalho hoje, então não sei se o antes/depois de vocês vai ser confiável ou um número bonito escolhido a dedo. Também desconfio de quão bem ele acerta as regras de negócio em código legado bagunçado, e de quanto tempo meus devs vão gastar confirmando afirmações.",
+  "would_change_my_mind": "Um piloto no nosso repositório principal em que os devs confirmem a maioria das afirmações e o baseline mostre queda real de stories reabertas, com segurança aprovando rápido por ser open source e rodar na nossa nuvem.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4500,
+  "price_too_expensive": 8000
+}

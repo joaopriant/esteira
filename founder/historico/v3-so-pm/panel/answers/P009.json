@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Meu problema hoje é cobertura de teste Playwright atrasada, e vocês mesmos dizem que geração de testes não faz parte do produto. É uma ferramenta pra PM; eu até toparia o piloto grátis por curiosidade, mas não vou levar ao CTO um gasto que não resolve a dor do meu time.",
+  "objection": "Quem usaria isso são os PMs, não o meu time. Já vi esse filme: piloto empolgante e no primeiro mês ninguém abre. E não está claro quanto custa em tokens numa base grande quando roda com a nossa chave de LLM no Modo Cofre.",
+  "would_change_my_mind": "Se a análise de story contra o código gerasse critérios de aceite ou casos de teste que meu time pudesse virar em Playwright, e o piloto mostrasse que os PMs realmente usaram toda semana.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 4500
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "O problema é real, tive duas stories voltando na última sprint por regra duplicada, mas não vou abrir o código-fonte de 50 a 200 devs para uma startup de um fundador só. Além disso, já pago Atlassian e quero ver o que o Rovo entrega antes de colocar mais uma ferramenta avulsa na stack.",
+  "objection": "Segurança e continuidade: somente leitura ainda é leitura do nosso IP inteiro. Onde roda, para qual LLM o código vai, quem tem acesso, e o que acontece se o fundador desistir daqui a seis meses?",
+  "would_change_my_mind": "Opção de rodar dentro da nossa nuvem/VPC sem o código sair do nosso ambiente, com contrato e DPA sérios e algum sinal de continuidade (sócio, investimento ou referência de outro CTO que eu conheça).",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

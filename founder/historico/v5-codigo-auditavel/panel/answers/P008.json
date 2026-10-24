@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Cobertura de Playwright atrasada é dor real aqui, roda no nosso ambiente com a nossa chave e o código é auditável, então o piloto de 30 dias entra essa semana sem briga com segurança. R$ 2.500 é troco perto do custo de um QA; travo o preço de fundador se o piloto rodar.",
+  "objection": "Um dev meu monta uma Action com Claude Code que lê a story e gera Playwright num fim de semana. Se o que vocês entregam além disso for só painel bonito, e se o QA não usar no dia a dia, cancelo no primeiro mês.",
+  "would_change_my_mind": "Se no piloto os testes Playwright gerados não passarem de primeira em boa parte das stories, ou se o time de QA parar de abrir depois da segunda semana, viro não.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

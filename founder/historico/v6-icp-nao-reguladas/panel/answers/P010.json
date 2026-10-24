@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Finalmente algo de IA que roda nativo em Azure Boards, Azure Repos e Azure Pipelines e usa o nosso Azure OpenAI, então o código não sai de casa e eu tenho uma resposta concreta para o board sobre uso de IA em engenharia. R$ 2.500 por mês é troco perto da folha de 100 e poucos devs, então eu entro no piloto e, se o baseline de stories reabertas cair, assino.",
+  "objection": "Esse US$ 0,40 por story foi medido em repositório de referência, não no nosso monolito .NET de dez anos com vários repos. Quero ver quanto de contexto ele manda para o modelo numa base grande, e se o teto de gasto não acaba cortando a análise no meio. Também me preocupa uma startup em fase inicial dentro do pipeline, mesmo com o código aberto.",
+  "would_change_my_mind": "Se no piloto o custo real por story na nossa base passar de uns US$ 3, ou se os devs começarem a desmentir as afirmações com evidência, eu não sigo para a licença.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 7000,
+  "price_too_expensive": 15000
+}

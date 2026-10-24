@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "R$ 2.500 é troco pro meu orçamento, mas o que vocês descrevem é exatamente o tipo de coisa que meu time monta em duas ou três sprints com Claude, MCP do Jira e um workflow no GitHub Actions, e acabei de fechar Jira e Copilot, não quero mais um fornecedor agora. No máximo eu aceito o piloto grátis para ver o baseline de retrabalho, mas pagar no primeiro mês não.",
+  "objection": "Se o motor é aberto e roda na minha IA, o que eu estou pagando é uma interface e um painel que meu time faz internamente; e startup pequena em fase inicial, mesmo com garantia de continuidade, é mais um contrato pra gerenciar e mais um ponto de suporte que pode sumir.",
+  "would_change_my_mind": "O piloto mostrar, no meu próprio histórico, uma queda clara de stories reabertas (tipo 20% ou mais) com afirmações confirmadas pelos meus devs, e um protótipo interno nosso não chegar perto disso no mesmo período.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P007",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A arquitetura rodando no nosso ambiente com motor open source é o que me faz sequer considerar, mas uma startup em fase inicial ainda passa por segurança, DPA e questionário de fornecedor, e isso não fecha em um mês. No máximo eu levaria ao CTO o piloto grátis; pagar, só depois de ver os números.",
+  "objection": "Se a IA afirmar uma regra de negócio errada com um trecho de código que parece sustentar, o PM leva isso para a planning e quem perde credibilidade sou eu. Quero saber a taxa real de afirmações erradas no nosso código, não em repositórios de referência, e se essa startup ainda existe daqui a um ano.",
+  "would_change_my_mind": "Um piloto no nosso repositório em que os devs confirmem pelo menos 90% das afirmações e o baseline mostre queda clara de stories reabertas, com o time de segurança aprovando o código auditado.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

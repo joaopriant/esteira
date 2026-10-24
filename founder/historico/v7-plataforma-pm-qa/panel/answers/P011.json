@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real: na última sprint duas stories voltaram porque a regra já existia de outro jeito, e rodar no nosso ambiente com a nossa IA, com pentest, SBOM e escrow, é o desenho certo. Mesmo assim, um container de código fechado de uma startup em fase inicial lendo o nosso repositório não passa pelo security review, DPA e questionário de fornecedor nem chega aprovado pelo CTO dentro de um mês. No máximo eu peço o piloto grátis e levo para a segurança.",
+  "objection": "É uma startup brasileira em fase inicial com código fechado rodando dentro do nosso pipeline com acesso ao repositório e ao Jira. Tenho que defender isso para o time de segurança e para o CTO, e no fundo ainda acho que Atlassian ou GitHub vão colocar algo parecido de graça no Jira ou no Copilot daqui a pouco.",
+  "would_change_my_mind": "O piloto de 30 dias no nosso repositório mostrando, com números contra o baseline, que as stories reabertas caíram de verdade e que os devs confirmaram a maioria das afirmações, junto com o pacote de segurança (pentest, SBOM, DPA) já pronto para o meu time de segurança aprovar sem rodadas extras.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Meu medo era mandar código para uma startup de um fundador só, mas roda no nosso pipeline, com a nossa chave de IA, código aberto para auditoria e licença perpétua se fecharem, então esse bloqueio cai. O board me cobra eficiência e uso de IA, e um piloto grátis medindo stories reabertas é exatamente a prova que eu preciso; entro no piloto e só pago se o antes/depois mostrar horas de dev economizadas.",
+  "objection": "Ferramenta de IA que lê story e código costuma impressionar na demo e virar ruído em duas semanas: se os devs não confirmarem as afirmações e o retrabalho não cair de forma mensurável, isso é mais uma assinatura que eu corto no próximo trimestre, somando R$ 2.500 de licença mais uns R$ 450 de LLM.",
+  "would_change_my_mind": "Se o piloto de 30 dias não mostrar queda clara de stories reabertas ou retrabalho comparado ao baseline dos últimos 3 meses, eu não converto.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

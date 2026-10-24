@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, ainda na última sprint duas stories voltaram porque a regra já existia de outro jeito, e o Modo Cofre com container na nossa nuvem e o Kit de Segurança mostram que eles entendem o nosso mundo. Mas numa fintech regulada, uma startup em fase inicial sem SOC 2 lendo o nosso código não passa pela segurança e pelo jurídico em um mês. No máximo eu abro o processo de fornecedor para o piloto, e não pago nada agora.",
+  "objection": "Sem SOC 2 e com uma empresa recém-nascida, o meu CISO vai travar o acesso ao repositório mesmo com o container rodando na nossa nuvem. E se a startup quebrar ou for engolida em um ano, ou se a Atlassian/GitHub lançar isso dentro do Jira, eu terei gasto meses de procurement à toa.",
+  "would_change_my_mind": "O container rodando 100% dentro da nossa nuvem com a nossa chave de LLM, sem nenhum dado saindo, validado pelo nosso time de segurança num piloto, mais SOC 2 com data marcada ou uma referência de outra empresa regulada brasileira que já usa.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 10000
+}

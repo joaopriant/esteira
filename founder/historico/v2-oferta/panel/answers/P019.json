@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Tudo aqui roda em Jira e Confluence, e eu já estou pagando Atlassian esperando que o Rovo cruze story com código. Antes de colocar mais uma ferramenta avulsa, com uma startup sem SOC 2, quero ver o que o Rovo entrega nos próximos meses.",
+  "objection": "Meus PMs não técnicos não conseguem julgar se o trecho de código citado realmente sustenta a regra; se a ferramenta errar com cara de evidência, o erro vai para a planning do mesmo jeito e eu queimo a confiança do time. E é mais um fornecedor pequeno com acesso ao nosso código.",
+  "would_change_my_mind": "Um piloto em que eu compare lado a lado com o Rovo no mesmo repositório e os devs confirmem bem mais de 85% das afirmações, com queda medida de stories reabertas; aí eu aceito o piloto grátis e pago.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 8000
+}

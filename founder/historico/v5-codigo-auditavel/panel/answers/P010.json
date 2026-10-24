@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Finalmente algo de IA que roda nativo em Azure Pipelines com Azure OpenAI e não exige mandar código para fora; R$ 2.500 é troco perto do custo de retrabalho de 100+ devs e me dá um número de eficiência para levar ao board. Entro no piloto grátis já mirando uma vaga de Cliente Fundador, mas só assino se o antes/depois aparecer de verdade.",
+  "objection": "Esses US$ 0,40 por story foram medidos em repositório de referência, não no nosso monorepo de anos com .NET legado; tenho medo de o custo em tokens explodir ou de a análise ficar rasa quando o contexto não cabe. E é uma startup em fase inicial: o suporte ao Azure DevOps pode ser cidadão de segunda classe de novo, atrás do GitHub.",
+  "would_change_my_mind": "Se no piloto o custo real por story no nosso código passar de uns US$ 2 ou se mais da metade das afirmações não forem confirmadas pelos devs, eu não assino.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 15000
+}

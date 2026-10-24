@@ -1,0 +1,88 @@
+{
+ "business": "Esteira (SaaS B2B, Brasil). Unidade = 1 cliente pagante ativo no mês. Como days_per_month = 1, os campos *_per_day significam clientes ativos no mês. Preço R$ 2.500 para todos; Clientes Fundadores ganham preço travado por 24 meses em vez de desconto.",
+ "unit": "cliente-mês",
+ "price": 2500,
+ "variable": [
+  {
+   "label": "LLM: zero, modelo BYOK (a IA roda na assinatura ou API do próprio cliente, como no Maestri)",
+   "cost": 0
+  },
+  {
+   "label": "Infra por cliente: indexação, compute, storage (estimativa)",
+   "cost": 150
+  },
+  {
+   "label": "Imposto sobre receita, Simples Nacional ~6% (estimativa, confirmar com contador)",
+   "cost": 120
+  },
+  {
+   "label": "Cobrança via Asaas: Pix/boleto R$1,99 + NF R$0,49 por mês (asaas.com/precos-e-taxas)",
+   "cost": 5
+  },
+  {
+   "label": "Reserva para a garantia de 85% (20% acionam x 3 meses / 12 meses de vida)",
+   "cost": 100
+  }
+ ],
+ "fixed_monthly": [
+  {
+   "label": "Pró-labore do fundador (estimativa; 0 se bootstrap puro)",
+   "cost": 6000
+  },
+  {
+   "label": "Infra base de cloud e ambientes (estimativa)",
+   "cost": 1000
+  },
+  {
+   "label": "Ferramentas SaaS: GitHub, e-mail, CRM, domínio, monitoramento (estimativa)",
+   "cost": 1200
+  },
+  {
+   "label": "Contabilidade (estimativa)",
+   "cost": 500
+  },
+  {
+   "label": "IA do fundador para desenvolvimento (estimativa: 1 assinatura tipo Claude Max ~US$100 x R$5,50); pilotos rodam na IA do cliente",
+   "cost": 600
+  }
+ ],
+ "startup": [
+  {
+   "label": "Abertura de CNPJ e registro (estimativa)",
+   "cost": 1500
+  },
+  {
+   "label": "Jurídico: DPA/LGPD, termos de uso, contrato (estimativa)",
+   "cost": 6000
+  },
+  {
+   "label": "Pentest independente (estimativa)",
+   "cost": 15000
+  },
+  {
+   "label": "LLM e infra durante a construção do MVP (estimativa)",
+   "cost": 4000
+  },
+  {
+   "label": "Lançamento: landing, materiais, eventos (estimativa)",
+   "cost": 5000
+  }
+ ],
+ "days_per_month": 1,
+ "capacity_per_day": 15,
+ "plan_per_day": 10,
+ "ramp_per_day": [
+  0,
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ]
+}

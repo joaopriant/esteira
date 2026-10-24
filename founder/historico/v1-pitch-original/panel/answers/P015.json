@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação, então não assino nada antes de ver funcionar no nosso código. Só que dar acesso ao repositório para uma startup de fundador solo, mesmo somente leitura, passa pelo meu time de segurança, e da última vez isso levou 3 meses, então o piloto 'grátis' nem começa este mês.",
+  "objection": "Um fundador solo com acesso de leitura ao nosso código-fonte inteiro: quem garante onde esse código vai parar, qual modelo processa, e o que acontece se a empresa fechar? E mesmo que funcione, eu não tenho métrica de retrabalho hoje para provar o retorno para o CFO.",
+  "would_change_my_mind": "Opção de rodar dentro da nossa própria nuvem (sem o código sair do nosso ambiente), com documentação de segurança pronta (SOC 2 ou equivalente, DPA, LGPD) que encurte a aprovação, e um piloto que me entregue um antes/depois de retrabalho medido em stories reais.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 10000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Rodar no nosso ambiente e com código aberto resolve meu medo de entregar o código, mas aí mesmo é que penso: isso é uma Action chamando Claude com o repo e o card, meu time monta uma versão boa o bastante em uma ou duas sprints. Talvez eu topasse o piloto grátis por curiosidade, mas não assino R$ 2.500/mês agora.",
+  "objection": "Pagar licença recorrente para uma startup de um fundador por algo que parece um prompt bem feito sobre o repositório e que o meu time constrói internamente com MCP; e não tenho certeza se 'regra já existe de outro jeito' é detectado de verdade ou só gera ruído no card.",
+  "would_change_my_mind": "Um piloto no nosso repo mostrando que pegou as stories que voltaram na última sprint, com evidência que os devs confirmaram, e uma queda clara de retrabalho que eu não conseguiria replicar barato em casa.",
+  "price_too_cheap": 300,
+  "price_cheap": 900,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

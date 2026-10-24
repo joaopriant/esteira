@@ -1,0 +1,90 @@
+{
+ "n": 20,
+ "seed": 677932,
+ "customer": {
+  "business": "Esteira: revisor de user story contra o código para PMs (SaaS B2B, Brasil)",
+  "target": "Quem decide e paga ferramentas de produto/engenharia (Head de Produto, CTO, VP/Diretor de Engenharia, Head de QA) em scale-ups e empresas médias de software NÃO reguladas no Brasil, com 20 a 200 devs, usando Azure DevOps ou Jira com GitHub/GitLab, sem depender do ecossistema Atlassian para IA. Valores de salário e preço em reais (R$).",
+  "where": "Brasil (São Paulo, Florianópolis, BH, Recife, remoto)",
+  "age": [
+   29,
+   48
+  ],
+  "segments": [
+   {
+    "name": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+    "share": 0.41,
+    "income": [
+     280000,
+     520000
+    ]
+   },
+   {
+    "name": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+    "share": 0.35,
+    "income": [
+     420000,
+     900000
+    ]
+   },
+   {
+    "name": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+    "share": 0.24,
+    "income": [
+     220000,
+     400000
+    ]
+   }
+  ],
+  "behaviours": [
+   {
+    "name": "Já testou IA e se decepcionou",
+    "share": 0.24,
+    "how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato."
+   },
+   {
+    "name": "Stack Microsoft (Azure DevOps)",
+    "share": 0.18,
+    "how": "Usa Azure Boards + Azure Repos; sente que as ferramentas novas de IA sempre chegam primeiro para GitHub."
+   },
+   {
+    "name": "Early adopter de ferramentas de IA",
+    "share": 0.18,
+    "how": "Testa ferramenta nova toda semana, aceita piloto rápido, mas cancela no primeiro mês se ninguém usar."
+   },
+   {
+    "name": "Cuidadoso com orçamento",
+    "share": 0.15,
+    "how": "Corta assinatura de SaaS em todo trimestre; só compra se mostrar economia em horas de dev."
+   },
+   {
+    "name": "Segurança em primeiro lugar",
+    "share": 0.12,
+    "how": "Nenhuma ferramenta lê o código sem passar pelo time de segurança, DPA e questionário de fornecedor."
+   },
+   {
+    "name": "Constrói internamente",
+    "share": 0.12,
+    "how": "Prefere montar com Claude/GPT e MCP dentro de casa a pagar uma startup pequena."
+   }
+  ],
+  "objections": [
+   "Não vou dar acesso ao nosso código-fonte para uma startup de um fundador só",
+   "Se a IA afirmar uma regra de negócio errada, o PM leva o erro para a planning e eu perco a confiança do time",
+   "A Atlassian/GitHub vai lançar isso de graça dentro do Jira daqui a pouco",
+   "Meu tech lead já faz isso no refinamento, não vejo a dor",
+   "Meus PMs não vão adotar mais uma ferramenta",
+   "Quanto isso custa em tokens quando a base de código é grande?",
+   "Um dev meu monta isso com Claude Code num fim de semana",
+   "Como meço o retorno? Não tenho métrica de retrabalho hoje"
+  ],
+  "habits": [
+   "você tem 4 PMs e só 2 têm algum background técnico",
+   "na última sprint, duas stories voltaram do dev porque a regra já existia de outro jeito",
+   "seu time de QA escreve testes Playwright, mas a cobertura está atrasada",
+   "você acabou de renegociar o contrato do Jira e do GitHub Copilot",
+   "o board da empresa cobra eficiência de engenharia e uso de IA",
+   "seu time de segurança levou 3 meses para aprovar o último fornecedor"
+  ]
+ },
+ "pitch": "Esteira, uma startup brasileira em fase inicial: confronta cada user story do Jira ou Azure Boards com o código real do seu repositório (GitHub, GitLab, Bitbucket ou Azure Repos). Para o PM, mostra o que já existe, onde está, quais regras de negócio rodam de verdade e onde a story diverge; a spec revisada volta para o card. Para o QA, gera casos de teste e testes Playwright a partir da story e do código.\nToda afirmação vem com o arquivo e o trecho de código que a sustentam; sem evidência, diz \"não encontrei\".\nRoda inteiramente no seu ambiente: é uma GitHub Action / tarefa de Azure Pipelines (ou um container na sua nuvem) que usa a IA da sua empresa: a assinatura (Claude, ChatGPT) ou a chave de API (Azure OpenAI, Bedrock, Anthropic) que vocês já pagam. O seu código nunca sai do seu ambiente e nunca passa pelos nossos servidores; o resultado é escrito direto no card. O software é proprietário (código fechado). Para o seu time de segurança: o container só se comunica com o seu Jira/Azure, o seu repositório e a sua IA, e isso pode ser verificado no seu próprio firewall; entregamos relatório de pentest independente e a lista completa de dependências (SBOM).\nCusto de LLM na sua conta, medido em repositórios de referência: cerca de US$ 0,40 por story analisada (aprox. R$ 450/mês para 200 stories); o painel mostra o gasto em tempo real e permite colocar um teto.\nO que você paga para nós: a licença do app para Jira/Azure Boards (interface do PM, histórico, painel de acerto e retrabalho), atualizações e suporte. Piloto de 30 dias grátis com baseline: medimos quantas stories voltaram ou foram reabertas nos últimos 3 meses e entregamos o antes/depois e quantas afirmações os seus devs confirmaram.\nPreço: R$ 2.500 por mês por empresa, até 10 PMs, devs e QAs ilimitados. Clientes Fundadores: as 5 primeiras empresas travam o preço de R$ 2.500 por 24 meses e entram no conselho de roadmap, em troca de um caso de uso com números, até 31/03/2027.\nGarantia de continuidade, em contrato: o código-fonte fica depositado em escrow com um terceiro; se a Esteira fechar ou descontinuar o produto, a sua licença vira perpétua e gratuita e o código é liberado para a sua empresa manter sozinha."
+}

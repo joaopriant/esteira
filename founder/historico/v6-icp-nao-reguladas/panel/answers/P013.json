@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint perdi duas stories porque a regra já existia de outro jeito; é exatamente essa dor. Piloto grátis de 30 dias com baseline, rodando na nossa própria chave de IA, é o tipo de teste que eu topo na mesma semana, e R$ 2.500 é troco perto do custo de uma story voltando.",
+  "objection": "Esse US$ 0,40 por story foi medido em repositório de referência, não no nosso monorepo grande; tenho medo do custo de token explodir e, pior, dos PMs abrirem o painel duas vezes e esquecerem. Se no fim do mês ninguém estiver usando, eu cancelo.",
+  "would_change_my_mind": "Se no piloto o custo real por story no nosso repo passar de uns US$ 2 ou os PMs não usarem em pelo menos metade das stories, eu não converto para pago.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 5000,
+  "price_too_expensive": 9000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Minha cobertura de Playwright está atrasada e o preço fixo sem cobrança por token responde exatamente a minha dúvida sobre base de código grande; piloto grátis de 30 dias eu topo na hora e R$ 2.500/mês passa fácil com o CTO se o antes/depois mostrar número.",
+  "objection": "Os testes Playwright gerados rodam de verdade no nosso app ou viram mais uma pilha de teste quebrado que o meu time tem que consertar? Se no fim do piloto ninguém do QA estiver usando no dia a dia, eu cancelo, e o CTO ainda vai perguntar da falta de SOC 2.",
+  "would_change_my_mind": "Se na primeira semana do piloto os testes gerados não rodarem verdes no nosso CI sem retrabalho pesado, eu largo.",
+  "price_too_cheap": 400,
+  "price_cheap": 1500,
+  "price_expensive": 4500,
+  "price_too_expensive": 8000
+}

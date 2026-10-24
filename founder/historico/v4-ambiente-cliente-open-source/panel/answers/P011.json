@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "The dor é real, perdi duas stories na última sprint por regra que já existia, e rodar no nosso ambiente com a nossa chave de LLM e motor open source é exatamente o desenho certo. Mas uma startup em fase inicial não passa por segurança, jurídico e questionário de fornecedor em um mês; no máximo eu abro o piloto e a compra fica para o próximo trimestre.",
+  "objection": "Startup brasileira em estágio inicial, sem cliente regulado de referência, ainda acessa o Jira e escreve no card. Se ela quebrar ou a Atlassian/GitHub lançar algo parecido dentro do Jira, eu fiquei com mais uma integração para desmontar e um processo de homologação que gastou meses do time de segurança.",
+  "would_change_my_mind": "Um cliente de fintech ou seguradora já em produção que eu possa ligar, mais um pacote de segurança pronto (DPA, respostas ao questionário de fornecedor, escopo exato das permissões no Jira) que encurte a homologação para semanas.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 5000,
+  "price_too_expensive": 10000
+}

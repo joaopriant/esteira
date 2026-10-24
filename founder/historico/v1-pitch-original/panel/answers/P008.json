@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Minha cobertura Playwright está atrasada e R$ 2.500 por mês é menos que uma semana de um QA meu, então eu topo o piloto de 30 dias sem pensar muito. Mas só assino se, no fim do piloto, o QA estiver de fato rodando os testes gerados e os PMs usando sem eu cobrar.",
+  "objection": "Dar acesso de leitura a todo o meu código para uma startup de um fundador só me preocupa em segurança e continuidade, e ainda acho que um dev meu monta uma versão básica disso com Claude Code; se os testes gerados vierem frágeis ou ninguém usar, cancelo no primeiro mês.",
+  "would_change_my_mind": "Se no piloto os testes Playwright gerados não rodarem verdes no nosso CI com pouca edição, ou se o fornecedor não passar no nosso questionário de segurança (onde o código é processado, retenção, LGPD), eu não assino.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

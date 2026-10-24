@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Confesso que o desenho me chamou atencao: roda no nosso ambiente, tem tarefa de Azure Pipelines, usa nosso Azure OpenAI e o motor e auditavel. Mas e uma startup em fase inicial e o nosso processo de fornecedor leva meses, entao no primeiro mes nao tem compra nenhuma, no maximo eu levo para o time de seguranca olhar.",
+  "objection": "Startup brasileira em fase inicial dentro de uma empresa regulada: quem garante que eles existem daqui a 18 meses, quem da suporte quando quebrar, e o juridico vai pedir due diligence que eles talvez nem tenham. E ainda tem o risco de meus PMs nao adotarem mais uma ferramenta e eu ficar pagando licenca parada.",
+  "would_change_my_mind": "Um piloto que passe pela nossa seguranca rapido porque nao ha dado saindo do ambiente, com uma referencia de outra fintech ou seguradora usando em Azure DevOps e os numeros de retrabalho caindo de verdade nos nossos proprios cards.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

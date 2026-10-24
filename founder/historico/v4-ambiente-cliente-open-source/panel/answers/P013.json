@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint perdi duas stories exatamente porque a regra já existia de outro jeito, então isso ataca uma dor real minha. Piloto grátis, roda na nossa conta de LLM e é auditável: entro no piloto essa semana e, se os PMs usarem, pego a vaga de Cliente Fundador a R$ 1.500; se ninguém abrir o card depois de 3 semanas, cancelo sem dó.",
+  "objection": "Esse US$ 0,40 por story foi medido em repositório de referência, não no nosso monolito com anos de legado. Quero ver o gasto real de tokens no nosso código e se os PMs vão de fato ler a análise no card ou só ignorar mais um comentário automático.",
+  "would_change_my_mind": "Se no piloto o custo por story no nosso repositório passar de uns US$ 2, ou se menos da metade das afirmações forem confirmadas pelos devs, eu não pago.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Na última sprint duas stories voltaram porque a regra já existia de outro jeito, e é exatamente isso que essa ferramenta diz resolver. Piloto de 30 dias grátis com baseline e rodando no nosso ambiente com a nossa chave: eu ligo isso essa semana. R$ 2.500/mês é troco perto de uma story refeita, mas só sigo pagando se os PMs usarem de verdade depois do piloto.",
+  "objection": "Esse US$ 0,40 por story foi medido em repositório de referência, não no nosso monorepo. Quero ver quanto custa em tokens quando a base é grande e se as afirmações com trecho de código batem mesmo, ou se os PMs param de abrir no segundo sprint.",
+  "would_change_my_mind": "Se no piloto o custo por story no nosso repo real passar de uns US$ 2 ou os PMs não usarem nas primeiras duas semanas, eu cancelo.",
+  "price_too_cheap": 300,
+  "price_cheap": 1500,
+  "price_expensive": 4500,
+  "price_too_expensive": 9000
+}

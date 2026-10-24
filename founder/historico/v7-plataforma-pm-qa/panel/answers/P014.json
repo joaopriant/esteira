@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "R$ 2.500 is nothing for my budget and the evidence-per-claim design is exactly what I want after the Copilot hallucination mess, but I already paid once for AI promises. I'd run the free pilot on our monorepo, but I wouldn't sign anything in the first month before seeing the numbers.",
+  "objection": "US$ 0,40 por story foi medido em 'repositórios de referência', não numa base grande e bagunçada como a nossa. E é uma startup em fase inicial com código fechado: se as afirmações com arquivo e trecho estiverem erradas em 1 de cada 5, meus devs param de confiar em uma semana.",
+  "would_change_my_mind": "Fechar o piloto de 30 dias no nosso repositório com os devs confirmando a grande maioria das afirmações, queda mensurável de stories reabertas contra o baseline, e custo real de tokens perto do anunciado com o teto funcionando.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

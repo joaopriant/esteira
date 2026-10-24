@@ -1,0 +1,222 @@
+[
+ {
+  "id": "P001",
+  "name": "Ada",
+  "age": 40,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 744000,
+  "behaviour": "Já testou IA e se decepcionou",
+  "behaviour_how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato.",
+  "objection": "Meus PMs não vão adotar mais uma ferramenta",
+  "habit": "seu time de segurança levou 3 meses para aprovar o último fornecedor"
+ },
+ {
+  "id": "P002",
+  "name": "Olivia",
+  "age": 39,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 329000,
+  "behaviour": "Cuidadoso com orçamento",
+  "behaviour_how": "Corta assinatura de SaaS em todo trimestre; só compra se mostrar economia em horas de dev.",
+  "objection": "Se a IA afirmar uma regra de negócio errada, o PM leva o erro para a planning e eu perco a confiança do time",
+  "habit": "seu time de QA escreve testes Playwright, mas a cobertura está atrasada"
+ },
+ {
+  "id": "P003",
+  "name": "Omar",
+  "age": 41,
+  "segment": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+  "income": 295000,
+  "behaviour": "Já testou IA e se decepcionou",
+  "behaviour_how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato.",
+  "objection": "Se a IA afirmar uma regra de negócio errada, o PM leva o erro para a planning e eu perco a confiança do time",
+  "habit": "você tem 4 PMs e só 2 têm algum background técnico"
+ },
+ {
+  "id": "P004",
+  "name": "Ravi",
+  "age": 29,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 368000,
+  "behaviour": "Cuidadoso com orçamento",
+  "behaviour_how": "Corta assinatura de SaaS em todo trimestre; só compra se mostrar economia em horas de dev.",
+  "objection": "Não vou dar acesso ao nosso código-fonte para uma startup de um fundador só",
+  "habit": "o board da empresa cobra eficiência de engenharia e uso de IA"
+ },
+ {
+  "id": "P005",
+  "name": "Jade",
+  "age": 30,
+  "segment": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+  "income": 375000,
+  "behaviour": "Já testou IA e se decepcionou",
+  "behaviour_how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande?",
+  "habit": "seu time de segurança levou 3 meses para aprovar o último fornecedor"
+ },
+ {
+  "id": "P006",
+  "name": "Eli",
+  "age": 36,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 363000,
+  "behaviour": "Constrói internamente",
+  "behaviour_how": "Prefere montar com Claude/GPT e MCP dentro de casa a pagar uma startup pequena.",
+  "objection": "Não vou dar acesso ao nosso código-fonte para uma startup de um fundador só",
+  "habit": "na última sprint, duas stories voltaram do dev porque a regra já existia de outro jeito"
+ },
+ {
+  "id": "P007",
+  "name": "Dana",
+  "age": 42,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 859000,
+  "behaviour": "Segurança em primeiro lugar",
+  "behaviour_how": "Nenhuma ferramenta lê o código sem passar pelo time de segurança, DPA e questionário de fornecedor.",
+  "objection": "Se a IA afirmar uma regra de negócio errada, o PM leva o erro para a planning e eu perco a confiança do time",
+  "habit": "o board da empresa cobra eficiência de engenharia e uso de IA"
+ },
+ {
+  "id": "P008",
+  "name": "Oscar",
+  "age": 48,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 862000,
+  "behaviour": "Early adopter de ferramentas de IA",
+  "behaviour_how": "Testa ferramenta nova toda semana, aceita piloto rápido, mas cancela no primeiro mês se ninguém usar.",
+  "objection": "Um dev meu monta isso com Claude Code num fim de semana",
+  "habit": "seu time de QA escreve testes Playwright, mas a cobertura está atrasada"
+ },
+ {
+  "id": "P009",
+  "name": "Ben",
+  "age": 33,
+  "segment": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+  "income": 244000,
+  "behaviour": "Cuidadoso com orçamento",
+  "behaviour_how": "Corta assinatura de SaaS em todo trimestre; só compra se mostrar economia em horas de dev.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande?",
+  "habit": "seu time de QA escreve testes Playwright, mas a cobertura está atrasada"
+ },
+ {
+  "id": "P010",
+  "name": "Jordan",
+  "age": 47,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 518000,
+  "behaviour": "Stack Microsoft (Azure DevOps)",
+  "behaviour_how": "Usa Azure Boards + Azure Repos; sente que as ferramentas novas de IA sempre chegam primeiro para GitHub.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande?",
+  "habit": "o board da empresa cobra eficiência de engenharia e uso de IA"
+ },
+ {
+  "id": "P011",
+  "name": "Esme",
+  "age": 33,
+  "segment": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+  "income": 233000,
+  "behaviour": "Segurança em primeiro lugar",
+  "behaviour_how": "Nenhuma ferramenta lê o código sem passar pelo time de segurança, DPA e questionário de fornecedor.",
+  "objection": "A Atlassian/GitHub vai lançar isso de graça dentro do Jira daqui a pouco",
+  "habit": "na última sprint, duas stories voltaram do dev porque a regra já existia de outro jeito"
+ },
+ {
+  "id": "P012",
+  "name": "Arjun",
+  "age": 42,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 558000,
+  "behaviour": "Stack Microsoft (Azure DevOps)",
+  "behaviour_how": "Usa Azure Boards + Azure Repos; sente que as ferramentas novas de IA sempre chegam primeiro para GitHub.",
+  "objection": "Não vou dar acesso ao nosso código-fonte para uma startup de um fundador só",
+  "habit": "na última sprint, duas stories voltaram do dev porque a regra já existia de outro jeito"
+ },
+ {
+  "id": "P013",
+  "name": "Tomas",
+  "age": 39,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 480000,
+  "behaviour": "Early adopter de ferramentas de IA",
+  "behaviour_how": "Testa ferramenta nova toda semana, aceita piloto rápido, mas cancela no primeiro mês se ninguém usar.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande?",
+  "habit": "na última sprint, duas stories voltaram do dev porque a regra já existia de outro jeito"
+ },
+ {
+  "id": "P014",
+  "name": "Declan",
+  "age": 31,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 406000,
+  "behaviour": "Já testou IA e se decepcionou",
+  "behaviour_how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato.",
+  "objection": "Quanto isso custa em tokens quando a base de código é grande?",
+  "habit": "o board da empresa cobra eficiência de engenharia e uso de IA"
+ },
+ {
+  "id": "P015",
+  "name": "Noor",
+  "age": 34,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 302000,
+  "behaviour": "Já testou IA e se decepcionou",
+  "behaviour_how": "Pagou Copilot/ChatGPT Enterprise para o time, viu alucinação e agora exige prova no próprio código antes de qualquer contrato.",
+  "objection": "Como meço o retorno? Não tenho métrica de retrabalho hoje",
+  "habit": "seu time de segurança levou 3 meses para aprovar o último fornecedor"
+ },
+ {
+  "id": "P016",
+  "name": "Ezra",
+  "age": 46,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 875000,
+  "behaviour": "Constrói internamente",
+  "behaviour_how": "Prefere montar com Claude/GPT e MCP dentro de casa a pagar uma startup pequena.",
+  "objection": "Como meço o retorno? Não tenho métrica de retrabalho hoje",
+  "habit": "você acabou de renegociar o contrato do Jira e do GitHub Copilot"
+ },
+ {
+  "id": "P017",
+  "name": "Wes",
+  "age": 42,
+  "segment": "Engineering Manager ou Head de QA que influencia a compra, mas precisa de aprovação do CTO (salário anual em R$)",
+  "income": 310000,
+  "behaviour": "Early adopter de ferramentas de IA",
+  "behaviour_how": "Testa ferramenta nova toda semana, aceita piloto rápido, mas cancela no primeiro mês se ninguém usar.",
+  "objection": "Meus PMs não vão adotar mais uma ferramenta",
+  "habit": "seu time de segurança levou 3 meses para aprovar o último fornecedor"
+ },
+ {
+  "id": "P018",
+  "name": "Luis",
+  "age": 41,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 408000,
+  "behaviour": "Early adopter de ferramentas de IA",
+  "behaviour_how": "Testa ferramenta nova toda semana, aceita piloto rápido, mas cancela no primeiro mês se ninguém usar.",
+  "objection": "Como meço o retorno? Não tenho métrica de retrabalho hoje",
+  "habit": "você acabou de renegociar o contrato do Jira e do GitHub Copilot"
+ },
+ {
+  "id": "P019",
+  "name": "Poppy",
+  "age": 42,
+  "segment": "Head/Diretor(a) de Produto em scale-up de 20 a 80 devs (salário anual em R$)",
+  "income": 314000,
+  "behaviour": "Stack Microsoft (Azure DevOps)",
+  "behaviour_how": "Usa Azure Boards + Azure Repos; sente que as ferramentas novas de IA sempre chegam primeiro para GitHub.",
+  "objection": "Se a IA afirmar uma regra de negócio errada, o PM leva o erro para a planning e eu perco a confiança do time",
+  "habit": "você tem 4 PMs e só 2 têm algum background técnico"
+ },
+ {
+  "id": "P020",
+  "name": "Freya",
+  "age": 35,
+  "segment": "CTO ou VP de Engenharia em empresa de 50 a 200 devs (salário anual em R$)",
+  "income": 655000,
+  "behaviour": "Stack Microsoft (Azure DevOps)",
+  "behaviour_how": "Usa Azure Boards + Azure Repos; sente que as ferramentas novas de IA sempre chegam primeiro para GitHub.",
+  "objection": "Meu tech lead já faz isso no refinamento, não vejo a dor",
+  "habit": "você acabou de renegociar o contrato do Jira e do GitHub Copilot"
+ }
+]

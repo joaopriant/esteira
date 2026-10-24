@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "R$ 2.500 é troco pro meu orçamento, mas isso é basicamente um agente com MCP lendo Jira e repo usando a nossa própria IA; meu time de plataforma monta uma versão disso em duas sprints. Acabei de fechar Jira e Copilot, não vou pôr mais um fornecedor pequeno e de código fechado na cadeia por algo que dá pra construir em casa.",
+  "objection": "Não tenho métrica de retrabalho hoje, então não sei medir o retorno, e o que vocês vendem de diferente é o prompt e a cola entre Jira e repo, que é exatamente o que eu consigo replicar internamente.",
+  "would_change_my_mind": "Um piloto em que o baseline de stories reabertas mostre queda real no nosso próprio repositório, e que fique claro que construir internamente com a mesma qualidade de evidência custaria mais do que a licença.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

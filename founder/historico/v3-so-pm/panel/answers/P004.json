@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A ideia conversa com o que o board me cobra, mas não vou plugar nosso repositório numa startup em fase inicial, sem SOC 2, só porque o piloto é grátis. Meu CTO e o jurídico barram isso antes de eu conseguir medir qualquer economia de horas de dev.",
+  "objection": "Dar acesso de leitura ao nosso código para uma empresa nova, que pode sumir ou vazar algo, sem SOC 2 e sem referência de cliente parecido com a gente. O Modo Cofre ajuda no papel, mas ainda é o código deles rodando sobre o nosso.",
+  "would_change_my_mind": "Rodar o container dentro da nossa própria nuvem com a nossa chave de LLM, aprovado pelo nosso time de segurança, mais um caso real de uma scale-up brasileira parecida mostrando menos stories reabertas em horas de dev economizadas.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}

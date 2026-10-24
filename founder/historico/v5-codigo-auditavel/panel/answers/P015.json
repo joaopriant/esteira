@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Já paguei Copilot e ChatGPT Enterprise e vi alucinação; não assino nada antes de ver funcionando no meu código. O piloto grátis com baseline e rodando no nosso ambiente é exatamente o formato que aceito, mas no primeiro mês eu faria só o piloto, não pagaria.",
+  "objection": "Startup em fase inicial dizendo que 'não encontrei' resolve alucinação. Quero ver quantas das afirmações os meus devs realmente confirmam em stories nossas, e se a métrica de retrabalho do baseline é confiável, porque hoje eu não meço isso e não sei se o antes/depois vai ser real ou só bonito no slide.",
+  "would_change_my_mind": "Um piloto em que a maioria das afirmações seja confirmada pelos devs e o baseline mostre queda clara de stories reabertas; com isso e o aval do time de segurança depois de ler o código, eu assino.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

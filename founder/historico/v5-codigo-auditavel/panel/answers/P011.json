@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "A dor é real, tive duas stories voltando na última sprint, e rodar no nosso ambiente com a nossa chave de LLM e código auditável é exatamente o desenho certo. Mas mesmo o piloto lê o nosso código, e em empresa regulada isso passa por segurança, jurídico, DPA e questionário de fornecedor: num mês normal isso não sai, e uma startup em fase inicial sem nenhum cliente regulado de referência fica no fim da fila.",
+  "objection": "Fornecedor em fase inicial dentro de um ambiente regulado: quem mais do meu setor já aprovou isso no time de segurança, e o compliance aceita mandar trechos do nosso código para o modelo, mesmo sendo a nossa conta? Fora isso, tenho medo de que a Atlassian ou o GitHub coloquem algo parecido dentro do Jira e eu tenha investido meses de onboarding à toa.",
+  "would_change_my_mind": "Uma fintech ou seguradora brasileira de referência que já passou pelo processo de segurança e topa conversar comigo, junto com um pacote de segurança pronto (questionário de fornecedor respondido, DPA, arquitetura e lista exata do que é enviado ao LLM) para o meu time de segurança aprovar o piloto em semanas, não meses.",
+  "price_too_cheap": 500,
+  "price_cheap": 1500,
+  "price_expensive": 6000,
+  "price_too_expensive": 12000
+}

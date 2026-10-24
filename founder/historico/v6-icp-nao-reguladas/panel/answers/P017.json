@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "Piloto grátis de 30 dias, roda como GitHub Action com a nossa chave de LLM e o código é auditável, então não preciso esperar 3 meses de segurança pra testar; e como o resultado cai direto no card, o PM não tem que abrir mais uma ferramenta. Eu ligo o piloto essa semana e levo o antes/depois pro CTO.",
+  "objection": "Meus PMs não vão adotar mais uma coisa: se em 30 dias eles ignorarem os comentários no card e os devs não confirmarem as afirmações, eu cancelo e o CTO nem chega a aprovar a licença. Também desconfio da qualidade dos testes Playwright gerados no nosso código real.",
+  "would_change_my_mind": "Se no piloto menos da metade dos PMs usar a spec revisada ou se a taxa de afirmações confirmadas pelos devs for baixa, eu viro um não.",
+  "price_too_cheap": 300,
+  "price_cheap": 1200,
+  "price_expensive": 4000,
+  "price_too_expensive": 7000
+}

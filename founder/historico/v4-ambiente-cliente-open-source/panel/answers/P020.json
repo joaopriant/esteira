@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Meus tech leads já confrontam a story com o código no refinamento, e eu acabei de renegociar Jira e Copilot; a aposta da casa é o Rovo cobrir isso dentro do Atlassian antes de eu colocar mais uma ferramenta avulsa de startup em fase inicial.",
+  "objection": "Não vejo a dor grande o suficiente para justificar mais um fornecedor, mais um app no Jira e mais uma conta de LLM para governar, ainda mais de uma empresa que pode não existir daqui a um ano e que o Rovo ou o Copilot podem engolir.",
+  "would_change_my_mind": "O piloto grátis mostrando, nos meus próprios dados, que uma fatia relevante das stories volta ou é reaberta por divergência com o código e que a ferramenta reduz isso de forma clara, algo que o Rovo comprovadamente não faz hoje.",
+  "price_too_cheap": 300,
+  "price_cheap": 1000,
+  "price_expensive": 2500,
+  "price_too_expensive": 5000
+}
