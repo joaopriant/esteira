@@ -42,10 +42,14 @@ Data: 24/10/2026. Conferido contra a seção 8 de `modelo-de-ameacas.md` e o ADR
 
 | Ameaça | Onde | Estado |
 |---|---|---|
-| Token do Radar em arquivo | `conectarRadar` grava só no cofre (`radar:teams`, `radar:slack`). O teste varre o diretório de dados e não acha o token de exemplo. `credenciaisRadar` devolve booleano. | ok, com teste |
+| Token do Radar em arquivo | `conectarRadar` grava só no cofre (`radar:teams`, `radar:slack`, `radar:whatsapp`). O teste varre o diretório de dados e não acha o token de exemplo. `credenciaisRadar` devolve booleano. Caminho de Granola/Plaud fica relativo a `radar-import`. | ok, com teste |
 | Envio em canal | `pedidoLeitura` só devolve GET para `graph.microsoft.com` ou `slack.com`, ou `null` para WhatsApp, Granola e Plaud. Não há método de postar mensagem. Sem token, o leitor real não chama a rede. | ok, com teste |
 | Caminho da importação | `lerPasta` usa `caminhoSeguro`. `../` volta lista vazia e não lê o arquivo de fora. | ok, com teste |
 | Prompt injection | Linha de ordem sai em `sanitizarTextoExterno` antes do Claude. Citação que não é substring não vira prova. O teste de importação mista não deixa o segredo na sugestão; texto só de injeção não gera sugestão. O contexto do `claude -p` marca o sinal como dado e diz para não enviar mensagem. | ok, com teste |
 | Publicar a partir do Radar | `enviarParaEsteira` chama `iniciarEsteira`. O único caminho de escrita no board continua sendo `publicar`. | ok |
 
 Aceito: o nome de quem fala no Slack real pode ser o id da conta, porque não fazemos uma segunda chamada para resolver o perfil. A transcrição colada continua podendo trazer dado pessoal; ela fica no JSON local da máquina do PM, como a story.
+
+## Incremento — Conexões e React Bits
+
+Data: 25/10/2026. Sem dependência nova, então não houve `npm audit` adicional. O token de WhatsApp entra na conta `radar:whatsapp` e o teste de `tests/conexoes.test.ts` confirma que ele não aparece em arquivo. A pasta recusa `..`. Os componentes visuais não abrem rede e não mudam a CSP.

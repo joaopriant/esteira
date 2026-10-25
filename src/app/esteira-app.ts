@@ -10,6 +10,7 @@ import type {
   EstatisticaBloco,
   EstadoApp,
   FonteRadar,
+  PainelConexoes,
   ModuloWiki,
   PassoExecucao,
   Produto,
@@ -50,7 +51,7 @@ import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
-import { contaDoPat, contaRadar, nomePastaSeguro, validarOrgUrl } from '../adapters/seguro'
+import { caminhoSeguro, contaDoPat, contaRadar, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
 import type { AzurePort, ClaudePort } from '../ports'
 
 interface ConfigDisco {
@@ -65,6 +66,7 @@ interface ConfigDisco {
   timeoutBlocoMs: number
   modeloStory: string
   fluxo: BlocoFluxo[]
+  pastasRadar?: Partial<Record<'whatsapp' | 'granola' | 'plaud', string>>
 }
 
 function hashTexto(texto: string): string {
@@ -110,6 +112,7 @@ export class EsteiraApp {
       if (wiki.modulos.some((modulo) => modulo.estado === 'gerando')) gerando = true
     }
     const sugestoes = await this.lerSugestoes()
+    const painel = await this.montarPainel()
     return {
       ajustes,
       produtos,
@@ -117,6 +120,7 @@ export class EsteiraApp {
       stories,
       filaWiki: { produtoId: produtos[0]?.id ?? '', pendentes, gerando: gerando || this.fila.length > 0 },
       radarPendentes: sugestoes.filter((item) => item.estado === 'nova').length,
+      conexoesAtivas: painel.ativas,
     }
   }
 
@@ -441,7 +445,7 @@ export class EsteiraApp {
     return story
   }
 
-  async conectarRadar(provedor: 'teams' | 'slack', token: string): Promise<{ conectado: true }> {
+  async conectarRadar(provedor: 'teams' | 'slack' | 'whatsapp', token: string): Promise<{ conectado: true }> {
     const limpo = token.trim()
     if (limpo.length < 8) throw new Error('O token de leitura está curto demais.')
     if (/[\r\n\0]/.test(limpo)) throw new Error('Token inválido.')
@@ -449,12 +453,110 @@ export class EsteiraApp {
     return { conectado: true }
   }
 
-  async credenciaisRadar(): Promise<{ teams: boolean; slack: boolean }> {
-    const [teams, slack] = await Promise.all([
+  async desconectarRadar(provedor: ProvedorRadar): Promise<{ ok: true }> {
+    if (provedor === 'teams' || provedor === 'slack' || provedor === 'whatsapp') {
+      await this.deps.segredos.apagar(contaRadar(provedor))
+    }
+    if (provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud') {
+      const config = await this.config()
+      if (config.pastasRadar?.[provedor]) {
+        delete config.pastasRadar[provedor]
+        await this.deps.disco.gravarJson('config.json', config)
+      }
+    }
+    return { ok: true }
+  }
+
+  async salvarPastaRadar(provedor: 'whatsapp' | 'granola' | 'plaud', caminho: string): Promise<{ caminho: string }> {
+    const relativo = this.normalizarPasta(provedor, caminho)
+    const config = await this.config()
+    const pastas = { ...(config.pastasRadar ?? {}) }
+    if (relativo) pastas[provedor] = relativo
+    else delete pastas[provedor]
+    config.pastasRadar = pastas
+    await this.deps.disco.gravarJson('config.json', config)
+    if (relativo) {
+      const cheio = caminhoSeguro(this.pastaRadar(provedor), relativo)
+      await fs.mkdir(path.dirname(cheio), { recursive: true })
+    }
+    return { caminho: relativo }
+  }
+
+  async credenciaisRadar(): Promise<{ teams: boolean; slack: boolean; whatsapp: boolean }> {
+    const [teams, slack, whatsapp] = await Promise.all([
       this.deps.segredos.ler(contaRadar('teams')),
       this.deps.segredos.ler(contaRadar('slack')),
+      this.deps.segredos.ler(contaRadar('whatsapp')),
     ])
-    return { teams: Boolean(teams), slack: Boolean(slack) }
+    return { teams: Boolean(teams), slack: Boolean(slack), whatsapp: Boolean(whatsapp) }
+  }
+
+  async painelConexoes(): Promise<PainelConexoes> {
+    return this.montarPainel()
+  }
+
+  async testarRadar(provedor: ProvedorRadar): Promise<{ ok: boolean; status: PainelConexoes['radar'][number]['status']; detalhe: string }> {
+    const item = (await this.montarPainel()).radar.find((conexao) => conexao.provedor === provedor)
+    if (!item) throw new Error('Fonte desconhecida.')
+    if (this.deps.modo === 'falso' || provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud') {
+      return { ok: item.status !== 'nao-conectado', status: item.status, detalhe: item.detalhe }
+    }
+    const token = await this.deps.segredos.ler(contaRadar(provedor))
+    if (!token) return { ok: item.status !== 'nao-conectado', status: item.status, detalhe: item.detalhe }
+    const url = provedor === 'teams' ? 'https://graph.microsoft.com/v1.0/me' : 'https://slack.com/api/auth.test'
+    try {
+      const resposta = await fetch(url, { method: 'GET', headers: { authorization: `Bearer ${token}`, accept: 'application/json' } })
+      if (!resposta.ok) return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas o host recusou a leitura.' }
+      return { ok: true, status: 'conectado', detalhe: 'A leitura respondeu. Nenhuma mensagem foi enviada.' }
+    } catch {
+      return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas não houve resposta do host.' }
+    }
+  }
+
+  async testarAzure(): Promise<{ ok: boolean; detalhe: string }> {
+    const config = await this.config()
+    if (!config.conectado) return { ok: false, detalhe: 'Nenhum PAT no cofre para esta organização.' }
+    try {
+      const repos = await (await this.clienteAzure()).listarRepositorios()
+      const n = repos.length
+      return { ok: true, detalhe: `O PAT leu ${n} ${n === 1 ? 'repositório' : 'repositórios'}. Escopos pedidos: Code Read e Work Items Read & Write.` }
+    } catch (erro) {
+      const mensagem = erro instanceof Error ? erro.message : 'Falha ao ler o Azure.'
+      return { ok: false, detalhe: redigirSegredo(mensagem).slice(0, 240) }
+    }
+  }
+
+  async testarClaude(): Promise<{ instalado: boolean; autenticado: boolean; detalhe: string }> {
+    const ajustes = await this.ajustes()
+    let binario: string
+    try {
+      binario = validarBinario(ajustes.claudeBin)
+    } catch (erro) {
+      return { instalado: false, autenticado: false, detalhe: erro instanceof Error ? erro.message : 'Executável inválido.' }
+    }
+    if (this.deps.modo === 'falso') {
+      return { instalado: true, autenticado: true, detalhe: 'Modo exemplo. O Claude desta máquina responde sem rede e sem chave de API.' }
+    }
+    const processo = criarProcesso()
+    try {
+      const versao = await processo.executar({ comando: binario, args: ['--version'], timeoutMs: 8_000 })
+      if (versao.codigo !== 0) return { instalado: false, autenticado: false, detalhe: 'O executável não respondeu a --version.' }
+    } catch {
+      return { instalado: false, autenticado: false, detalhe: 'Não encontrei o executável do Claude nesta máquina.' }
+    }
+    try {
+      const prova = await processo.executar({
+        comando: binario,
+        args: ['-p', 'Responda somente a palavra ok.', '--permission-mode', 'dontAsk'],
+        timeoutMs: Math.min(ajustes.timeoutBlocoMs, 20_000),
+      })
+      if (prova.codigo === 0 && /\bok\b/i.test(prova.stdout)) {
+        return { instalado: true, autenticado: true, detalhe: 'O Claude respondeu ao claude -p com a assinatura desta máquina.' }
+      }
+      return { instalado: true, autenticado: false, detalhe: 'O binário existe, mas o claude -p não confirmou a assinatura.' }
+    } catch {
+      return { instalado: true, autenticado: false, detalhe: 'O claude -p passou do tempo ou não pôde ser executado.' }
+    }
   }
 
   async semearRadarSeVazio(): Promise<void> {
@@ -1190,6 +1292,101 @@ export class EsteiraApp {
     const achado = (await this.produtos()).find((item) => item.id === id)
     if (!achado) throw new Error('Não encontrei o produto.')
     return achado
+  }
+
+  private pastaRadar(provedor: ProvedorRadar): string {
+    return path.join(this.deps.dataDir, 'radar-import', provedor)
+  }
+
+  private async pastaTemArquivo(provedor: ProvedorRadar): Promise<boolean> {
+    try {
+      const nomes = await fs.readdir(this.pastaRadar(provedor))
+      return nomes.some((nome) => !nome.startsWith('.'))
+    } catch {
+      return false
+    }
+  }
+
+  private normalizarPasta(provedor: 'whatsapp' | 'granola' | 'plaud', caminho: string): string {
+    const texto = caminho.trim()
+    if (!texto) return ''
+    if (/[\r\n\0]/.test(texto)) throw new Error('Caminho inválido.')
+    const barra = texto.replace(/\\/g, '/')
+    const marca = `radar-import/${provedor}/`
+    const indice = barra.lastIndexOf(marca)
+    let relativo = indice >= 0 ? barra.slice(indice + marca.length) : barra
+    if (path.isAbsolute(texto) && indice < 0) throw new Error('A pasta precisa ficar dentro de radar-import.')
+    relativo = relativo.replace(/^\.\/+/, '').replace(/\/+$/, '')
+    if (!relativo || relativo === '.') return ''
+    if (relativo.startsWith('/') || relativo.includes('..')) throw new Error('Caminho fora da pasta permitida.')
+    caminhoSeguro(this.pastaRadar(provedor), relativo)
+    return relativo.slice(0, 300)
+  }
+
+  private async montarPainel(): Promise<PainelConexoes> {
+    const ajustes = await this.ajustes()
+    const config = await this.config()
+    const fontes = await this.fontesRadar()
+    const creditos = await this.credenciaisRadar()
+    const nomes: Record<ProvedorRadar, string> = {
+      teams: 'Microsoft Teams',
+      slack: 'Slack',
+      whatsapp: 'WhatsApp',
+      granola: 'Granola',
+      plaud: 'Plaud',
+    }
+    const radar: PainelConexoes['radar'] = []
+    for (const provedor of ['teams', 'slack', 'whatsapp', 'granola', 'plaud'] as const) {
+      const tokenNoCofre = provedor === 'granola' || provedor === 'plaud' ? false : creditos[provedor]
+      const caminhoSalvo = provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud' ? config.pastasRadar?.[provedor] ?? '' : ''
+      const temArquivo = await this.pastaTemArquivo(provedor)
+      const temFonte = fontes.some((fonte) => fonte.provedor === provedor && fonte.ativa)
+      let status: PainelConexoes['radar'][number]['status'] = 'nao-conectado'
+      let detalhe = 'Nada ligado. O app não lê este canal.'
+      if (tokenNoCofre) {
+        status = 'conectado'
+        detalhe = provedor === 'whatsapp'
+          ? 'Token no cofre. O app não envia mensagem. A leitura entra pela pasta local.'
+          : 'Token de leitura no cofre. A consulta, quando existe, é só GET.'
+      } else if (caminhoSalvo || temArquivo || (this.deps.modo === 'falso' && temFonte)) {
+        status = 'pasta-local'
+        detalhe = this.deps.modo === 'falso' && !temArquivo && !caminhoSalvo
+          ? 'Exemplo local. A leitura não sai desta máquina.'
+          : 'Pasta local ativa. Os arquivos ficam nesta máquina.'
+      }
+      radar.push({
+        provedor,
+        nome: nomes[provedor],
+        status,
+        detalhe,
+        tokenNoCofre,
+        pasta: this.pastaRadar(provedor),
+        caminhoSalvo,
+        fontes: fontes.filter((fonte) => fonte.provedor === provedor),
+      })
+    }
+    const azureConectado = ajustes.conectado
+    const claudeExemplo = this.deps.modo === 'falso'
+    const ativas = radar.filter((item) => item.status !== 'nao-conectado').length + (azureConectado ? 1 : 0) + (claudeExemplo ? 1 : 0)
+    return {
+      radar,
+      azure: {
+        orgUrl: ajustes.orgUrl,
+        conectado: azureConectado,
+        escopos: 'Code Read e Work Items Read & Write',
+        detalhe: azureConectado ? 'PAT no cofre desta máquina. A tela não recebe o token de volta.' : 'Nenhum PAT no cofre.',
+      },
+      claude: {
+        binario: ajustes.claudeBin,
+        timeoutBlocoMs: ajustes.timeoutBlocoMs,
+        instalado: claudeExemplo ? true : null,
+        autenticado: claudeExemplo ? true : null,
+        detalhe: claudeExemplo
+          ? 'Modo exemplo. O Claude falso responde sem chave de API.'
+          : 'Ainda não verificado. Testar roda claude -p nesta máquina.',
+      },
+      ativas,
+    }
   }
 
   private async config(): Promise<ConfigDisco> {

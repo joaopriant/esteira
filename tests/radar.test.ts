@@ -65,7 +65,7 @@ describe('radar', () => {
     expect((await app.sugestoesRadar()).find((item) => item.id === ruido!.id)?.estado).toBe('descartada')
     const arquivos = await lerTudo(dataDir)
     expect(arquivos).not.toContain('token-de-teste-leitura')
-    expect(await app.credenciaisRadar()).toEqual({ teams: false, slack: true })
+    expect(await app.credenciaisRadar()).toEqual({ teams: false, slack: true, whatsapp: false })
   })
 
   it('descarta injeção antes de virar sugestão e isola o texto no prompt', async () => {

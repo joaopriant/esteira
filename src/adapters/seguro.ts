@@ -57,7 +57,7 @@ export function contaDoPat(orgUrl: string): string {
   return `azure-devops:${validarOrgUrl(orgUrl).origin}${validarOrgUrl(orgUrl).pathname.replace(/\/$/, '')}`
 }
 
-export function contaRadar(provedor: 'teams' | 'slack'): string {
+export function contaRadar(provedor: 'teams' | 'slack' | 'whatsapp'): string {
   return `radar:${provedor}`
 }
 

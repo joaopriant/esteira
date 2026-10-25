@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { EstadoApp, Produto, Repositorio, WikiProduto } from '../../shared/tipos'
 import { chamar } from '../api'
+import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
+import { AnimatedList } from '../components/react-bits/AnimatedList'
+import { BlurText } from '../components/react-bits/BlurText'
+import { CountUp } from '../components/react-bits/CountUp'
+import { ShinyText } from '../components/react-bits/ShinyText'
+import { SpotlightCard } from '../components/react-bits/SpotlightCard'
 import { Erro, Vazio, mensagemDe } from '../ui'
 
 type Remoto = { id: string; nome: string; projeto: string; remoteUrl: string; branchPadrao: string }
@@ -69,9 +75,8 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
   return (
     <>
       <div className="titulo">
-        <h1>Produtos</h1>
-        <button
-          className="btn"
+        <h1><BlurText text="Produtos" /></h1>
+        <AcaoPrimaria
           type="button"
           disabled={Boolean(ocupado) || !estado.ajustes.conectado}
           onClick={() =>
@@ -80,13 +85,13 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
             })
           }
         >
-          {ocupado === 'Clonando' ? 'Trazendo' : 'Trazer os escolhidos'}
-        </button>
+          {ocupado === 'Clonando' ? <ShinyText text="Trazendo" /> : 'Trazer os escolhidos'}
+        </AcaoPrimaria>
       </div>
       <p className="sub">Um produto junta repositórios que o PM lê junto. A wiki dele só fica pronta depois do clone.</p>
       <Erro texto={erro} />
       {aviso && <p className="sub">{aviso}</p>}
-      {!estado.ajustes.conectado && <Vazio>Conecte a organização em Ajustes para listar os repositórios.</Vazio>}
+      {!estado.ajustes.conectado && <Vazio>Conecte a organização em Conexões para listar os repositórios.</Vazio>}
       {estado.ajustes.conectado && lista.length === 0 && <Vazio>A organização não devolveu repositório.</Vazio>}
       {lista.length > 0 && (
         <div className="tabela">
@@ -150,37 +155,25 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
         </div>
         {estado.produtos.length === 0 && <Vazio>Nenhum produto. Escolha repositórios já clonados e dê um nome.</Vazio>}
         {estado.produtos.length > 0 && (
-          <div className="tabela">
-          <table className="lista">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Repositórios</th>
-                <th>Depende de</th>
-                <th>Wiki</th>
-              </tr>
-            </thead>
-            <tbody>
-              {estado.produtos.map((produto) => {
-                const wiki = wikis[produto.id]
-                const prontos = wiki?.modulos.filter((modulo) => modulo.estado === 'pronto').length ?? 0
-                const total = wiki?.modulos.length ?? 0
-                return (
-                  <tr key={produto.id} aria-current={produto.id === editando ? 'true' : undefined}>
-                    <td>
-                      <button className="link" type="button" aria-current={produto.id === editando ? 'true' : undefined} onClick={() => setEditando(produto.id)}>
-                        {produto.nome}
-                      </button>
-                    </td>
-                    <td>{nomesRepos(produto, estado.repositorios)}</td>
-                    <td>{produto.dependeDe.length === 0 ? '—' : produto.dependeDe.map((id) => estado.produtos.find((item) => item.id === id)?.nome ?? id).join(', ')}</td>
-                    <td className="num">{wiki ? `${prontos}/${total}` : '—'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          </div>
+          <AnimatedList className="conexoes-grade">
+            {estado.produtos.map((produto) => {
+              const wiki = wikis[produto.id]
+              const prontos = wiki?.modulos.filter((modulo) => modulo.estado === 'pronto').length ?? 0
+              const total = wiki?.modulos.length ?? 0
+              return (
+                <SpotlightCard as="article" className="conexao-card" key={produto.id}>
+                  <h3>
+                    <button className="link" type="button" aria-current={produto.id === editando ? 'true' : undefined} onClick={() => setEditando(produto.id)}>
+                      {produto.nome}
+                    </button>
+                  </h3>
+                  <p>{nomesRepos(produto, estado.repositorios)}</p>
+                  <p className="sub">Depende de {produto.dependeDe.length === 0 ? 'ninguém' : produto.dependeDe.map((id) => estado.produtos.find((item) => item.id === id)?.nome ?? id).join(', ')}</p>
+                  <p className="sub">Wiki {wiki ? <><CountUp to={prontos} />/<CountUp to={total} /></> : '—'}</p>
+                </SpotlightCard>
+              )
+            })}
+          </AnimatedList>
         )}
         <Editor
           produto={estado.produtos.find((item) => item.id === editando)}

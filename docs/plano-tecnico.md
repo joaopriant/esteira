@@ -104,6 +104,12 @@ O fluxo deixa de ser formulário empilhado. A tela monta três zonas (fontes, bl
 
 Testes novos: `tests/radar.test.ts` (cinco fontes, prova, envio, injeção, leitura local, presets). Os testes da v1 continuam iguais.
 
+## Incremento — React Bits, canvas contido e Conexões
+
+Data: 25/10/2026. ADR 0007.
+
+A tela Conexões concentra Azure DevOps, Claude Code e as cinco fontes do Radar. O token de Teams, Slack e WhatsApp entra só no cofre. Granola e Plaud apontam para um caminho dentro de `radar-import`. O canvas de fluxo passou a card HTML com altura do conteúdo; o SVG só liga as caixas. Os efeitos visuais não adicionam dependência. `tests/conexoes.test.ts` cobre cofre, caminho e vínculo de canal. `tests/ui-bits.test.tsx` confere que o texto final está no HTML.
+
 ## Fora deste plano
 
 Servidor, telemetria, Jira, canvas com ramificação ou condição, login de vários PMs, assinatura digital do instalador, escrever em Teams, Slack ou WhatsApp.

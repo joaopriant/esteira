@@ -1,0 +1,116 @@
+.rb-spotlight {
+  position: relative;
+  z-index: 0;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.rb-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--spotlight, rgba(27, 108, 128, 0.16)), transparent 42%);
+  transition: opacity 160ms linear;
+}
+.rb-spotlight:hover::before { opacity: 1; }
+
+.rb-shiny {
+  display: inline;
+  background-image: linear-gradient(100deg, currentColor 0%, currentColor 38%, #f4fbfc 50%, currentColor 62%, currentColor 100%);
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: rb-brilho 2.8s linear infinite;
+}
+.rb-gradient {
+  color: var(--text);
+  background-image: linear-gradient(100deg, var(--text) 0%, var(--text) 42%, var(--accent) 78%, var(--text) 100%);
+  background-size: 180% 100%;
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .rb-gradient:not(.rb-quieto) {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+}
+.rb-blur { animation: rb-revelar 0.7s ease both; }
+.rb-decrypt { animation: rb-decifrar 0.8s steps(8, end) both; }
+.rb-quieto,
+.rb-quieto.rb-shiny,
+.rb-quieto.rb-gradient,
+.rb-quieto.rb-blur,
+.rb-quieto.rb-decrypt {
+  animation: none;
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+  background: none;
+}
+
+.rb-item { animation: rb-subir 0.45s ease both; }
+.rb-magnet {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: middle;
+}
+.rb-star {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  position: relative;
+  border-radius: 8px;
+}
+.rb-star.ativo::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: conic-gradient(from var(--star-angle, 0deg), transparent 0 78%, var(--accent) 88%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: rb-giro 8s linear infinite;
+}
+.rb-star-bloco { display: block; width: 100%; }
+.rb-dots {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes rb-brilho { to { background-position: -120% 0; } }
+@keyframes rb-revelar { from { filter: blur(6px); opacity: 0.35; } to { filter: blur(0); opacity: 1; } }
+@keyframes rb-decifrar { from { letter-spacing: 0.12em; opacity: 0.4; } to { letter-spacing: -0.02em; opacity: 1; } }
+@keyframes rb-subir { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes rb-giro { to { --star-angle: 360deg; } }
+@property --star-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-shiny, .rb-gradient, .rb-blur, .rb-decrypt, .rb-item, .rb-star.ativo::after, .rb-magnet {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+    letter-spacing: inherit;
+    opacity: 1;
+  }
+  .rb-shiny, .rb-gradient {
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
+    background: none;
+  }
+}

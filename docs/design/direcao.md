@@ -19,4 +19,8 @@ Sorteio do modo de app (`design-taste-frontend`, kind `builder`): estilo **frame
 - Medição: o que foi aceito, o que foi descartado, e quantas vezes o card voltou?
 - Ajustes: a organização está conectada, qual é o modelo da story e para onde o card vai?
 
-Nada de painel de KPI, gradiente ou ícone em quadrado colorido. Contagem de achados fica na lista, em número tabular, não em cartão.
+Nada de painel de KPI ou ícone em quadrado colorido. Contagem de achados fica na lista, em número tabular. A Medição continua tabela: o número anima (`CountUp`) e um único cartão repete a frase de totais, sem virar fileira de indicador.
+
+**React Bits, 25/10/2026.** Os efeitos (brilho no status, revelação do título, borda no botão principal, spotlight no card, grade de pontos no canvas) estão em CSS próprio, sem dependência nova. A cor do gradiente é a tinta do produto, não um arco-íris. `prefers-reduced-motion` desliga a animação e deixa o texto final. O canvas não usa texto em SVG: o card cresce com o conteúdo e a curva é medida depois. Detalhe no ADR 0007.
+
+**Conexões.** A pergunta da tela é: o que esta máquina já consegue ler, e o que ainda falta ligar? Token e PAT ficam no cofre. Ajustes guarda só o modelo da story e o mapa de campos do card.

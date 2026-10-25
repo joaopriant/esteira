@@ -95,6 +95,26 @@ export interface FonteRadar {
   ativa: boolean
 }
 
+export type StatusConexao = 'conectado' | 'nao-conectado' | 'pasta-local'
+
+export interface ConexaoRadar {
+  provedor: ProvedorRadar
+  nome: string
+  status: StatusConexao
+  detalhe: string
+  tokenNoCofre: boolean
+  pasta: string
+  caminhoSalvo: string
+  fontes: FonteRadar[]
+}
+
+export interface PainelConexoes {
+  radar: ConexaoRadar[]
+  azure: { orgUrl: string; conectado: boolean; escopos: string; detalhe: string }
+  claude: { binario: string; timeoutBlocoMs: number; instalado: boolean | null; autenticado: boolean | null; detalhe: string }
+  ativas: number
+}
+
 export interface SinalBruto {
   id: string
   provedor: ProvedorRadar
@@ -269,6 +289,7 @@ export interface EstadoApp {
   stories: ResumoStory[]
   filaWiki: { produtoId: string; pendentes: number; gerando: boolean }
   radarPendentes: number
+  conexoesAtivas: number
 }
 
 export interface ResumoStory {

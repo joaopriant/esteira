@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { EstadoApp } from '../shared/tipos'
 import { chamar } from './api'
+import { CountUp } from './components/react-bits/CountUp'
+import { GradientText } from './components/react-bits/GradientText'
 import { AjustesView } from './telas/Ajustes'
+import { ConexoesView } from './telas/Conexoes'
 import { EsteiraView } from './telas/Esteira'
 import { FluxoView } from './telas/Fluxo'
 import { MedicaoView } from './telas/Medicao'
@@ -10,11 +13,12 @@ import { RadarView } from './telas/Radar'
 import { WikiView } from './telas/Wiki'
 import { Erro, Marca, mensagemDe, nomeOrg } from './ui'
 
-type Tela = 'esteira' | 'radar' | 'wiki' | 'produtos' | 'fluxo' | 'medicao' | 'ajustes'
+type Tela = 'esteira' | 'radar' | 'conexoes' | 'wiki' | 'produtos' | 'fluxo' | 'medicao' | 'ajustes'
 
 const TELAS: { id: Tela; nome: string }[] = [
   { id: 'esteira', nome: 'Esteira' },
   { id: 'radar', nome: 'Radar' },
+  { id: 'conexoes', nome: 'Conexões' },
   { id: 'wiki', nome: 'Wiki' },
   { id: 'produtos', nome: 'Produtos' },
   { id: 'fluxo', nome: 'Fluxo' },
@@ -59,7 +63,7 @@ export function App() {
         <div className="marca">
           <Marca />
           <div>
-            <strong>Esteira</strong>
+            <strong><GradientText text="Esteira" /></strong>
             <span>{org}</span>
           </div>
         </div>
@@ -72,7 +76,8 @@ export function App() {
           {TELAS.map((item) => (
             <button key={item.id} type="button" aria-current={tela === item.id ? 'page' : undefined} onClick={() => ir(item.id)}>
               {item.nome}
-              {item.id === 'radar' && (estado?.radarPendentes ?? 0) > 0 && <span className="selo num">{estado?.radarPendentes}</span>}
+              {item.id === 'radar' && (estado?.radarPendentes ?? 0) > 0 && <span className="selo"><CountUp to={estado?.radarPendentes ?? 0} /></span>}
+              {item.id === 'conexoes' && (estado?.conexoesAtivas ?? 0) > 0 && <span className="selo"><CountUp to={estado?.conexoesAtivas ?? 0} /></span>}
             </button>
           ))}
         </nav>
@@ -94,8 +99,8 @@ export function App() {
             // Sem organização nada roda; o aviso leva direto para onde se resolve.
             <p className="alerta-conexao">
               Nenhuma organização conectada.
-              <button className="btn-texto" type="button" onClick={() => ir('ajustes')}>
-                Conectar em Ajustes
+              <button className="btn-texto" type="button" onClick={() => ir('conexoes')}>
+                Conectar em Conexões
               </button>
             </p>
           ) : (
@@ -119,17 +124,19 @@ export function App() {
             <RadarView
               estado={estado}
               recarregar={recarregar}
+              aoConexoes={() => ir('conexoes')}
               aoEnviar={(id) => {
                 setAbrirStory(id)
                 setTela('esteira')
               }}
             />
           )}
+          {estado && tela === 'conexoes' && <ConexoesView estado={estado} recarregar={recarregar} />}
           {estado && tela === 'wiki' && <WikiView estado={estado} />}
           {estado && tela === 'produtos' && <ProdutosView estado={estado} recarregar={recarregar} />}
-          {estado && tela === 'fluxo' && <FluxoView />}
+          {estado && tela === 'fluxo' && <FluxoView aoConexoes={() => ir('conexoes')} />}
           {estado && tela === 'medicao' && <MedicaoView estado={estado} recarregar={recarregar} />}
-          {estado && tela === 'ajustes' && <AjustesView estado={estado} recarregar={recarregar} />}
+          {estado && tela === 'ajustes' && <AjustesView estado={estado} recarregar={recarregar} aoConexoes={() => ir('conexoes')} />}
         </main>
       </div>
     </div>

@@ -1,16 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { BlocoFluxo, EstatisticaBloco, FonteRadar, SkillDisponivel } from '../../shared/tipos'
 import { duplicarBloco, inserirBloco, moverBloco } from '../../core/fluxo-padrao'
 import { chamar } from '../api'
+import { DotGrid } from '../components/react-bits/DotGrid'
+import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
+import { BlurText } from '../components/react-bits/BlurText'
+import { ShinyText } from '../components/react-bits/ShinyText'
+import { SpotlightCard } from '../components/react-bits/SpotlightCard'
+import { StarBorder } from '../components/react-bits/StarBorder'
 import { Erro, mensagemDe } from '../ui'
-
-interface Caixa {
-  id: string
-  x: number
-  y: number
-  w: number
-  h: number
-}
 
 interface Preset {
   id: string
@@ -18,47 +16,17 @@ interface Preset {
   blocos: BlocoFluxo[]
 }
 
-const W_FONTE = 186
-const H_FONTE = 64
-const W_ENTRADA = 156
-const H_ENTRADA = 84
-const W_BLOCO = 206
-const H_BLOCO = 158
-const W_SAIDA = 196
-const H_SAIDA = 124
+interface Caixa {
+  x: number
+  y: number
+  w: number
+  h: number
+}
 
-function cena(fontes: FonteRadar[], blocos: BlocoFluxo[]) {
-  const ativas = fontes.filter((fonte) => fonte.ativa)
-  const linhas = Math.max(ativas.length, 1)
-  const altura = linhas * H_FONTE + (linhas - 1) * 12
-  const topo = 32
-  const meio = topo + altura / 2
-  const fontesCaixas: Caixa[] = (ativas.length > 0 ? ativas : [{ id: 'sem-fonte', nome: '', referencia: '', produtoId: '', provedor: 'teams', ativa: false }]).map((fonte, indice) => ({
-    id: fonte.id,
-    x: 8,
-    y: topo + indice * (H_FONTE + 12),
-    w: W_FONTE,
-    h: H_FONTE,
-  }))
-  const entrada: Caixa = { id: 'entrada', x: 228, y: meio - H_ENTRADA / 2, w: W_ENTRADA, h: H_ENTRADA }
-  const blocosCaixas: Caixa[] = blocos.map((bloco, indice) => ({
-    id: bloco.id,
-    x: 424 + indice * (W_BLOCO + 48),
-    y: meio - H_BLOCO / 2,
-    w: W_BLOCO,
-    h: H_BLOCO,
-  }))
-  const depois = blocosCaixas.length > 0 ? blocosCaixas[blocosCaixas.length - 1]!.x + W_BLOCO + 56 : entrada.x + W_ENTRADA + 64
-  const saida: Caixa = { id: 'saida', x: depois, y: meio - H_SAIDA / 2, w: W_SAIDA, h: H_SAIDA }
-  return {
-    ativas,
-    fontesCaixas,
-    entrada,
-    blocosCaixas,
-    saida,
-    w: saida.x + W_SAIDA + 28,
-    h: Math.max(altura + topo + 28, H_BLOCO + 120, 560),
-  }
+interface Fio {
+  id: string
+  d: string
+  pausa: boolean
 }
 
 function curva(a: Caixa, b: Caixa): string {
@@ -66,18 +34,25 @@ function curva(a: Caixa, b: Caixa): string {
   const y1 = a.y + a.h / 2
   const x2 = b.x
   const y2 = b.y + b.h / 2
-  const folga = Math.max(40, (x2 - x1) / 2)
+  const folga = Math.max(18, Math.abs(x2 - x1) / 2)
   return `M ${x1} ${y1} C ${x1 + folga} ${y1}, ${x2 - folga} ${y2}, ${x2} ${y2}`
 }
 
-function meio(a: Caixa, b: Caixa): { x: number; y: number } {
-  return { x: (a.x + a.w + b.x) / 2, y: (a.y + a.h / 2 + b.y + b.h / 2) / 2 }
+function resumoFonte(bloco: BlocoFluxo, skills: SkillDisponivel[]): string {
+  const fonte = bloco.fonte
+  let bruto = ''
+  if (fonte.tipo === 'instrucao') bruto = fonte.texto.replace(/\s+/g, ' ').trim()
+  else {
+    const skillId = fonte.skillId
+    bruto = rotuloSkill(skills.find((skill) => skill.id === skillId), skillId)
+  }
+  if (bruto.length <= 180) return bruto
+  return `${bruto.slice(0, 176).trimEnd()}…`
 }
 
-function resumoFonte(bloco: BlocoFluxo, skills: SkillDisponivel[]): string {
-  if (bloco.fonte.tipo === 'instrucao') return bloco.fonte.texto.replace(/\s+/g, ' ').slice(0, 110)
-  const skillId = bloco.fonte.skillId
-  return skills.find((skill) => skill.id === skillId)?.nome ?? skillId
+function rotuloSkill(skill: SkillDisponivel | undefined, skillId: string): string {
+  if (!skill) return skillId
+  return `${skill.nome} · ${skill.origem === 'embutida' ? 'da Esteira' : 'sua'}`
 }
 
 function MarcaPapel({ papel }: { papel: BlocoFluxo['papel'] }) {
@@ -95,7 +70,7 @@ function MarcaPapel({ papel }: { papel: BlocoFluxo['papel'] }) {
   )
 }
 
-export function FluxoView() {
+export function FluxoView({ aoConexoes }: { aoConexoes?: () => void }) {
   const [blocos, setBlocos] = useState<BlocoFluxo[]>([])
   const [gravado, setGravado] = useState('[]')
   const [skills, setSkills] = useState<SkillDisponivel[]>([])
@@ -108,8 +83,10 @@ export function FluxoView() {
   const [ok, setOk] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [pronto, setPronto] = useState(false)
-  const [vista, setVista] = useState({ x: 20, y: 12, z: 1 })
+  const [vista, setVista] = useState({ x: 12, y: 8, z: 1 })
+  const [fios, setFios] = useState<Fio[]>([])
   const viewport = useRef<HTMLDivElement>(null)
+  const palco = useRef<HTMLDivElement>(null)
   const pan = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
 
   useEffect(() => {
@@ -139,22 +116,62 @@ export function FluxoView() {
     }
   }, [])
 
-  const mapa = useMemo(() => cena(fontes, blocos), [fontes, blocos])
   const selecionado = blocos.find((bloco) => bloco.id === selecao) ?? null
   const sujo = JSON.stringify(blocos) !== gravado
+  const ativas = fontes.filter((fonte) => fonte.ativa)
+  const chaveCena = `${ativas.map((fonte) => fonte.id).join(',')}|${blocos.map((bloco) => `${bloco.id}:${bloco.modo}`).join(',')}|${vista.z}|${selecao ?? ''}`
 
-  useEffect(() => {
-    const el = viewport.current
-    if (!el || !pronto) return
-    const ajustar = () => {
-      const z = Math.min(1, (el.clientWidth - 28) / mapa.w, (el.clientHeight - 28) / mapa.h)
-      setVista({ x: 16, y: 10, z: Number.isFinite(z) && z > 0.35 ? z : 0.7 })
+  useLayoutEffect(() => {
+    const raiz = palco.current
+    if (!raiz || !pronto) return
+    const medir = () => {
+      const base = raiz.getBoundingClientRect()
+      const z = vista.z || 1
+      const caixaDe = (ancora: string): Caixa | null => {
+        const el = raiz.querySelector<HTMLElement>(`[data-ancora="${ancora}"]`)
+        if (!el) return null
+        const rect = el.getBoundingClientRect()
+        return {
+          x: (rect.left - base.left) / z,
+          y: (rect.top - base.top) / z,
+          w: rect.width / z,
+          h: rect.height / z,
+        }
+      }
+      const entrada = caixaDe('entrada')
+      const saida = caixaDe('saida')
+      if (!entrada || !saida) return
+      const proximos: Fio[] = []
+      const fontesCaixas = (ativas.length > 0 ? ativas : [{ id: 'sem-fonte' }]).map((fonte) => caixaDe(`fonte-${fonte.id}`)).filter((caixa): caixa is Caixa => Boolean(caixa))
+      fontesCaixas.forEach((caixa, indice) => {
+        proximos.push({ id: `fonte-${indice}`, d: curva(caixa, entrada), pausa: false })
+      })
+      const blocosCaixas = blocos.map((bloco) => caixaDe(`bloco-${bloco.id}`))
+      if (blocos.length === 0) {
+        proximos.push({ id: 'entrada-saida', d: curva(entrada, saida), pausa: true })
+      } else if (blocosCaixas[0]) {
+        proximos.push({ id: 'entrada-bloco', d: curva(entrada, blocosCaixas[0]), pausa: blocos[0]?.modo === 'por-clique' })
+        blocosCaixas.forEach((caixa, indice) => {
+          if (indice === 0 || !caixa || !blocosCaixas[indice - 1]) return
+          proximos.push({
+            id: `bloco-${indice}`,
+            d: curva(blocosCaixas[indice - 1]!, caixa),
+            pausa: blocos[indice]?.modo === 'por-clique',
+          })
+        })
+        const ultimo = blocosCaixas[blocosCaixas.length - 1]
+        if (ultimo) proximos.push({ id: 'saida', d: curva(ultimo, saida), pausa: true })
+      }
+      setFios((atual) => {
+        if (atual.length === proximos.length && atual.every((fio, indice) => fio.id === proximos[indice]?.id && fio.d === proximos[indice]?.d && fio.pausa === proximos[indice]?.pausa)) return atual
+        return proximos
+      })
     }
-    ajustar()
-    const obs = new ResizeObserver(ajustar)
-    obs.observe(el)
+    medir()
+    const obs = new ResizeObserver(medir)
+    obs.observe(raiz)
     return () => obs.disconnect()
-  }, [pronto, mapa.w, mapa.h])
+  }, [pronto, chaveCena])
 
   useEffect(() => {
     if (!selecionado || selecionado.fonte.tipo !== 'skill') {
@@ -200,13 +217,13 @@ export function FluxoView() {
 
   const numeros = selecionado ? stats.find((item) => item.blocoId === selecionado.id) ?? stats.find((item) => item.blocoNome === selecionado.nome) : undefined
   const taxa = numeros && numeros.gerados > 0 ? Math.round((numeros.aceitos / numeros.gerados) * 100) : null
+  const listaFontes = ativas.length > 0 ? ativas : [null]
 
   return (
     <div className="fluxo-estudio">
       <div className="titulo">
-        <h1>Fluxo</h1>
-        <button
-          className="btn"
+        <h1><BlurText text="Fluxo" /></h1>
+        <AcaoPrimaria
           type="button"
           disabled={ocupado || blocos.length === 0}
           onClick={() => {
@@ -222,8 +239,8 @@ export function FluxoView() {
               .finally(() => setOcupado(false))
           }}
         >
-          {ocupado ? 'Salvando' : sujo ? 'Salvar fluxo' : 'Fluxo salvo'}
-        </button>
+          {ocupado ? <ShinyText text="Salvando" /> : sujo ? 'Salvar fluxo' : 'Fluxo salvo'}
+        </AcaoPrimaria>
       </div>
       <div className="fluxo-barra">
         <div className="escolha" role="group" aria-label="Modelos de fluxo">
@@ -234,14 +251,9 @@ export function FluxoView() {
           ))}
         </div>
         <div className="acoes">
-          <button className="btn-sec" type="button" onClick={() => setVista((atual) => ({ ...atual, z: Math.max(0.45, atual.z - 0.1) }))} aria-label="Diminuir">−</button>
-          <button className="btn-sec" type="button" onClick={() => {
-            const el = viewport.current
-            if (!el) return
-            const z = Math.min(1, (el.clientWidth - 28) / mapa.w, (el.clientHeight - 28) / mapa.h)
-            setVista({ x: 16, y: 10, z: z > 0.35 ? z : 0.7 })
-          }}>Ajustar</button>
-          <button className="btn-sec" type="button" onClick={() => setVista((atual) => ({ ...atual, z: Math.min(1.5, atual.z + 0.1) }))} aria-label="Aumentar">+</button>
+          <button className="btn-sec" type="button" onClick={() => setVista((atual) => ({ ...atual, z: Math.max(0.7, Number((atual.z - 0.1).toFixed(2))) }))} aria-label="Diminuir">−</button>
+          <button className="btn-sec" type="button" onClick={() => setVista({ x: 12, y: 8, z: 1 })}>Ajustar</button>
+          <button className="btn-sec" type="button" onClick={() => setVista((atual) => ({ ...atual, z: Math.min(1.4, Number((atual.z + 0.1).toFixed(2))) }))} aria-label="Aumentar">+</button>
         </div>
       </div>
       <p className="sub">A linha cheia segue sozinha. A tracejada espera um clique. O mais entra exatamente entre dois blocos.</p>
@@ -253,7 +265,7 @@ export function FluxoView() {
           ref={viewport}
           onPointerDown={(evento) => {
             const alvo = evento.target as HTMLElement
-            if (alvo.closest('button, article, input, select, textarea')) return
+            if (alvo.closest('button, article, input, select, textarea, a')) return
             pan.current = { x: evento.clientX, y: evento.clientY, px: vista.x, py: vista.y }
             evento.currentTarget.setPointerCapture(evento.pointerId)
           }}
@@ -264,105 +276,97 @@ export function FluxoView() {
           onPointerUp={() => { pan.current = null }}
           onWheel={(evento) => {
             const fator = evento.deltaY > 0 ? 0.92 : 1.08
-            setVista((atual) => ({ ...atual, z: Math.min(1.5, Math.max(0.45, atual.z * fator)) }))
+            setVista((atual) => ({ ...atual, z: Math.min(1.4, Math.max(0.7, Number((atual.z * fator).toFixed(3)))) }))
           }}
         >
-          <div className="fluxo-mundo" style={{ width: mapa.w, height: mapa.h, transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.z})` }}>
-            <svg className="fluxo-fios" width={mapa.w} height={mapa.h} aria-hidden="true">
-              {mapa.fontesCaixas.map((caixa) => (
-                <path key={caixa.id} d={curva(caixa, mapa.entrada)} className="fio-auto" />
-              ))}
-              {mapa.blocosCaixas.length === 0 ? (
-                <path d={curva(mapa.entrada, mapa.saida)} className="fio-pausa" />
-              ) : (
-                <>
-                  <path d={curva(mapa.entrada, mapa.blocosCaixas[0]!)} className={blocos[0]?.modo === 'por-clique' ? 'fio-pausa' : 'fio-auto'} />
-                  {mapa.blocosCaixas.slice(1).map((caixa, indice) => (
-                    <path key={caixa.id} d={curva(mapa.blocosCaixas[indice]!, caixa)} className={blocos[indice + 1]?.modo === 'por-clique' ? 'fio-pausa' : 'fio-auto'} />
-                  ))}
-                  <path d={curva(mapa.blocosCaixas[mapa.blocosCaixas.length - 1]!, mapa.saida)} className="fio-pausa" />
-                </>
-              )}
-            </svg>
-            <span className="zona" style={{ left: 8, top: 8 }}>Fontes</span>
-            <span className="zona" style={{ left: 424, top: 8 }}>Esteira</span>
-            <span className="zona" style={{ left: mapa.saida.x, top: 8 }}>Saída</span>
-            {mapa.fontesCaixas.map((caixa) => {
-              const fonte = mapa.ativas.find((item) => item.id === caixa.id)
-              return (
-                <article key={caixa.id} className="no-fonte" style={{ left: caixa.x, top: caixa.y, width: caixa.w, height: caixa.h }}>
-                  <span>{fonte ? nomeProvedor(fonte.provedor) : 'Radar'}</span>
-                  <strong>{fonte ? fonte.nome : 'Nenhuma fonte ligada'}</strong>
-                  <small>{fonte ? 'leitura' : 'ative no Radar'}</small>
-                </article>
-              )
-            })}
-            <article className="no-entrada" style={{ left: mapa.entrada.x, top: mapa.entrada.y, width: mapa.entrada.w, height: mapa.entrada.h }}>
-              <span>Entrada</span>
-              <strong>Ideia manual</strong>
-              <small>o texto que o PM escreve</small>
-            </article>
-            {blocos.map((bloco, indice) => {
-              const caixa = mapa.blocosCaixas[indice]!
-              const anterior = indice === 0 ? mapa.entrada : mapa.blocosCaixas[indice - 1]!
-              const ponto = meio(anterior, caixa)
-              return (
-                <div key={bloco.id}>
-                  <button className="mais-fluxo" style={{ left: ponto.x, top: ponto.y }} type="button" aria-label={`Inserir bloco antes de ${bloco.nome}`} onClick={() => inserir(indice)}>+</button>
-                  {bloco.modo === 'por-clique' && (
-                    <button className="badge-pausa" style={{ left: ponto.x, top: caixa.y - 6 }} type="button" onClick={() => mudar(bloco.id, { ...bloco, modo: 'automatico' })}>
-                      aguarda clique
-                    </button>
-                  )}
-                  <article
-                    className={`no-bloco papel-${bloco.papel} ${selecao === bloco.id ? 'selecionado' : ''}`}
-                    style={{ left: caixa.x, top: caixa.y, width: caixa.w, height: caixa.h }}
-                    draggable
-                    onDragStart={(evento) => evento.dataTransfer.setData('text/plain', String(indice))}
-                    onDragOver={(evento) => evento.preventDefault()}
-                    onDrop={(evento) => {
-                      evento.preventDefault()
-                      const de = Number(evento.dataTransfer.getData('text/plain'))
-                      if (Number.isNaN(de)) return
-                      setBlocos((atual) => moverBloco(atual, de, indice))
-                      setOk('')
-                    }}
-                    onClick={() => setSelecao(bloco.id)}
-                  >
-                    <header>
-                      <span className="indice">{indice + 1}</span>
-                      <MarcaPapel papel={bloco.papel} />
-                      <strong>{bloco.nome}</strong>
-                    </header>
-                    <p>{bloco.papel === 'escrever' ? 'Escrever' : 'Confrontar'}</p>
-                    <small>{resumoFonte(bloco, skills)}</small>
-                    <div className="escolha">
-                      <button type="button" className="btn-sec" aria-pressed={bloco.modo === 'automatico'} onClick={(evento) => { evento.stopPropagation(); mudar(bloco.id, { ...bloco, modo: 'automatico' }) }}>Automático</button>
-                      <button type="button" className="btn-sec" aria-pressed={bloco.modo === 'por-clique'} onClick={(evento) => { evento.stopPropagation(); mudar(bloco.id, { ...bloco, modo: 'por-clique' }) }}>Por clique</button>
+          <DotGrid />
+          <div className="fluxo-mundo" style={{ transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.z})` }}>
+            <div className="fluxo-palco" ref={palco}>
+              <svg className="fluxo-fios" aria-hidden="true">
+                {fios.map((fio) => (
+                  <path key={fio.id} d={fio.d} className={fio.pausa ? 'fio-pausa' : 'fio-auto'} />
+                ))}
+              </svg>
+              <section className="fluxo-col">
+                <span className="zona">Fontes</span>
+                {aoConexoes && (
+                  <button className="btn-sec atalho-conexoes" type="button" onClick={aoConexoes}>Gerenciar conexões</button>
+                )}
+                {listaFontes.map((fonte) => (
+                  <SpotlightCard as="article" key={fonte?.id ?? 'sem-fonte'} className="no-fonte" data-ancora={`fonte-${fonte?.id ?? 'sem-fonte'}`}>
+                    <span>{fonte ? nomeProvedor(fonte.provedor) : 'Radar'}</span>
+                    <strong>{fonte ? fonte.nome : 'Nenhuma fonte ligada'}</strong>
+                    <small>{fonte ? `${nomeProvedor(fonte.provedor)} · ${fonte.referencia}` : 'ative em Conexões'}</small>
+                  </SpotlightCard>
+                ))}
+              </section>
+              <section className="fluxo-col">
+                <span className="zona">Entrada</span>
+                <SpotlightCard as="article" className="no-entrada" data-ancora="entrada">
+                  <span>Entrada</span>
+                  <strong>Ideia manual</strong>
+                  <small>o texto que o PM escreve</small>
+                </SpotlightCard>
+              </section>
+              {blocos.map((bloco, indice) => (
+                <div className="fluxo-trecho" key={bloco.id}>
+                  <div className="fluxo-entre">
+                    <button className="mais-fluxo" type="button" aria-label={`Inserir bloco antes de ${bloco.nome}`} onClick={() => inserir(indice)}>+</button>
+                  </div>
+                  <section className="fluxo-col">
+                    {indice === 0 && <span className="zona">Esteira</span>}
+                    {indice > 0 && <span className="zona zona-vazia" aria-hidden="true">Esteira</span>}
+                    <div className="fluxo-no" data-ancora={`bloco-${bloco.id}`}>
+                      <StarBorder className="rb-star-bloco" ativo={selecao === bloco.id}>
+                        <SpotlightCard
+                          as="article"
+                          className={`no-bloco papel-${bloco.papel} ${selecao === bloco.id ? 'selecionado' : ''}`}
+                          draggable
+                          onDragStart={(evento) => evento.dataTransfer.setData('text/plain', String(indice))}
+                          onDragOver={(evento) => evento.preventDefault()}
+                          onDrop={(evento) => {
+                            evento.preventDefault()
+                            const de = Number(evento.dataTransfer.getData('text/plain'))
+                            if (Number.isNaN(de)) return
+                            setBlocos((atual) => moverBloco(atual, de, indice))
+                            setOk('')
+                          }}
+                          onClick={() => setSelecao(bloco.id)}
+                        >
+                          <header>
+                            <span className="indice">{indice + 1}</span>
+                            <MarcaPapel papel={bloco.papel} />
+                            <strong>{bloco.nome}</strong>
+                          </header>
+                          <p>{bloco.papel === 'escrever' ? 'Escrever' : 'Confrontar'}</p>
+                          <small>{resumoFonte(bloco, skills)}</small>
+                          <span className={bloco.modo === 'por-clique' ? 'badge-modo pausa' : 'badge-modo auto'}>
+                            {bloco.modo === 'por-clique' ? 'aguarda clique' : 'automático'}
+                          </span>
+                          <div className="escolha">
+                            <button type="button" className="btn-sec" aria-pressed={bloco.modo === 'automatico'} onClick={(evento) => { evento.stopPropagation(); mudar(bloco.id, { ...bloco, modo: 'automatico' }) }}>Automático</button>
+                            <button type="button" className="btn-sec" aria-pressed={bloco.modo === 'por-clique'} onClick={(evento) => { evento.stopPropagation(); mudar(bloco.id, { ...bloco, modo: 'por-clique' }) }}>Por clique</button>
+                          </div>
+                        </SpotlightCard>
+                      </StarBorder>
                     </div>
-                  </article>
+                  </section>
                 </div>
-              )
-            })}
-            {mapa.blocosCaixas.length > 0 && (
-              <button
-                className="mais-fluxo"
-                style={{ left: meio(mapa.blocosCaixas[mapa.blocosCaixas.length - 1]!, mapa.saida).x, top: meio(mapa.blocosCaixas[mapa.blocosCaixas.length - 1]!, mapa.saida).y }}
-                type="button"
-                aria-label="Inserir bloco antes da saída"
-                onClick={() => inserir(blocos.length)}
-              >
-                +
-              </button>
-            )}
-            {mapa.blocosCaixas.length === 0 && (
-              <button className="mais-fluxo" style={{ left: meio(mapa.entrada, mapa.saida).x, top: meio(mapa.entrada, mapa.saida).y }} type="button" aria-label="Inserir o primeiro bloco" onClick={() => inserir(0)}>+</button>
-            )}
-            <article className="no-saida" style={{ left: mapa.saida.x, top: mapa.saida.y, width: mapa.saida.w, height: mapa.saida.h }}>
-              <span>Saída</span>
-              <strong>Story e achados</strong>
-              <small>Publicar no Azure Boards só com clique. Depois, passou ou voltou.</small>
-            </article>
+              ))}
+              <div className="fluxo-trecho">
+                <div className="fluxo-entre">
+                  <button className="mais-fluxo" type="button" aria-label={blocos.length === 0 ? 'Inserir o primeiro bloco' : 'Inserir bloco antes da saída'} onClick={() => inserir(blocos.length)}>+</button>
+                </div>
+                <section className="fluxo-col">
+                  <span className="zona">Saída</span>
+                  <SpotlightCard as="article" className="no-saida" data-ancora="saida">
+                    <span>Saída</span>
+                    <strong>Story e achados</strong>
+                    <small>Publicar no Azure Boards só com clique. Depois, passou ou voltou.</small>
+                  </SpotlightCard>
+                </section>
+              </div>
+            </div>
           </div>
         </div>
         {selecionado && (
@@ -399,7 +403,7 @@ export function FluxoView() {
                 <select value={selecionado.fonte.skillId} onChange={(evento) => mudar(selecionado.id, { ...selecionado, fonte: { tipo: 'skill', skillId: evento.target.value } })}>
                   <OpcaoSkillAusente skills={skills} skillId={selecionado.fonte.skillId} />
                   {skills.map((skill) => (
-                    <option key={skill.id} value={skill.id}>{skill.nome}</option>
+                    <option key={skill.id} value={skill.id}>{rotuloSkill(skill, skill.id)}</option>
                   ))}
                 </select>
               </label>

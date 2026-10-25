@@ -2,6 +2,12 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { Achado, EstadoApp, LinhaDiff, StoryRun, StoryTexto } from '../../shared/tipos'
 import { STORY_VAZIA } from '../../shared/tipos'
 import { chamar } from '../api'
+import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
+import { AnimatedList } from '../components/react-bits/AnimatedList'
+import { BlurText } from '../components/react-bits/BlurText'
+import { DecryptedText } from '../components/react-bits/DecryptedText'
+import { ShinyText } from '../components/react-bits/ShinyText'
+import { SpotlightCard } from '../components/react-bits/SpotlightCard'
 import { Erro, TIPO_ACHADO, Vazio, mensagemDe, rotuloStory } from '../ui'
 
 const ORDEM = { pendente: 0, aceito: 1, descartado: 2 }
@@ -90,7 +96,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
   if (estado.produtos.length === 0) {
     return (
       <>
-        <h1>Esteira</h1>
+        <h1><BlurText text="Esteira" /></h1>
         <p className="sub">A story precisa de um produto para saber qual código ler.</p>
         <Vazio>Nenhum produto ainda. Em Produtos, escolha os repositórios e dê um nome ao conjunto.</Vazio>
       </>
@@ -100,7 +106,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
   return (
     <>
       <div className="titulo">
-        <h1>{nova ? 'Nova story' : story?.story.titulo || 'Story sem título'}</h1>
+        <h1>{nova ? <BlurText text="Nova story" /> : <DecryptedText text={story?.story.titulo || 'Story sem título'} />}</h1>
         <div className="acoes">
           {!nova && (
             <button
@@ -121,9 +127,9 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
             </button>
           )}
           {story?.estado === 'pausada' && (
-            <button className="btn" type="button" disabled={Boolean(ocupado)} onClick={() => void agir('Continuando', async () => aplicar(await chamar<StoryRun>('continuar', { id: story.id })))}>
-              {ocupado === 'Continuando' ? 'Continuando' : 'Continuar'}
-            </button>
+            <AcaoPrimaria type="button" disabled={Boolean(ocupado)} onClick={() => void agir('Continuando', async () => aplicar(await chamar<StoryRun>('continuar', { id: story.id })))}>
+              {ocupado === 'Continuando' ? <ShinyText text="Continuando" /> : 'Continuar'}
+            </AcaoPrimaria>
           )}
           {!nova && story?.estado === 'pronta' && !story.diffPendente && !story.publicacao && (
             // A seção do board fica abaixo da story; este botão leva até ela quando publicar vira a ação principal.
@@ -185,9 +191,9 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
               ))}
             </select>
           </label>
-          <button className="btn" type="submit" disabled={Boolean(ocupado) || !ideia.trim()}>
-            {ocupado === 'Rodando' ? 'Rodando a esteira' : 'Rodar a esteira'}
-          </button>
+          <AcaoPrimaria type="submit" disabled={Boolean(ocupado) || !ideia.trim()}>
+            {ocupado === 'Rodando' ? <ShinyText text="Rodando a esteira" /> : 'Rodar a esteira'}
+          </AcaoPrimaria>
         </form>
       ) : (
         story && (
@@ -226,14 +232,13 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                 <p className="sub">A story só muda depois deste clique. Cancelar deixa o texto como está.</p>
                 <Diff linhas={story.diffPendente.linhas} />
                 <div className="acoes">
-                  <button
-                    className="btn"
+                  <AcaoPrimaria
                     type="button"
                     disabled={Boolean(ocupado)}
                     onClick={() => void agir('Aplicando', async () => aplicar(await chamar<StoryRun>('aprovarDiff', { id: story.id })))}
                   >
-                    Aplicar ajuste
-                  </button>
+                    {ocupado === 'Aplicando' ? <ShinyText text="Aplicando" /> : 'Aplicar ajuste'}
+                  </AcaoPrimaria>
                   <button
                     className="btn-sec"
                     type="button"
@@ -324,6 +329,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                   <span className="num">{pendentes} pendentes</span>
                 </header>
                 {achados.length === 0 && <Vazio>Nenhum achado nesta story.</Vazio>}
+                <AnimatedList>
                 {achados.map((achado, indice) => (
                   <Fragment key={achado.id}>
                   {achado.estado !== 'pendente' && achados[indice - 1]?.estado === 'pendente' && <p className="achados-resolvidos">Decididos</p>}
@@ -340,6 +346,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                   />
                   </Fragment>
                 ))}
+                </AnimatedList>
               </section>
             </div>
           </>
@@ -400,7 +407,7 @@ function AchadoCard({
   aoDescartar: () => void
 }) {
   return (
-    <article className={achado.estado === 'pendente' ? 'achado' : 'achado resolvido'}>
+    <SpotlightCard as="article" className={achado.estado === 'pendente' ? 'achado' : 'achado resolvido'}>
       <header>
         {/* O que foi achado lidera; o bloco que achou é metadado. */}
         <span className="origem">{achado.blocoNome}</span>
@@ -424,7 +431,7 @@ function AchadoCard({
           </button>
         </div>
       )}
-    </article>
+    </SpotlightCard>
   )
 }
 
@@ -549,9 +556,9 @@ function FormPublicar(props: Parameters<typeof Publicar>[0]) {
           </div>
         </>
       )}
-      <button className="btn" type="button" disabled={Boolean(props.ocupado) || (props.acao === 'comentar' ? !props.cardId : !props.projeto.trim())} onClick={props.aoPublicar}>
-        {props.ocupado === 'Publicando' ? 'Publicando' : 'Publicar no board'}
-      </button>
+      <AcaoPrimaria type="button" disabled={Boolean(props.ocupado) || (props.acao === 'comentar' ? !props.cardId : !props.projeto.trim())} onClick={props.aoPublicar}>
+        {props.ocupado === 'Publicando' ? <ShinyText text="Publicando" /> : 'Publicar no Azure Boards'}
+      </AcaoPrimaria>
     </>
   )
 }

@@ -74,14 +74,23 @@ O app roda na máquina do fundador, com o PAT dele e o código da empresa dele. 
 
 Atualizado em 24/10/2026, com o ADR 0006.
 
-- Token de leitura só no cofre, contas `radar:teams` e `radar:slack`. Não entra em `fontes-radar.json`, `radar-sugestoes.json`, story, log ou resposta de IPC. `conectarRadar` devolve `{ conectado: true }`.
+- Token de leitura só no cofre, contas `radar:teams`, `radar:slack` e `radar:whatsapp`. Não entra em `fontes-radar.json`, `radar-sugestoes.json`, `config.json`, story, log ou resposta de IPC. `conectarRadar` devolve `{ conectado: true }`. WhatsApp não tem host aprovado: o token não é enviado; a leitura é a pasta.
 - WhatsApp, Granola e Plaud não têm token de envio. A leitura real é arquivo dentro de `radar-import/<provedor>`, com o mesmo `caminhoSeguro` do clone. `..` não sai da pasta.
 - Teams e Slack, quando há token, fazem um GET. Hosts fechados: `graph.microsoft.com` e `slack.com`. Referência que não casa com o formato do canal não vira URL. Não há POST, resposta em thread nem envio em nome do PM.
 - Texto de chat e transcrição é dado hostil. `sanitizarTextoExterno` tira caractere de controle, quebra de delimitador `<<<` `>>>` e linha que tenta dar ordem (`ignore as instruções`, `publique no board`, `PAT=`). O que sobra vai ao `claude -p` dentro de `<<<SINAL>>>`, com a frase fixa de que aquilo não é ordem e de que nada é enviado ao canal.
 - A prova não depende do modelo obedecer: a citação tem de ser substring do texto já sanitizado. Senão a sugestão não entra na fila. O resumo que traz ordem ou segredo que não está na fonte é descartado.
 - Mandar para a Esteira copia a prova para a story local e roda os blocos. Não publica no Azure e não escreve no canal.
 
-## 9. O que aceitamos de risco na v1
+### 9. Tela de Conexões
+
+Atualizado em 25/10/2026, com o ADR 0007.
+
+- `salvarPastaRadar` só aceita caminho relativo a `radar-import/<provedor>`. `..` e caminho absoluto fora dessa pasta são recusados. O valor vai para `config.json` porque não é segredo.
+- `testarRadar` no modo real, para Teams e Slack, faz GET no host já fechado. O detalhe que volta para a tela não inclui o token nem o corpo. WhatsApp, Granola e Plaud não disparam rede nesse teste.
+- `testarClaude` pode executar o binário configurado (`--version` e `claude -p`). O stdout não volta para a tela. Não há chave de API no argumento.
+- `testarAzure` usa o PAT que já está no cofre e devolve só a contagem de repositórios. Erro passa por `redigirSegredo`.
+
+## 10. O que aceitamos de risco na v1
 
 - O CLI do Claude, fora do `--bare`, pode ler a configuração global do usuário. É a máquina dele.
 - Não há assinatura de código no instalador (o spec manda assim). O fundador precisa saber de onde veio o instalador.

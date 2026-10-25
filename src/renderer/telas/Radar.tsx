@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { EstadoApp, FonteRadar, ProvedorRadar, SugestaoRadar, TipoSugestao } from '../../shared/tipos'
 import { chamar } from '../api'
+import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
+import { AnimatedList } from '../components/react-bits/AnimatedList'
+import { BlurText } from '../components/react-bits/BlurText'
+import { CountUp } from '../components/react-bits/CountUp'
+import { ShinyText } from '../components/react-bits/ShinyText'
+import { SpotlightCard } from '../components/react-bits/SpotlightCard'
 import { Erro, Vazio, mensagemDe } from '../ui'
 
 const PROVEDORES: ProvedorRadar[] = ['teams', 'slack', 'whatsapp', 'granola', 'plaud']
@@ -29,10 +35,12 @@ export function RadarView({
   estado,
   recarregar,
   aoEnviar,
+  aoConexoes,
 }: {
   estado: EstadoApp
   recarregar: () => Promise<void>
   aoEnviar: (storyId: string) => void
+  aoConexoes?: () => void
 }) {
   const [fontes, setFontes] = useState<FonteRadar[]>([])
   const [sugestoes, setSugestoes] = useState<SugestaoRadar[]>([])
@@ -42,8 +50,6 @@ export function RadarView({
   const [ok, setOk] = useState('')
   const [ocupado, setOcupado] = useState('')
   const [pronto, setPronto] = useState(false)
-  const [novaFonte, setNovaFonte] = useState({ provedor: 'teams' as ProvedorRadar, nome: '', referencia: '', produtoId: estado.produtos[0]?.id ?? '' })
-  const [catalogo, setCatalogo] = useState<{ referencia: string; nome: string }[]>([])
   const [importacao, setImportacao] = useState({ provedor: 'granola' as 'granola' | 'plaud', autor: '', local: '', texto: '', produtoId: estado.produtos[0]?.id ?? '' })
 
   async function carregar() {
@@ -65,20 +71,6 @@ export function RadarView({
       vivo = false
     }
   }, [])
-
-  useEffect(() => {
-    let vivo = true
-    chamar<{ referencia: string; nome: string }[]>('catalogoRadar', { provedor: novaFonte.provedor })
-      .then((lista) => {
-        if (vivo) setCatalogo(lista)
-      })
-      .catch(() => {
-        if (vivo) setCatalogo([])
-      })
-    return () => {
-      vivo = false
-    }
-  }, [novaFonte.provedor])
 
   const fila = useMemo(
     () =>
@@ -111,7 +103,7 @@ export function RadarView({
   return (
     <>
       <div className="titulo">
-        <h1>Radar</h1>
+        <h1><BlurText text="Radar" /></h1>
         <button className="btn" type="button" disabled={Boolean(ocupado)} onClick={() => void agir('Lendo', async () => { await chamar('sincronizarRadar', {}); setOk('Fontes lidas. Só entrou o que tem trecho literal.') })}>
           {ocupado === 'Lendo' ? 'Lendo fontes' : 'Ler fontes agora'}
         </button>
@@ -141,10 +133,11 @@ export function RadarView({
       )}
 
       <section>
-        <h2>Fila · {fila.length}</h2>
+        <h2>Fila · <CountUp to={fila.length} /></h2>
         {fila.length === 0 && <Vazio>Nenhuma sugestão neste filtro. Ruído e texto sem trecho verificável ficam de fora.</Vazio>}
+        <AnimatedList>
         {fila.map((item) => (
-          <article className="sinal" key={item.id}>
+          <SpotlightCard as="article" className="sinal" key={item.id}>
             <header>
               <span>
                 <span className={`pilula ${item.tipo === 'bug' ? 'aviso' : item.tipo === 'melhoria' ? '' : 'ok'}`}>{NOME_TIPO[item.tipo]}</span>
@@ -161,8 +154,7 @@ export function RadarView({
               </blockquote>
             ))}
             <div className="acoes">
-              <button
-                className="btn"
+              <AcaoPrimaria
                 type="button"
                 disabled={Boolean(ocupado)}
                 onClick={() => void agir(item.id, async () => {
@@ -170,20 +162,24 @@ export function RadarView({
                   aoEnviar(story.id)
                 })}
               >
-                {ocupado === item.id ? 'Abrindo a esteira' : 'Mandar para a Esteira'}
-              </button>
+                {ocupado === item.id ? <ShinyText text="Abrindo a esteira" /> : 'Mandar para a Esteira'}
+              </AcaoPrimaria>
               <button className="btn-texto btn-perigo" type="button" disabled={Boolean(ocupado)} onClick={() => void agir(`d-${item.id}`, async () => { await chamar('descartarSugestao', { id: item.id }) })}>
                 Descartar
               </button>
             </div>
-          </article>
+          </SpotlightCard>
         ))}
+        </AnimatedList>
       </section>
 
       <section className="bloco medida">
-        <h2>Fontes monitoradas</h2>
-        <p className="sub">Cada fonte fica ligada a um produto. Desligar para de ler. O token de Teams ou Slack, se houver, fica no cofre e não volta para esta tela.</p>
-        {fontes.length === 0 && <Vazio>Nenhuma fonte ainda. Escolha um canal abaixo ou importe uma transcrição.</Vazio>}
+        <div className="titulo">
+          <h2>Fontes monitoradas</h2>
+          {aoConexoes && <button className="btn-sec" type="button" onClick={aoConexoes}>Gerenciar conexões</button>}
+        </div>
+        <p className="sub">O que está ligado agora. Token, pasta e vínculo novo ficam em Conexões. O token não volta para esta tela.</p>
+        {fontes.length === 0 && <Vazio>Nenhuma fonte ainda. Em Conexões, vincule um canal a um produto.</Vazio>}
         <ul className="fontes">
           {fontes.map((fonte) => (
             <li key={fonte.id}>
@@ -209,61 +205,6 @@ export function RadarView({
             </li>
           ))}
         </ul>
-        <form
-          className="linha"
-          onSubmit={(evento) => {
-            evento.preventDefault()
-            void agir('Fonte', async () => {
-              await chamar('salvarFonteRadar', {
-                id: '',
-                produtoId: novaFonte.produtoId,
-                provedor: novaFonte.provedor,
-                nome: novaFonte.nome || catalogo.find((item) => item.referencia === novaFonte.referencia)?.nome || novaFonte.referencia,
-                referencia: novaFonte.referencia,
-                ativa: true,
-              })
-              setNovaFonte((atual) => ({ ...atual, nome: '', referencia: '' }))
-              setOk('Fonte ligada. Ler agora puxa o que já está no canal.')
-            })
-          }}
-        >
-          <label className="campo">
-            <span>Canal</span>
-            <select value={novaFonte.provedor} onChange={(evento) => setNovaFonte((atual) => ({ ...atual, provedor: evento.target.value as ProvedorRadar, referencia: '' }))}>
-              {PROVEDORES.map((item) => (
-                <option key={item} value={item}>{NOME_PROVEDOR[item]}</option>
-              ))}
-            </select>
-          </label>
-          <label className="campo">
-            <span>Qual</span>
-            <input
-              list="catalogo-radar"
-              value={novaFonte.referencia}
-              placeholder={catalogo[0]?.referencia ?? 'referência ou arquivo'}
-              onChange={(evento) => {
-                const referencia = evento.target.value
-                const achado = catalogo.find((item) => item.referencia === referencia)
-                setNovaFonte((atual) => ({ ...atual, referencia, nome: achado?.nome ?? atual.nome }))
-              }}
-              required
-            />
-            <datalist id="catalogo-radar">
-              {catalogo.map((item) => (
-                <option key={item.referencia} value={item.referencia}>{item.nome}</option>
-              ))}
-            </datalist>
-          </label>
-          <label className="campo">
-            <span>Produto</span>
-            <select value={novaFonte.produtoId} onChange={(evento) => setNovaFonte((atual) => ({ ...atual, produtoId: evento.target.value }))}>
-              {estado.produtos.map((produto) => (
-                <option key={produto.id} value={produto.id}>{produto.nome}</option>
-              ))}
-            </select>
-          </label>
-          <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || estado.produtos.length === 0}>Ligar fonte</button>
-        </form>
       </section>
 
       <section className="bloco medida">

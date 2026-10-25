@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { EstadoApp, ModuloWiki, RespostaWiki, WikiProduto } from '../../shared/tipos'
 import { chamar } from '../api'
+import { AnimatedList } from '../components/react-bits/AnimatedList'
+import { BlurText } from '../components/react-bits/BlurText'
+import { SpotlightCard } from '../components/react-bits/SpotlightCard'
 import { Erro, Vazio, mensagemDe } from '../ui'
 
 export function WikiView({ estado }: { estado: EstadoApp }) {
@@ -65,7 +68,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
   if (estado.produtos.length === 0) {
     return (
       <>
-        <h1>Wiki</h1>
+        <h1><BlurText text="Wiki" /></h1>
         <p className="sub">A wiki nasce do código dos produtos.</p>
         <Vazio>Cadastre um produto antes. Sem repositório clonado não há o que ler.</Vazio>
       </>
@@ -77,7 +80,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
   return (
     <>
       <div className="titulo">
-        <h1>Wiki {produto ? `de ${produto.nome}` : ''}</h1>
+        <h1><BlurText text={produto ? `Wiki de ${produto.nome}` : 'Wiki'} /></h1>
         <button className="btn-sec" type="button" disabled={Boolean(ocupado)} onClick={() => void gerar()}>
           {ocupado === 'Gerando' ? 'Gerando' : 'Gerar de novo'}
         </button>
@@ -109,7 +112,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
       {wiki && wiki.modulos.length === 0 && <Vazio>Este produto ainda não tem módulo. Gerar de novo lê os repositórios clonados.</Vazio>}
       {wiki && wiki.modulos.length > 0 && (
         <div className="modulos">
-          <div>
+          <AnimatedList>
             {wiki.modulos.map((item) => (
               <button key={item.id} type="button" className="modulo-btn" aria-current={item.id === moduloId} onClick={() => setModuloId(item.id)}>
                 {item.nome}
@@ -118,7 +121,7 @@ export function WikiView({ estado }: { estado: EstadoApp }) {
                 </small>
               </button>
             ))}
-          </div>
+          </AnimatedList>
           <div>
             {modulo && <Modulo modulo={modulo} />}
           </div>
@@ -173,7 +176,7 @@ function Modulo({ modulo }: { modulo: ModuloWiki }) {
       {modulo.estado === 'gerando' && <p>Lendo este módulo agora.</p>}
       {modulo.afirmacoes.length === 0 && modulo.estado === 'pronto' && <Vazio>A leitura não trouxe afirmação.</Vazio>}
       {modulo.afirmacoes.map((afirmacao, indice) => (
-        <article className="achado" key={`${afirmacao.caminho}-${indice}`}>
+        <SpotlightCard as="article" className="achado" key={`${afirmacao.caminho}-${indice}`}>
           <header>
             <strong>{afirmacao.texto}</strong>
             {afirmacao.semProva && <span className="pilula aviso">sem prova</span>}
@@ -186,7 +189,7 @@ function Modulo({ modulo }: { modulo: ModuloWiki }) {
               {afirmacao.trecho}
             </p>
           )}
-        </article>
+        </SpotlightCard>
       ))}
     </>
   )

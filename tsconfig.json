@@ -11,6 +11,7 @@
     "types": ["node"],
     "lib": ["ES2022"]
   },
+  "exclude": ["tests/**/*.tsx"],
   "include": [
     "src/main",
     "src/preload",

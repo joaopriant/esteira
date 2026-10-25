@@ -92,7 +92,13 @@ const esquemas: Record<string, z.ZodTypeAny> = {
   sugestoesRadar: vazio,
   descartarSugestao: id,
   enviarParaEsteira: id,
-  conectarRadar: z.object({ provedor: z.enum(['teams', 'slack']), token: z.string().min(8).max(500) }),
+  conectarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp']), token: z.string().min(8).max(500) }),
+  desconectarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']) }),
+  salvarPastaRadar: z.object({ provedor: z.enum(['whatsapp', 'granola', 'plaud']), caminho: z.string().max(300) }),
+  testarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']) }),
+  testarAzure: vazio,
+  testarClaude: vazio,
+  painelConexoes: vazio,
   credenciaisRadar: vazio,
   lerSkillTexto: z.object({ id: z.string().min(1).max(80) }),
   estatisticasBlocos: vazio,
@@ -204,6 +210,18 @@ async function executar(app: EsteiraApp, canal: string, corpo: unknown): Promise
       return app.enviarParaEsteira(dados.id)
     case 'conectarRadar':
       return app.conectarRadar(dados.provedor, dados.token)
+    case 'desconectarRadar':
+      return app.desconectarRadar(dados.provedor)
+    case 'salvarPastaRadar':
+      return app.salvarPastaRadar(dados.provedor, dados.caminho)
+    case 'testarRadar':
+      return app.testarRadar(dados.provedor)
+    case 'testarAzure':
+      return app.testarAzure()
+    case 'testarClaude':
+      return app.testarClaude()
+    case 'painelConexoes':
+      return app.painelConexoes()
     case 'credenciaisRadar':
       return app.credenciaisRadar()
     case 'lerSkillTexto':
