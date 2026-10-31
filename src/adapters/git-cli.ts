@@ -6,8 +6,6 @@ import { caminhoSeguro, redigirSegredo, validarBranch, validarRemoto } from './s
 // Clone e pull na rede da empresa passam fácil de 3 min.
 export const TIMEOUT_REDE_GIT_MS = 30 * 60 * 1000
 
-const URL_PULL = 'https://dev.azure.com/'
-
 const CHAVES_REDE = new Set([
   'http.sslbackend',
   'http.sslcainfo',
@@ -160,10 +158,11 @@ export function criarGit(
         aoProgredir,
       )
     },
-    async atualizar({ dest, branch, pat, aoProgredir }) {
+    async atualizar({ url, dest, branch, pat, aoProgredir }) {
+      validarRemoto(url)
       const pasta = destino(dest)
       const branchOk = validarBranch(branch)
-      const env = await ambiente(pat, URL_PULL)
+      const env = await ambiente(pat, url)
       const antes = await rodar(
         { comando: 'git', args: ['rev-parse', 'HEAD'], cwd: pasta, env, timeoutMs: 30_000 },
         'Não li o commit',

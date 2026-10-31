@@ -152,6 +152,9 @@ describe('limites de caminho e host', () => {
   it('recusa host fora do Azure e branch com comando', () => {
     expect(() => validarOrgUrl('https://evil.example/org')).toThrow(/dev\.azure\.com/)
     expect(() => validarBranch('main;rm')).toThrow(/Branch/)
+    expect(() => validarBranch('-main')).toThrow(/Branch/)
+    expect(() => validarBranch('--upload-pack=x')).toThrow(/Branch/)
+    expect(validarBranch('feature/estorno-parcial')).toBe('feature/estorno-parcial')
     expect(() => caminhoSeguro('/dados/repos', '../segredo')).toThrow(/fora/)
   })
 

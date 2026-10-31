@@ -23,7 +23,8 @@ export function validarRemoto(valor: string): URL {
 }
 
 export function validarBranch(branch: string): string {
-  if (!/^[A-Za-z0-9._/-]+$/.test(branch) || branch.includes('..') || branch.startsWith('/') || branch.endsWith('/')) {
+  // Um nome que começa com - vira opção em `git pull origin -branch`.
+  if (!/^[A-Za-z0-9._/-]+$/.test(branch) || branch.includes('..') || branch.startsWith('-') || branch.startsWith('/') || branch.endsWith('/')) {
     throw new Error(`Branch inválida: ${branch}`)
   }
   return branch

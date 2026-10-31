@@ -51,6 +51,19 @@ describe('proxy e certificados do sistema', () => {
     expect(RedeDoSistema.opcoesHttps({ proxy: null, direto: false })).toBeUndefined()
   })
 
+  it('só trata como direto a resposta literal DIRECT', () => {
+    expect(RedeDoSistema.interpretarPac('DIRECT')).toEqual({ proxy: null, direto: true })
+    expect(RedeDoSistema.interpretarPac('DIRECT; DIRECT')).toEqual({ proxy: null, direto: true })
+    expect(RedeDoSistema.interpretarPac('PROXY proxy.empresa:8080; DIRECT')).toEqual({
+      proxy: 'http://proxy.empresa:8080',
+      direto: false,
+    })
+    expect(() => RedeDoSistema.interpretarPac('SOCKS4 10.0.0.1:1080')).toThrow(/SOCKS4/)
+    expect(() => RedeDoSistema.interpretarPac('direct')).toThrow(/Não entendi o proxy/)
+    expect(() => RedeDoSistema.interpretarPac('')).toThrow(/Não entendi o proxy/)
+    expect(() => RedeDoSistema.interpretarPac('FOO bar')).toThrow(/Não entendi o proxy/)
+  })
+
   it('junta o pacote do Node com o certificado de sistema, sem repetir', () => {
     const sistema = '-----BEGIN CERTIFICATE-----\nSIST\n-----END CERTIFICATE-----'
     const pacote = '-----BEGIN CERTIFICATE-----\nMOZ\n-----END CERTIFICATE-----'
@@ -58,6 +71,20 @@ describe('proxy e certificados do sistema', () => {
     expect(texto.match(/BEGIN CERTIFICATE/g)).toHaveLength(2)
     expect(texto).toContain('SIST')
     expect(texto).toContain('MOZ')
+  })
+
+  it('inclui os certificados de NODE_EXTRA_CA_CERTS no arquivo que o Azure usa', () => {
+    const extra = '-----BEGIN CERTIFICATE-----\nEXTRAUNIC\n-----END CERTIFICATE-----'
+    const texto = RedeDoSistema.textoCa(
+      ['-----BEGIN CERTIFICATE-----\nMOZ\n-----END CERTIFICATE-----'],
+      ['-----BEGIN CERTIFICATE-----\nSIST\n-----END CERTIFICATE-----'],
+      [extra],
+    )
+    expect(texto).toContain('EXTRAUNIC')
+    expect(texto).toContain('MOZ')
+    expect(texto).toContain('SIST')
+    expect(RedeDoSistema.textoCa([], [], [])).toBe('')
+    expect(RedeDoSistema.pemsExtra()).toEqual(tls.getCACertificates('extra').filter((pem) => pem.includes('BEGIN CERTIFICATE')))
   })
 
   it('grava um arquivo de CAs que o SDK consegue ler, com loja do sistema e pacote do Node', async () => {

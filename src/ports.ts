@@ -61,7 +61,7 @@ export interface ClaudePort {
 
 export interface GitPort {
   clone(pedido: { url: string; dest: string; branch: string; pat: string; aoProgredir?: (linha: string) => void }): Promise<void>
-  atualizar(pedido: { dest: string; branch: string; pat: string; aoProgredir?: (linha: string) => void }): Promise<{ arquivosAlterados: string[] }>
+  atualizar(pedido: { url: string; dest: string; branch: string; pat: string; aoProgredir?: (linha: string) => void }): Promise<{ arquivosAlterados: string[] }>
   listarArquivos(dest: string): Promise<string[]>
   lerArquivo(dest: string, relativo: string): Promise<string>
   head(dest: string): Promise<string>

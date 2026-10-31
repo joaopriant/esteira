@@ -47,39 +47,63 @@ export class RedeDoSistema {
     return bruto
   }
 
+  static interpretarPac(texto: string): DecisaoProxy {
+    const partes = texto.split(';').map((parte) => parte.trim()).filter(Boolean)
+    if (partes.length > 0 && partes.every((parte) => parte === 'DIRECT')) {
+      return { proxy: null, direto: true }
+    }
+    const proxy = RedeDoSistema.proxyDeChromium(texto)
+    if (proxy) return { proxy, direto: false }
+    const amostra = texto.trim().slice(0, 120) || '(vazio)'
+    throw new Error(`Não entendi o proxy do sistema: ${amostra}. Aceito DIRECT, PROXY, HTTPS ou SOCKS5.`)
+  }
+
   static async decidir(url: string, env: NodeJS.ProcessEnv = process.env): Promise<DecisaoProxy> {
     if (process.versions.electron) {
+      let texto: string
       try {
         const electron = require('electron') as typeof import('electron')
-        const texto = await electron.session.defaultSession.resolveProxy(url)
-        const proxy = RedeDoSistema.proxyDeChromium(texto)
-        // DIRECT é decisão do PAC: não cair no HTTP_PROXY por cima.
-        return { proxy, direto: proxy === null }
+        texto = await electron.session.defaultSession.resolveProxy(url)
       } catch {
         return { proxy: RedeDoSistema.proxyDoAmbiente(url, env), direto: false }
       }
+      return RedeDoSistema.interpretarPac(texto)
     }
     return { proxy: RedeDoSistema.proxyDoAmbiente(url, env), direto: false }
   }
 
-  static pemsDoSistema(): string[] {
+  static pemsDe(tipo: 'system' | 'extra' | 'bundled'): string[] {
     if (typeof tls.getCACertificates !== 'function') return []
     try {
-      return tls.getCACertificates('system').filter((pem) => pem.includes('BEGIN CERTIFICATE'))
+      return tls.getCACertificates(tipo).filter((pem) => pem.includes('BEGIN CERTIFICATE'))
     } catch {
       return []
     }
   }
 
-  static juntarPems(empacotados: string[], sistema: string[]): string {
+  static pemsDoSistema(): string[] {
+    return RedeDoSistema.pemsDe('system')
+  }
+
+  static pemsExtra(): string[] {
+    return RedeDoSistema.pemsDe('extra')
+  }
+
+  static juntarPems(...listas: string[][]): string {
     const vistos = new Set<string>()
     const saida: string[] = []
-    for (const pem of [...empacotados, ...sistema]) {
+    for (const pem of listas.flat()) {
       if (!pem.includes('BEGIN CERTIFICATE') || vistos.has(pem)) continue
       vistos.add(pem)
       saida.push(pem.trim())
     }
     return saida.length === 0 ? '' : `${saida.join('\n')}\n`
+  }
+
+  // Sem sistema nem extra, o Node já usa o pacote embutido. Com caFile o SDK troca essa lista, então extra tem de ir junto.
+  static textoCa(empacotados: string[], sistema: string[], extra: string[]): string {
+    if (sistema.length === 0 && extra.length === 0) return ''
+    return RedeDoSistema.juntarPems(empacotados, sistema, extra)
   }
 
   static async arquivoCa(): Promise<string | undefined> {
@@ -117,14 +141,13 @@ export class RedeDoSistema {
   }
 
   private static pemsEmpacotados(): string[] {
-    if (typeof tls.getCACertificates === 'function') return tls.getCACertificates('bundled')
+    const daApi = RedeDoSistema.pemsDe('bundled')
+    if (daApi.length > 0) return daApi
     return [...tls.rootCertificates]
   }
 
   private static async gravarCa(): Promise<string | undefined> {
-    const sistema = RedeDoSistema.pemsDoSistema()
-    if (sistema.length === 0) return undefined
-    const texto = RedeDoSistema.juntarPems(RedeDoSistema.pemsEmpacotados(), sistema)
+    const texto = RedeDoSistema.textoCa(RedeDoSistema.pemsEmpacotados(), RedeDoSistema.pemsDoSistema(), RedeDoSistema.pemsExtra())
     if (!texto) return undefined
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-ca-'))
     const arquivo = path.join(dir, 'ca.pem')

@@ -222,6 +222,7 @@ describe('criarGit com dublê', () => {
     const raiz = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-git-'))
     const git = criarGit(processo, raiz, { decidirProxy: async () => SEM_PROXY })
     const mudou = await git.atualizar({
+      url: URL,
       dest: path.join(raiz, 'repo'),
       branch: 'develop',
       pat: PAT,
@@ -238,6 +239,30 @@ describe('criarGit com dublê', () => {
     await fs.rm(raiz, { recursive: true, force: true })
   })
 
+  it('pede o proxy do host real do remoto, inclusive visualstudio.com', async () => {
+    const vistos: string[] = []
+    const processo: Processo = {
+      async executar(pedido) {
+        if (pedido.args[0] === 'config') return { codigo: 1, stdout: '', stderr: '' }
+        if (pedido.args[0] === 'rev-parse') return { codigo: 0, stdout: 'abc\n', stderr: '' }
+        if (pedido.args[0] === 'pull') return { codigo: 0, stdout: '', stderr: '' }
+        if (pedido.args[0] === 'diff') return { codigo: 0, stdout: '', stderr: '' }
+        return { codigo: 1, stdout: '', stderr: 'inesperado' }
+      },
+    }
+    const raiz = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-git-'))
+    const git = criarGit(processo, raiz, {
+      decidirProxy: async (url) => {
+        vistos.push(url)
+        return SEM_PROXY
+      },
+    })
+    const remoto = 'https://fabrikam.visualstudio.com/Projeto/_git/repo'
+    await git.atualizar({ url: remoto, dest: path.join(raiz, 'repo'), branch: 'main', pat: PAT })
+    expect(vistos).toEqual([remoto])
+    await fs.rm(raiz, { recursive: true, force: true })
+  })
+
   it('recusa branch inválida sem chamar o git', async () => {
     let chamadas = 0
     const processo: Processo = {
@@ -249,6 +274,7 @@ describe('criarGit com dublê', () => {
     const raiz = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-git-'))
     const git = criarGit(processo, raiz)
     await expect(git.clone({ url: URL, dest: path.join(raiz, 'repo'), branch: 'feature;rm', pat: PAT })).rejects.toThrow(/Branch/)
+    await expect(git.clone({ url: URL, dest: path.join(raiz, 'repo'), branch: '-main', pat: PAT })).rejects.toThrow(/Branch/)
     expect(chamadas).toBe(0)
     await fs.rm(raiz, { recursive: true, force: true })
   })

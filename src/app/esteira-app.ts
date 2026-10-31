@@ -218,7 +218,7 @@ export class EsteiraApp {
       try {
         const aoProgredir = (linha: string) => this.andamento.set(remoto.id, linha)
         if (anterior?.estado === 'pronto' && anterior.caminhoLocal) {
-          await this.deps.git.atualizar({ dest: pasta, branch, pat, aoProgredir })
+          await this.deps.git.atualizar({ url: remoto.remoteUrl, dest: pasta, branch, pat, aoProgredir })
         } else {
           await this.deps.git.clone({ url: remoto.remoteUrl, dest: pasta, branch, pat, aoProgredir })
         }
@@ -247,6 +247,7 @@ export class EsteiraApp {
       this.andamento.set(repo.id, 'atualizando')
       try {
         const resultado = await this.deps.git.atualizar({
+          url: repo.remoteUrl,
           dest: repo.caminhoLocal,
           branch: repo.branchAcompanhada,
           pat,
