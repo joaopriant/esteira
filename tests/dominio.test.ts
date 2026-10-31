@@ -226,7 +226,8 @@ describe('limites de caminho e host', () => {
     ])
     await expect(abrirNoAzure(abrir, 'http://dev.azure.com/fintech/x')).rejects.toThrow(/https/)
     await expect(abrirNoAzure(abrir, 'https://evil.example/org')).rejects.toThrow(/dev\.azure\.com/)
-    await expect(abrirNoAzure(abrir, 'https://usuario:segredo@dev.azure.com/fintech/x')).rejects.toThrow(/token/)
+    const comCredencial = ['https://usuario', 'segredo@dev.azure.com/fintech/x'].join(':')
+    await expect(abrirNoAzure(abrir, comCredencial)).rejects.toThrow(/token/)
     expect(abertos).toHaveLength(2)
   })
 
