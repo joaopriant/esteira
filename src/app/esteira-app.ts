@@ -51,7 +51,7 @@ import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
-import { caminhoSeguro, contaDoPat, contaRadar, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
+import { caminhoSeguro, contaDoPat, contaRadar, nomePastaSeguro, redigirSegredo, urlSemCredencial, validarBinario, validarOrgUrl, validarRemoto } from '../adapters/seguro'
 import type { AzurePort, ClaudePort } from '../ports'
 
 interface ConfigDisco {
@@ -162,13 +162,16 @@ export class EsteiraApp {
 
   async conectar(orgUrl: string, pat: string): Promise<Ajustes> {
     const url = validarOrgUrl(orgUrl)
-    if (!pat.trim()) throw new Error('Informe o PAT.')
-    await this.deps.segredos.gravar(contaDoPat(url.toString()), pat.trim())
+    const token = pat.trim()
+    if (!token) throw new Error('Informe o PAT.')
+    const org = url.toString().replace(/\/$/, '')
+    if (this.deps.modo === 'falso') await this.deps.azure.listarRepositorios()
+    else await (await criarAzureReal(org, token)).listarRepositorios()
+    await this.deps.segredos.gravar(contaDoPat(url.toString()), token)
     const config = await this.config()
-    config.orgUrl = url.toString().replace(/\/$/, '')
+    config.orgUrl = org
     config.conectado = true
     await this.deps.disco.gravarJson('config.json', config)
-    await (await this.clienteAzure()).listarRepositorios()
     return this.ajustes()
   }
 
@@ -191,15 +194,33 @@ export class EsteiraApp {
     const atuais = await this.repositorios()
     const proximos: Repositorio[] = []
     for (const remoto of remotos) {
-      validarOrgUrl(remoto.remoteUrl)
       const anterior = atuais.find((repo) => repo.id === remoto.id)
       const selecionado = ids.includes(remoto.id)
       const branch = branches[remoto.id] || anterior?.branchAcompanhada || remoto.branchPadrao
+      let remoteUrl: string
+      try {
+        remoteUrl = validarRemoto(remoto.remoteUrl).toString()
+      } catch (erro) {
+        proximos.push({
+          id: remoto.id,
+          nome: remoto.nome,
+          projeto: remoto.projeto,
+          remoteUrl: urlSemCredencial(remoto.remoteUrl),
+          branchPadrao: remoto.branchPadrao,
+          branchAcompanhada: branch,
+          caminhoLocal: anterior?.caminhoLocal,
+          ultimoCommit: anterior?.ultimoCommit,
+          estado: selecionado ? 'erro' : 'nao-clonado',
+          selecionado,
+          erro: selecionado ? (erro instanceof Error ? erro.message : 'A URL do repositório não é válida.') : undefined,
+        })
+        continue
+      }
       const registro: Repositorio = {
         id: remoto.id,
         nome: remoto.nome,
         projeto: remoto.projeto,
-        remoteUrl: remoto.remoteUrl,
+        remoteUrl,
         branchPadrao: remoto.branchPadrao,
         branchAcompanhada: branch,
         caminhoLocal: anterior?.caminhoLocal,
@@ -217,7 +238,7 @@ export class EsteiraApp {
         if (anterior?.estado === 'pronto' && anterior.caminhoLocal) {
           await this.deps.git.atualizar({ dest: pasta, branch, pat })
         } else {
-          await this.deps.git.clone({ url: remoto.remoteUrl, dest: pasta, branch, pat })
+          await this.deps.git.clone({ url: remoteUrl, dest: pasta, branch, pat })
         }
         registro.estado = 'pronto'
         registro.ultimoCommit = await this.deps.git.head(pasta)

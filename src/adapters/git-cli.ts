@@ -30,14 +30,14 @@ export function criarGit(processo: Processo, raizRepos: string): GitPort {
   }
   return {
     async clone({ url, dest, branch, pat }) {
-      validarRemoto(url)
+      const remoto = validarRemoto(url).toString()
       const branchOk = validarBranch(branch)
       const pasta = destino(dest)
       await garantir(
         processo,
         {
           comando: 'git',
-          args: ['clone', '--branch', branchOk, '--single-branch', url, pasta],
+          args: ['clone', '--branch', branchOk, '--single-branch', remoto, pasta],
           env: ambienteGit(pat, process.env),
           timeoutMs: 180_000,
         },
