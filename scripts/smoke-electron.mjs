@@ -68,7 +68,7 @@ async function ate(prazoMs, passo) {
 async function paginaDo(porta) {
   let resposta
   try {
-    resposta = await fetch(`http://127.0.0.1:${porta}/json/list`)
+    resposta = await fetch(`http://127.0.0.1:${porta}/json/list`, { signal: AbortSignal.timeout(2000) })
   } catch {
     throw new Error('A janela ainda não apareceu na depuração remota.')
   }
@@ -203,7 +203,13 @@ async function main() {
   try {
     const pagina = conectar(await ate(30_000, () => paginaDo(porta)))
     sessoes.push(pagina)
-    await pagina.aberto
+    await Promise.race([
+      pagina.aberto,
+      new Promise((_, rejeitar) => {
+        // unref: o prazo não segura o processo depois da fumaça.
+        setTimeout(() => rejeitar(new Error('A depuração remota não abriu o WebSocket em 10 s.')), 10_000).unref()
+      }),
+    ])
     const tela = await ate(40_000, async () => {
       const atual = await estadoDaTela(pagina)
       if (atual.chamar !== 'function') throw new Error('window.esteira.chamar ainda não existe.')
