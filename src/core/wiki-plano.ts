@@ -29,6 +29,11 @@ function segmento(caminho: string): string {
   return 'raiz'
 }
 
+/** shortcut: 80 mil caracteres por chamada da wiki; rever se um módulo precisar caber inteiro numa chamada só. */
+export const LIMITE_CONTEXTO_WIKI = 80_000
+
+const ESTADOS_A_REFAZER = new Set(['erro', 'pendente', 'gerando'])
+
 export function definirModulos(arquivos: ArquivoModulo[]): ModuloPlanejado[] {
   const grupos = new Map<string, ModuloPlanejado>()
   for (const arquivo of arquivos) {
@@ -52,17 +57,18 @@ export function definirModulos(arquivos: ArquivoModulo[]): ModuloPlanejado[] {
 }
 
 export function modulosParaRegenerar(
-  anteriores: { id: string; hashes: Record<string, string> }[],
+  anteriores: { id: string; hashes: Record<string, string>; estado?: string }[],
   atuais: ModuloPlanejado[],
 ): string[] {
-  const antes = new Map(anteriores.map((modulo) => [modulo.id, modulo.hashes]))
+  const antes = new Map(anteriores.map((modulo) => [modulo.id, modulo]))
   const ids: string[] = []
   for (const modulo of atuais) {
-    const hashes = antes.get(modulo.id)
-    if (!hashes) {
+    const anterior = antes.get(modulo.id)
+    if (!anterior || (anterior.estado !== undefined && ESTADOS_A_REFAZER.has(anterior.estado))) {
       ids.push(modulo.id)
       continue
     }
+    const hashes = anterior.hashes
     const chaves = new Set([...Object.keys(hashes), ...Object.keys(modulo.hashes)])
     for (const chave of chaves) {
       if (hashes[chave] !== modulo.hashes[chave]) {
@@ -72,4 +78,21 @@ export function modulosParaRegenerar(
     }
   }
   return ids
+}
+
+export function fatiarPorContexto<T extends { conteudo: string }>(arquivos: T[], limite = LIMITE_CONTEXTO_WIKI): T[][] {
+  const lotes: T[][] = []
+  let lote: T[] = []
+  let usado = 0
+  for (const arquivo of arquivos) {
+    if (lote.length > 0 && usado + arquivo.conteudo.length > limite) {
+      lotes.push(lote)
+      lote = []
+      usado = 0
+    }
+    lote.push(arquivo)
+    usado += arquivo.conteudo.length
+  }
+  if (lote.length > 0) lotes.push(lote)
+  return lotes
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { aplicarContrato } from '../src/core/contrato'
 import { prefiltrarBacklog } from '../src/core/prefiltro-backlog'
-import { definirModulos, modulosParaRegenerar } from '../src/core/wiki-plano'
+import { definirModulos, fatiarPorContexto, modulosParaRegenerar } from '../src/core/wiki-plano'
 import { extrairMencoes, resolverEscopo } from '../src/core/mentoes'
 import { acaoInicialDoBoard, descricaoDoCard, frasePublicacao, idDoCardAberto, montarComentario, urlDoCard } from '../src/core/publicacao'
 import { comMarcaDoAchado } from '../src/core/diff-story'
@@ -115,6 +115,28 @@ describe('wiki incremental', () => {
     const antes = definirModulos(base)
     const depois = definirModulos(base.map((arquivo) => (arquivo.caminho.includes('estorno') ? { ...arquivo, hash: 'z' } : arquivo)))
     expect(modulosParaRegenerar(antes, depois)).toEqual(['pagamentos-api/estorno'])
+  })
+
+  it('refaz erro, pendente e gerando mesmo com o mesmo hash', () => {
+    const planejados = definirModulos(base)
+    const erro = planejados.map((modulo) => ({ ...modulo, estado: modulo.id.endsWith('estorno') ? 'erro' : 'pronto' }))
+    expect(modulosParaRegenerar(erro, planejados)).toEqual(['pagamentos-api/estorno'])
+    const pendente = planejados.map((modulo) => ({ ...modulo, estado: 'pendente' }))
+    expect(modulosParaRegenerar(pendente, planejados).sort()).toEqual(['pagamentos-api/estorno', 'pagamentos-api/liquidacao'])
+    const gerando = planejados.map((modulo) => ({ ...modulo, estado: 'gerando' }))
+    expect(modulosParaRegenerar(gerando, planejados)).toHaveLength(planejados.length)
+    expect(modulosParaRegenerar(planejados.map((modulo) => ({ ...modulo, estado: 'pronto' })), planejados)).toEqual([])
+  })
+
+  it('parte o contexto para caber numa chamada e não descarta o arquivo grande', () => {
+    const arquivos = [
+      { caminho: 'a', conteudo: 'x'.repeat(50) },
+      { caminho: 'b', conteudo: 'y'.repeat(40) },
+      { caminho: 'c', conteudo: 'z'.repeat(30) },
+    ]
+    expect(fatiarPorContexto(arquivos, 80).map((lote) => lote.map((item) => item.caminho))).toEqual([['a'], ['b', 'c']])
+    const grande = [{ caminho: 'grande', conteudo: 'x'.repeat(100) }, { caminho: 'b', conteudo: 'y' }]
+    expect(fatiarPorContexto(grande, 80).map((lote) => lote.map((item) => item.caminho))).toEqual([['grande'], ['b']])
   })
 })
 

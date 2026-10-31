@@ -47,7 +47,7 @@ import { extrairMencoes, resolverEscopo } from '../core/mentoes'
 import { prefiltrarBacklog } from '../core/prefiltro-backlog'
 import { descricaoDoCard, montarComentario } from '../core/publicacao'
 import { dataMesesAtras, novoId } from '../core/texto'
-import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
+import { definirModulos, fatiarPorContexto, LIMITE_CONTEXTO_WIKI, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli, diagnosticarClaude } from '../adapters/claude-cli'
 import { criarProcesso, ehParada } from '../adapters/processo'
@@ -107,6 +107,8 @@ export class EsteiraApp {
   private andamento = new Map<string, string>()
   private execucoes = new Map<string, { controle: AbortController; promessa: Promise<void> }>()
   private ouvintes = new Set<(evento: EventoBloco) => void>()
+  // shortcut: o texto lido fica em memória até o próximo gerarWiki desse repo; rever se a soma passar de algumas centenas de MB.
+  private leituraPorRepo = new Map<string, ArquivoLido[]>()
 
   constructor(private readonly deps: Dependencias) {}
 
@@ -150,9 +152,13 @@ export class EsteiraApp {
     let pendentes = 0
     let gerando = false
     for (const produto of produtos) {
-      const wiki = await this.lerWiki(produto.id)
-      pendentes += wiki.modulos.filter((modulo) => modulo.estado === 'pendente' || modulo.estado === 'gerando').length
-      if (wiki.modulos.some((modulo) => modulo.estado === 'gerando')) gerando = true
+      try {
+        const wiki = await this.lerWiki(produto.id)
+        pendentes += wiki.modulos.filter((modulo) => modulo.estado === 'pendente' || modulo.estado === 'gerando').length
+        if (wiki.modulos.some((modulo) => modulo.estado === 'gerando')) gerando = true
+      } catch (erro) {
+        console.error(`Não li a wiki de ${produto.nome}.`, erro instanceof Error ? erro.message : erro)
+      }
     }
     const sugestoes = await this.lerSugestoes()
     const painel = await this.montarPainel()
@@ -232,6 +238,7 @@ export class EsteiraApp {
 
   async salvarSelecao(ids: string[], branches: Record<string, string> = {}): Promise<Repositorio[]> {
     await this.exigirConexao()
+    this.leituraPorRepo.clear()
     const pat = await this.lerPat()
     const remotos = await (await this.clienteAzure()).listarRepositorios()
     const atuais = await this.repositorios()
@@ -302,6 +309,7 @@ export class EsteiraApp {
 
   async atualizarRepositorios(): Promise<{ arquivosAlterados: string[] }> {
     await this.exigirConexao()
+    this.leituraPorRepo.clear()
     const pat = await this.lerPat()
     const repos = await this.repositorios()
     const alterados: string[] = []
@@ -654,6 +662,7 @@ export class EsteiraApp {
 
   async gerarWiki(produtoId: string): Promise<WikiProduto> {
     const produto = await this.produto(produtoId)
+    for (const id of produto.repositorioIds) this.leituraPorRepo.delete(id)
     const arquivos = await this.arquivosDos(produto.repositorioIds)
     const planejados = definirModulos(arquivos)
     const atual = await this.lerWiki(produtoId)
@@ -675,13 +684,34 @@ export class EsteiraApp {
       }
     })
     await this.gravarWiki(produtoId, modulos)
-    for (const id of regenerar) this.fila.push({ produtoId, moduloId: id })
-    this.corrente = this.corrente.then(() => this.processarFila())
+    for (const id of regenerar) this.enfileirar(produtoId, id)
+    this.acordarFila()
     return this.lerWiki(produtoId)
   }
 
   async drenarWiki(): Promise<void> {
     await this.corrente
+  }
+
+  async retomarWiki(): Promise<void> {
+    let produtos: Produto[] = []
+    try {
+      produtos = await this.produtos()
+    } catch (erro) {
+      console.error('Não retomei a wiki: não li os produtos.', erro)
+      return
+    }
+    for (const produto of produtos) {
+      try {
+        const wiki = await this.lerWiki(produto.id)
+        for (const modulo of wiki.modulos) {
+          if (modulo.estado === 'pendente' || modulo.estado === 'gerando') this.enfileirar(produto.id, modulo.id)
+        }
+      } catch (erro) {
+        console.error(`Não retomei a wiki de ${produto.nome}.`, erro)
+      }
+    }
+    this.acordarFila()
   }
 
   async perguntarWiki(produtoId: string, pergunta: string): Promise<RespostaWiki> {
@@ -696,7 +726,10 @@ export class EsteiraApp {
         afirmacoes.push(...modulo.afirmacoes)
       }
     }
-    const arquivos = await this.arquivosDos(await this.idsDeRepos(produto))
+    const arquivos = await this.arquivosCitados(
+      await this.idsDeRepos(produto),
+      afirmacoes.map((item) => item.caminho),
+    )
     const ajustes = await this.ajustes()
     const resposta = await (await this.clienteClaude()).run({
       papel: 'pergunta',
@@ -1340,26 +1373,88 @@ export class EsteiraApp {
     const lidos: ArquivoLido[] = []
     for (const repo of repos) {
       if (!ids.includes(repo.id) || !repo.caminhoLocal || repo.estado !== 'pronto') continue
+      const cache = this.leituraPorRepo.get(repo.id)
+      if (cache) {
+        lidos.push(...cache)
+        continue
+      }
       const lista = await this.deps.git.listarArquivos(repo.caminhoLocal)
+      const doRepo: ArquivoLido[] = []
       for (const caminho of lista) {
-        let conteudo = ''
-        try {
-          conteudo = await this.deps.git.lerArquivo(repo.caminhoLocal, caminho)
-        } catch {
-          continue
-        }
-        if (conteudo.includes('\0')) continue
-        if (conteudo.length > 80_000) conteudo = conteudo.slice(0, 80_000)
-        lidos.push({
-          repositorioId: repo.id,
-          repositorioNome: repo.nome,
-          caminho,
-          conteudo,
-          hash: hashTexto(conteudo),
-        })
+        const lido = await this.lerConteudo(repo, caminho)
+        if (lido) doRepo.push(lido)
+      }
+      this.leituraPorRepo.set(repo.id, doRepo)
+      lidos.push(...doRepo)
+    }
+    return lidos
+  }
+
+  private async arquivosDoModulo(modulo: Pick<ModuloWiki, 'repositorioId' | 'arquivos'>): Promise<ArquivoLido[]> {
+    const cache = this.leituraPorRepo.get(modulo.repositorioId)
+    if (cache) {
+      const quer = new Set(modulo.arquivos)
+      return cache.filter((arquivo) => quer.has(arquivo.caminho))
+    }
+    const repo = (await this.repositorios()).find((item) => item.id === modulo.repositorioId)
+    if (!repo) return []
+    const lidos: ArquivoLido[] = []
+    for (const caminho of modulo.arquivos) {
+      const lido = await this.lerConteudo(repo, caminho)
+      if (lido) lidos.push(lido)
+    }
+    return lidos
+  }
+
+  private async arquivosCitados(ids: string[], caminhos: string[]): Promise<ArquivoLido[]> {
+    const quer = [...new Set(caminhos.filter((caminho) => caminho && !caminho.includes('..')))]
+    if (quer.length === 0) return []
+    const repos = (await this.repositorios()).filter((repo) => ids.includes(repo.id) && repo.caminhoLocal && repo.estado === 'pronto')
+    const nomes = new Set(quer)
+    const lidos: ArquivoLido[] = []
+    for (const repo of repos) {
+      const cache = this.leituraPorRepo.get(repo.id)
+      if (cache) {
+        lidos.push(...cache.filter((arquivo) => nomes.has(arquivo.caminho)))
+        continue
+      }
+      for (const caminho of quer) {
+        const lido = await this.lerConteudo(repo, caminho)
+        if (lido) lidos.push(lido)
       }
     }
     return lidos
+  }
+
+  private async lerConteudo(repo: Repositorio, caminho: string): Promise<ArquivoLido | null> {
+    if (!repo.caminhoLocal || repo.estado !== 'pronto') return null
+    let conteudo = ''
+    try {
+      conteudo = await this.deps.git.lerArquivo(repo.caminhoLocal, caminho)
+    } catch {
+      return null
+    }
+    if (conteudo.includes('\0')) return null
+    if (conteudo.length > LIMITE_CONTEXTO_WIKI) conteudo = conteudo.slice(0, LIMITE_CONTEXTO_WIKI)
+    return {
+      repositorioId: repo.id,
+      repositorioNome: repo.nome,
+      caminho,
+      conteudo,
+      hash: hashTexto(conteudo),
+    }
+  }
+
+  private enfileirar(produtoId: string, moduloId: string): void {
+    if (this.fila.some((job) => job.produtoId === produtoId && job.moduloId === moduloId)) return
+    this.fila.push({ produtoId, moduloId })
+  }
+
+  private acordarFila(): void {
+    if (this.fila.length === 0) return
+    this.corrente = this.corrente.then(() => this.processarFila()).catch((erro: unknown) => {
+      console.error('A fila da wiki parou.', erro)
+    })
   }
 
   private async processarFila(): Promise<void> {
@@ -1369,10 +1464,14 @@ export class EsteiraApp {
       try {
         await this.gerarModulo(job.produtoId, job.moduloId)
       } catch (erro) {
-        await this.marcarModulo(job.produtoId, job.moduloId, {
-          estado: 'erro',
-          erro: erro instanceof Error ? erro.message : 'Falha ao gerar o módulo.',
-        })
+        try {
+          await this.marcarModulo(job.produtoId, job.moduloId, {
+            estado: 'erro',
+            erro: erro instanceof Error ? erro.message : 'Falha ao gerar o módulo.',
+          })
+        } catch (falha) {
+          console.error(`Não gravei o erro do módulo ${job.moduloId}.`, falha instanceof Error ? falha.message : falha)
+        }
       }
     }
   }
@@ -1382,47 +1481,55 @@ export class EsteiraApp {
     const modulo = wiki.modulos.find((item) => item.id === moduloId)
     if (!modulo) return
     await this.marcarModulo(produtoId, moduloId, { estado: 'gerando' })
-    const arquivos = (await this.arquivosDos([modulo.repositorioId])).filter((arquivo) => modulo.arquivos.includes(arquivo.caminho))
+    const arquivos = await this.arquivosDoModulo(modulo)
+    if (arquivos.length === 0) throw new Error('Não li nenhum arquivo do módulo.')
     const ajustes = await this.ajustes()
-    const resposta = await (await this.clienteClaude()).run({
-      papel: 'wiki',
-      blocoId: moduloId,
-      instrucao: 'Descreva o módulo com afirmações que copiem um trecho literal de cada arquivo.',
-      ideia: modulo.nome,
-      modelo: ajustes.modeloStory,
-      story: STORY_VAZIA,
-      wiki: [],
-      arquivos: arquivos.map((arquivo) => ({ repositorio: arquivo.repositorioNome, caminho: arquivo.caminho, conteudo: arquivo.conteudo })),
-      cards: [],
-      diretorios: [],
-      timeoutMs: ajustes.timeoutBlocoMs,
-    })
-    const json = resposta.json as { titulo?: string; resumo?: string; afirmacoes?: { texto?: string; caminho?: string; trecho?: string }[] }
-    const prova = arquivos.map((arquivo) => ({ caminho: arquivo.caminho, conteudo: arquivo.conteudo, repositorio: arquivo.repositorioNome }))
+    const lotes = fatiarPorContexto(arquivos)
     const afirmacoes: AfirmacaoWiki[] = []
-    for (const item of json.afirmacoes ?? []) {
-      const aplicado = aplicarContrato({
-        papel: 'confrontar',
+    let titulo = ''
+    let resumo = ''
+    for (const lote of lotes) {
+      const resposta = await (await this.clienteClaude()).run({
+        papel: 'wiki',
         blocoId: moduloId,
-        blocoNome: modulo.nome,
+        instrucao: 'Descreva o módulo com afirmações que copiem um trecho literal de cada arquivo.',
+        ideia: modulo.nome,
+        modelo: ajustes.modeloStory,
         story: STORY_VAZIA,
-        achados: [],
-        saidaAchados: [{ texto: item.texto, tipo: 'existe', evidencia: { tipo: 'arquivo', caminho: item.caminho, trecho: item.trecho, repositorio: modulo.repositorioNome } }],
-        arquivos: prova,
+        wiki: [],
+        arquivos: lote.map((arquivo) => ({ repositorio: arquivo.repositorioNome, caminho: arquivo.caminho, conteudo: arquivo.conteudo })),
         cards: [],
-        novoId: () => novoId('af'),
+        diretorios: [],
+        timeoutMs: ajustes.timeoutBlocoMs,
       })
-      const achado = aplicado.achados[0]
-      if (!achado) continue
-      afirmacoes.push({
-        texto: achado.texto,
-        caminho: achado.evidencia.tipo === 'arquivo' ? achado.evidencia.caminho : (item.caminho ?? ''),
-        trecho: achado.evidencia.tipo === 'arquivo' ? achado.evidencia.trecho : (item.trecho ?? ''),
-        semProva: achado.semProva,
-        repositorio: modulo.repositorioNome,
-      })
+      const json = resposta.json as { titulo?: string; resumo?: string; afirmacoes?: { texto?: string; caminho?: string; trecho?: string }[] }
+      if (!titulo && json.titulo) titulo = json.titulo
+      if (json.resumo) resumo = resumo ? `${resumo}\n\n${json.resumo}` : json.resumo
+      const prova = lote.map((arquivo) => ({ caminho: arquivo.caminho, conteudo: arquivo.conteudo, repositorio: arquivo.repositorioNome }))
+      for (const item of json.afirmacoes ?? []) {
+        const aplicado = aplicarContrato({
+          papel: 'confrontar',
+          blocoId: moduloId,
+          blocoNome: modulo.nome,
+          story: STORY_VAZIA,
+          achados: [],
+          saidaAchados: [{ texto: item.texto, tipo: 'existe', evidencia: { tipo: 'arquivo', caminho: item.caminho, trecho: item.trecho, repositorio: modulo.repositorioNome } }],
+          arquivos: prova,
+          cards: [],
+          novoId: () => novoId('af'),
+        })
+        const achado = aplicado.achados[0]
+        if (!achado) continue
+        afirmacoes.push({
+          texto: achado.texto,
+          caminho: achado.evidencia.tipo === 'arquivo' ? achado.evidencia.caminho : (item.caminho ?? ''),
+          trecho: achado.evidencia.tipo === 'arquivo' ? achado.evidencia.trecho : (item.trecho ?? ''),
+          semProva: achado.semProva,
+          repositorio: modulo.repositorioNome,
+        })
+      }
     }
-    const conteudo = [`# ${json.titulo || modulo.nome}`, '', json.resumo || '', '', ...afirmacoes.map((item) => `- ${item.texto}${item.semProva ? ' (sem prova)' : ''}\n  \`${item.caminho}\``)].join('\n')
+    const conteudo = [`# ${titulo || modulo.nome}`, '', resumo, '', ...afirmacoes.map((item) => `- ${item.texto}${item.semProva ? ' (sem prova)' : ''}\n  \`${item.caminho}\``)].join('\n')
     const gravado: ModuloWiki = {
       ...modulo,
       estado: 'pronto',
@@ -1453,7 +1560,16 @@ export class EsteiraApp {
     const modulos: ModuloWiki[] = []
     for (const modulo of indice?.modulos ?? []) {
       const cheio = await this.deps.disco.lerJson<ModuloWiki>(`wiki/${produtoId}/modulos/${moduloArquivo(modulo.id)}.json`)
-      modulos.push(cheio ? { ...modulo, ...cheio, estado: cheio.estado || modulo.estado } : modulo)
+      modulos.push(
+        cheio
+          ? {
+              ...cheio,
+              ...modulo,
+              conteudo: cheio.conteudo,
+              afirmacoes: modulo.afirmacoes.length > 0 ? modulo.afirmacoes : cheio.afirmacoes,
+            }
+          : modulo,
+      )
     }
     return { produtoId, modulos }
   }
