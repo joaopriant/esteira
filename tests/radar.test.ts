@@ -7,7 +7,7 @@ import { corpusExemplo } from '../src/adapters/radar-falso'
 import { criarLeitorReal, lerPasta, parseWhatsApp, pedidoLeitura } from '../src/adapters/radar-leitura'
 import { montarContexto } from '../src/adapters/claude-cli'
 import { sanitizarTextoExterno } from '../src/core/radar'
-import { duplicarBloco, fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, inserirBloco, moverBloco, validarFluxo } from '../src/core/fluxo-padrao'
+import { duplicarBloco, fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, fraseContrato, inserirBloco, moverBloco, validarFluxo } from '../src/core/fluxo-padrao'
 import { STORY_VAZIA } from '../src/shared/tipos'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
@@ -180,6 +180,18 @@ describe('fluxo', () => {
     const story = await app.aguardar((await app.iniciarEsteira('A story já está escrita e precisa só dos confrontos.', 'pix')).id)
     expect(story.passos.map((passo) => passo.papel)).toEqual(['confrontar', 'confrontar', 'confrontar'])
     expect((await app.presetsFluxo()).map((item) => item.id)).toEqual(['completa', 'confrontos', 'radar'])
+  })
+
+  it('descreve o que a linha passa adiante, sem ramo', () => {
+    const fluxo = fluxoPadrao()
+    expect(fraseContrato(fluxo, 0)).toBe('Ideia do PM ou sugestão do Radar → story no modelo')
+    expect(fraseContrato(fluxo, 1)).toBe('Story do bloco 1 + achados 0 → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxo, 2)).toBe('Story do bloco 1 + achados 1 → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxoSoConfrontos(), 0)).toBe('Ideia do PM, ainda sem story → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxoSoConfrontos(), 1)).toBe('Ideia do PM, ainda sem story + achados 1 → só novos achados (não reescreve a story)')
+    const escreveDepois = [...fluxoSoConfrontos().slice(0, 1), fluxoPadrao()[0]!, ...fluxoSoConfrontos().slice(1)]
+    expect(fraseContrato(escreveDepois, 2)).toBe('Story do bloco 2 + achados 1 → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxo, 9)).toBe('')
   })
 })
 
