@@ -59,6 +59,7 @@ describe('ambiente do git', () => {
     expect(env.GIT_CONFIG_NOSYSTEM).toBe('1')
     expect(env.GIT_LFS_SKIP_SMUDGE).toBe('1')
     expect(env.GIT_TERMINAL_PROMPT).toBe('0')
+    expect(env.GIT_ALLOW_PROTOCOL).toBe('https')
     expect(env.ANTHROPIC_API_KEY).toBeUndefined()
     expect(env.GIT_TRACE).toBeUndefined()
     expect(env.GIT_CONFIG_GLOBAL).toBe('/home/eu/.gitconfig')

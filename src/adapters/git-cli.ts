@@ -55,6 +55,8 @@ export function montarAmbienteGit(
     if (chave.startsWith('GIT_CONFIG_')) delete env[chave]
   }
   env.GIT_TERMINAL_PROMPT = '0'
+  // Só https: um submódulo ou redirect não leva o git a ext::, file:// ou ssh.
+  env.GIT_ALLOW_PROTOCOL = 'https'
   // O sistema inteiro fica de fora: no Git for Windows ele traz credential.helper
   // (gravaria o PAT fora do cofre) e pode trazer url.*.insteadOf ou outro extraheader.
   // O ~/.gitconfig continua valendo. Da config de sistema só entram TLS e proxy,

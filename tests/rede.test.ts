@@ -58,6 +58,10 @@ describe('proxy e certificados do sistema', () => {
       proxy: 'http://proxy.empresa:8080',
       direto: false,
     })
+    expect(RedeDoSistema.interpretarPac('DIRECT; PROXY a:1')).toEqual({ proxy: null, direto: true })
+    expect(RedeDoSistema.interpretarPac('PROXY a:1; DIRECT')).toEqual({ proxy: 'http://a:1', direto: false })
+    expect(RedeDoSistema.interpretarPac('SOCKS4 x:1; PROXY a:1')).toEqual({ proxy: 'http://a:1', direto: false })
+    expect(() => RedeDoSistema.interpretarPac('SOCKS4 x:1')).toThrow(/Não entendi o proxy/)
     expect(() => RedeDoSistema.interpretarPac('SOCKS4 10.0.0.1:1080')).toThrow(/SOCKS4/)
     expect(() => RedeDoSistema.interpretarPac('direct')).toThrow(/Não entendi o proxy/)
     expect(() => RedeDoSistema.interpretarPac('')).toThrow(/Não entendi o proxy/)

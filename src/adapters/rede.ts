@@ -48,12 +48,13 @@ export class RedeDoSistema {
   }
 
   static interpretarPac(texto: string): DecisaoProxy {
-    const partes = texto.split(';').map((parte) => parte.trim()).filter(Boolean)
-    if (partes.length > 0 && partes.every((parte) => parte === 'DIRECT')) {
-      return { proxy: null, direto: true }
+    // A ordem do PAC manda: "DIRECT; PROXY p:1" é intranet direto, proxy só se o direto cair.
+    // Entrada que não entendo (SOCKS4, etc.) é pulada em favor da próxima.
+    for (const parte of texto.split(';').map((item) => item.trim()).filter(Boolean)) {
+      if (parte === 'DIRECT') return { proxy: null, direto: true }
+      const proxy = RedeDoSistema.proxyDeChromium(parte)
+      if (proxy) return { proxy, direto: false }
     }
-    const proxy = RedeDoSistema.proxyDeChromium(texto)
-    if (proxy) return { proxy, direto: false }
     const amostra = texto.trim().slice(0, 120) || '(vazio)'
     throw new Error(`Não entendi o proxy do sistema: ${amostra}. Aceito DIRECT, PROXY, HTTPS ou SOCKS5.`)
   }
