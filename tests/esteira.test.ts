@@ -6,8 +6,8 @@ import { criarAplicacao } from '../src/app/criar'
 import { azurePeloSdk, type AzureSdk } from '../src/adapters/azure-devops'
 import { criarClaudeCli, extrairJson } from '../src/adapters/claude-cli'
 import { criarClaudeFalso } from '../src/adapters/falsos'
-import { criarProcesso, ExecucaoParada } from '../src/adapters/processo'
-import type { ClaudePort, Processo } from '../src/ports'
+import { criarProcesso, ExecucaoParada, ligarEncerramento, planoDeMorte } from '../src/adapters/processo'
+import type { ClaudePort, Disco, Processo } from '../src/ports'
 import type { EsteiraApp } from '../src/app/esteira-app'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
@@ -188,6 +188,113 @@ describe('progresso ao vivo', () => {
       await app.parar(inicio.id).catch(() => undefined)
     }
   })
+
+  it('parar durante a gravação do último bloco deixa a story num estado final', async () => {
+    const { app, dataDir } = await appDeTeste()
+    const trava = segurarUltimaGravacao(app)
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    await vi.waitFor(() => expect(trava.dentro()).toBe(true), { timeout: 5_000 })
+    const parando = app.parar(inicio.id)
+    trava.soltar()
+    const story = await parando
+    expect(story.estado).toBe('pronta')
+    expect(story.passos.every((passo) => passo.estado === 'concluido')).toBe(true)
+    expect(story.achados.length).toBeGreaterThan(0)
+    const disco = JSON.parse(await fs.readFile(path.join(dataDir, 'stories', `${inicio.id}.json`), 'utf8')) as { estado: string }
+    expect(disco.estado).toBe('pronta')
+    await expect(app.parar(inicio.id)).resolves.toMatchObject({ estado: 'pronta' })
+  })
+
+  it('erro no último bloco não deixa a story rodando', async () => {
+    const base = criarClaudeFalso()
+    const claude: ClaudePort = {
+      async run(pedido) {
+        if (pedido.blocoId === 'confrontar-backlog') throw new Error('o backlog falhou')
+        return base.run(pedido)
+      },
+    }
+    const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-'))
+    pastas.push(dataDir)
+    const app = await criarAplicacao({ dataDir, modo: 'falso', agora: () => AGORA, semear: true, claude })
+    const fim = await app.aguardar((await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')).id)
+    expect(fim.estado).toBe('erro')
+    expect(fim.erro).toContain('backlog falhou')
+    expect(fim.achados.length).toBeGreaterThan(0)
+    expect(fim.passos.map((passo) => passo.estado)).toEqual(['concluido', 'concluido', 'concluido', 'erro'])
+    const disco = JSON.parse(await fs.readFile(path.join(dataDir, 'stories', `${fim.id}.json`), 'utf8')) as { estado: string }
+    expect(disco.estado).toBe('erro')
+    await expect(app.parar(fim.id)).resolves.toMatchObject({ estado: 'erro' })
+  })
+
+  it('recusa editar a story enquanto a esteira roda', async () => {
+    const { app, soltar } = await appQueTravaNoCodigo()
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    try {
+      await vi.waitFor(async () => {
+        const atual = await app.obterStory(inicio.id)
+        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
+      })
+      await expect(
+        app.editarStory(inicio.id, { titulo: 'mudou', corpo: 'x', descricao: '', criteriosDeAceite: '' }),
+      ).rejects.toThrow('A esteira está rodando. Pare ou espere o fim para editar a story.')
+      const durante = await app.obterStory(inicio.id)
+      expect(durante.story.titulo).not.toBe('mudou')
+      expect(durante.achados.length).toBeGreaterThan(0)
+      const parada = await app.parar(inicio.id)
+      const editada = await app.editarStory(inicio.id, { ...parada.story, titulo: 'Título editado depois' })
+      expect(editada.story.titulo).toBe('Título editado depois')
+      expect(editada.achados.map((achado) => achado.id)).toEqual(parada.achados.map((achado) => achado.id))
+    } finally {
+      soltar()
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
+
+  it('continuar retoma do bloco interrompido sem perder o que já foi gravado', async () => {
+    const { app, soltar } = await appQueTravaNoCodigo()
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    try {
+      await vi.waitFor(async () => {
+        const atual = await app.obterStory(inicio.id)
+        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
+      })
+      const parada = await app.parar(inicio.id)
+      const ids = parada.achados.map((achado) => achado.id)
+      expect(ids.length).toBeGreaterThan(0)
+      expect(parada.story.titulo.length).toBeGreaterThan(0)
+      soltar()
+      const pronta = await app.continuar(parada.id)
+      expect(pronta.estado).toBe('pronta')
+      expect(pronta.story.titulo).toBe(parada.story.titulo)
+      expect(ids.every((id) => pronta.achados.some((achado) => achado.id === id))).toBe(true)
+      expect(pronta.passos.map((passo) => passo.estado)).toEqual(['concluido', 'concluido', 'concluido', 'concluido'])
+      expect(pronta.achados.some((achado) => achado.blocoId === 'confrontar-codigo')).toBe(true)
+    } finally {
+      soltar()
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
+
+  it('recomeçar roda do início e mantém os achados já gravados', async () => {
+    const { app, soltar } = await appQueTravaNoCodigo()
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    try {
+      await vi.waitFor(async () => {
+        const atual = await app.obterStory(inicio.id)
+        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
+      })
+      const parada = await app.parar(inicio.id)
+      const ids = parada.achados.map((achado) => achado.id)
+      soltar()
+      const pronta = await app.recomecar(parada.id)
+      expect(pronta.estado).toBe('pronta')
+      expect(ids.every((id) => pronta.achados.some((achado) => achado.id === id))).toBe(true)
+      expect(pronta.passos.every((passo) => passo.estado === 'concluido')).toBe(true)
+    } finally {
+      soltar()
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
 })
 
 describe('adaptadores reais com dublês', () => {
@@ -331,6 +438,46 @@ describe('adaptadores reais com dublês', () => {
     corte.abort()
     await expect(resposta).rejects.toMatchObject({ name: 'AbortError' })
   })
+
+  it('before-quit e will-quit matam a árvore do claude -p', async () => {
+    expect(planoDeMorte(42, 'win32')).toEqual({ comando: 'taskkill', args: ['/pid', '42', '/t', '/f'] })
+    const ouvintes = new Map<string, () => void>()
+    ligarEncerramento({
+      on(evento, ouvinte) {
+        ouvintes.set(evento, ouvinte)
+      },
+    })
+    expect(ouvintes.has('before-quit')).toBe(true)
+    expect(ouvintes.has('will-quit')).toBe(true)
+    const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
+    pastas.push(pasta)
+    const pidfile = path.join(pasta, 'pids')
+    const pids: number[] = []
+    const promessa = criarProcesso().executar({
+      comando: process.execPath,
+      args: ['-e', scriptNeto()],
+      env: { ...process.env, ESTEIRA_PIDFILE: pidfile },
+      timeoutMs: 4_000,
+    })
+    try {
+      const texto = await esperarTexto(pidfile)
+      pids.push(...texto.split('\n').map((linha) => Number(linha)).filter((pid) => pid > 0))
+      expect(vivo(pids[0]!)).toBe(true)
+      expect(vivo(pids[1]!)).toBe(true)
+      ouvintes.get('before-quit')?.()
+      await vi.waitFor(() => {
+        expect(vivo(pids[0]!)).toBe(false)
+        expect(vivo(pids[1]!)).toBe(false)
+      })
+      ouvintes.get('will-quit')?.()
+      await expect(Promise.race([promessa, Promise.resolve('encerrou')])).resolves.toBeTruthy()
+    } finally {
+      ouvintes.get('will-quit')?.()
+      for (const pid of pids) {
+        try { process.kill(pid, 'SIGKILL') } catch { /* já saiu */ }
+      }
+    }
+  })
 })
 
 async function ateOFim(app: EsteiraApp, ideia: string) {
@@ -359,6 +506,72 @@ async function esperarTexto(caminho: string): Promise<string> {
     await new Promise((resolver) => setTimeout(resolver, 20))
   }
   throw new Error('o processo não registrou o pid')
+}
+
+function scriptNeto(): string {
+  return [
+    "const fs = require('node:fs')",
+    "const { spawn } = require('node:child_process')",
+    "const neto = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })",
+    "fs.writeFileSync(process.env.ESTEIRA_PIDFILE, String(process.pid) + '\\n' + String(neto.pid) + '\\n')",
+    'setInterval(() => {}, 1000)',
+  ].join('\n')
+}
+
+async function appQueTravaNoCodigo(): Promise<{ app: EsteiraApp; soltar: () => void }> {
+  const base = criarClaudeFalso()
+  let travar = false
+  const claude: ClaudePort = {
+    async run(pedido) {
+      if (travar && pedido.blocoId === 'confrontar-codigo') {
+        await new Promise((_resolve, reject) => {
+          const abortar = () => reject(new ExecucaoParada())
+          if (pedido.sinal?.aborted) abortar()
+          else pedido.sinal?.addEventListener('abort', abortar, { once: true })
+        })
+      }
+      return base.run(pedido)
+    },
+  }
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-'))
+  pastas.push(dataDir)
+  const app = await criarAplicacao({ dataDir, modo: 'falso', agora: () => AGORA, semear: true, claude })
+  travar = true
+  return {
+    app,
+    soltar() {
+      travar = false
+    },
+  }
+}
+
+function segurarUltimaGravacao(app: EsteiraApp): { dentro: () => boolean; soltar: () => void } {
+  const deps = (app as unknown as { deps: { disco: Disco } }).deps
+  const disco = deps.disco
+  let dentro = false
+  let soltar = () => {}
+  const trava = new Promise<void>((resolver) => {
+    soltar = resolver
+  })
+  deps.disco = {
+    caminho: (relativo) => disco.caminho(relativo),
+    lerJson: (relativo) => disco.lerJson(relativo),
+    listar: (relativo) => disco.listar(relativo),
+    async gravarJson(relativo, valor) {
+      const story = valor as { estado?: string; passos?: { estado: string }[] }
+      const ultima =
+        relativo.startsWith('stories/') &&
+        story.estado === 'rodando' &&
+        !!story.passos?.length &&
+        story.passos.every((passo) => passo.estado === 'concluido')
+      if (ultima && !dentro) {
+        dentro = true
+        await trava
+      }
+      await disco.gravarJson(relativo, valor)
+    },
+  }
+  return { dentro: () => dentro, soltar: () => soltar() }
 }
 
 async function lerTudo(raiz: string): Promise<string> {

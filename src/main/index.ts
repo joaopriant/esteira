@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron'
 import path from 'node:path'
+import { ligarEncerramento } from '../adapters/processo'
 import { criarAplicacao } from '../app/criar'
 import { despachar } from '../app/api'
 import type { EsteiraApp } from '../app/esteira-app'
@@ -65,6 +66,7 @@ function criarJanela(): BrowserWindow {
 }
 
 app.setAppUserModelId('com.esteira.desktop')
+ligarEncerramento(app)
 
 app.whenReady().then(() => {
   if (app.isPackaged) {

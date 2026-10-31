@@ -14,12 +14,20 @@ export function ehParada(erro: unknown): boolean {
   return erro instanceof Error && erro.name === 'AbortError'
 }
 
+const vivos = new Set<ChildProcess>()
+
+export function planoDeMorte(pid: number, plataforma = process.platform): { comando: 'taskkill'; args: string[] } | { grupo: true } {
+  if (plataforma === 'win32') return { comando: 'taskkill', args: ['/pid', String(pid), '/t', '/f'] }
+  return { grupo: true }
+}
+
 // shortcut: neto que chamar setsid escapa do grupo, revisar se o claude -p passar a soltar o processo.
-function matarArvore(filho: ChildProcess): void {
+export function matarArvore(filho: ChildProcess): void {
   const pid = filho.pid
   if (!pid) return
-  if (process.platform === 'win32') {
-    spawn('taskkill', ['/pid', String(pid), '/t', '/f'], { windowsHide: true, stdio: 'ignore' })
+  const plano = planoDeMorte(pid)
+  if ('comando' in plano) {
+    spawn(plano.comando, plano.args, { windowsHide: true, stdio: 'ignore' })
     return
   }
   try {
@@ -31,6 +39,16 @@ function matarArvore(filho: ChildProcess): void {
       /* já saiu */
     }
   }
+}
+
+export function encerrarProcessos(): void {
+  for (const filho of [...vivos]) matarArvore(filho)
+}
+
+export function ligarEncerramento(alvo: { on(evento: string, ouvinte: () => void): void }): void {
+  const matar = () => encerrarProcessos()
+  alvo.on('before-quit', matar)
+  alvo.on('will-quit', matar)
 }
 
 export function criarProcesso(): Processo {
@@ -82,10 +100,13 @@ export function criarProcesso(): Processo {
         filho.stderr.on('data', (parte: string) => {
           if (stderr.length < TETO_SAIDA) stderr += parte.slice(0, TETO_SAIDA - stderr.length)
         })
+        vivos.add(filho)
         filho.on('error', (erro) => {
+          vivos.delete(filho)
           falhar(erro)
         })
         filho.on('close', (codigo) => {
+          vivos.delete(filho)
           if (cancelado || sinal?.aborted) {
             falhar(new ExecucaoParada())
             return

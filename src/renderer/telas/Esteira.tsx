@@ -173,10 +173,20 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
               Voltar à story
             </button>
           )}
-          {story?.estado === 'pausada' && (
+          {(story?.estado === 'pausada' || story?.estado === 'interrompida') && (
             <AcaoPrimaria type="button" disabled={Boolean(ocupado)} onClick={() => void agir('Continuando', async () => aplicar(await chamar<StoryRun>('continuar', { id: story.id })))}>
               {ocupado === 'Continuando' ? <ShinyText text="Continuando" /> : 'Continuar'}
             </AcaoPrimaria>
+          )}
+          {story?.estado === 'interrompida' && (
+            <button
+              className="btn-sec"
+              type="button"
+              disabled={Boolean(ocupado)}
+              onClick={() => void agir('Recomeçando', async () => aplicar(await chamar<StoryRun>('recomecar', { id: story.id })))}
+            >
+              {ocupado === 'Recomeçando' ? 'Recomeçando' : 'Recomeçar'}
+            </button>
           )}
           {!nova && story?.estado === 'pronta' && !story.diffPendente && !story.publicacao && (
             // A seção do board fica abaixo da story; este botão leva até ela quando publicar vira a ação principal.
@@ -416,7 +426,7 @@ function sublinha(story: StoryRun | null, pendentes: number): string {
   if (story.estado === 'interrompida') {
     const nome = story.passos.find((passo) => passo.estado === 'interrompido')?.nome ?? 'um bloco'
     const n = story.achados.length
-    return `Parada em ${nome}. ${n} ${n === 1 ? 'achado fica' : 'achados ficam'}.`
+    return `Parada em ${nome}. ${n} ${n === 1 ? 'achado fica' : 'achados ficam'}. Continuar segue deste bloco.`
   }
   if (story.estado === 'erro') return story.erro || 'A esteira parou com erro.'
   if (story.estado === 'pausada') {

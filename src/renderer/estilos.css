@@ -113,6 +113,8 @@ h2 { font-size: 16px; font-weight: 500; }
   padding: var(--pad);
 }
 .titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.titulo .acoes { flex: none; }
+.titulo .acoes .btn, .titulo .acoes .btn-sec { white-space: nowrap; }
 h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line-height: 28px; overflow-wrap: anywhere; }
 .sub { color: var(--muted); font-size: var(--fs-body); margin: 4px 0 20px; }
 .acoes { display: flex; gap: 8px; align-items: center; }
