@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { Achado, EstadoApp, LinhaDiff, Publicacao, StoryRun, StoryTexto } from '../../shared/tipos'
 import { STORY_VAZIA } from '../../shared/tipos'
 import { acaoInicialDoBoard, frasePublicacao, idDoCardAberto, urlDoCard } from '../../core/publicacao'
@@ -27,6 +27,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
   const [area, setArea] = useState(estado.ajustes.areaPadrao)
   const [iteracao, setIteracao] = useState(estado.ajustes.iteracaoPadrao)
   const [cardId, setCardId] = useState('')
+  const seguir = useRef(true)
 
   useEffect(() => {
     if (!abrirId) return
@@ -58,6 +59,31 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
     // O produto da story aberta basta para preencher o projeto uma vez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId, nova])
+
+  // Cada bloco grava a story. Ler de novo no mesmo canal atualiza o trilho e os achados.
+  useEffect(() => {
+    if (nova || !story || story.estado !== 'rodando') return
+    seguir.current = true
+    const id = story.id
+    let vivo = true
+    async function ler() {
+      if (!vivo || !seguir.current) return
+      try {
+        const lida = await chamar<StoryRun>('obterStory', { id })
+        if (!vivo || !seguir.current) return
+        setStory(lida)
+        setRascunho(lida.story)
+      } catch {
+        /* a próxima leitura tenta de novo */
+      }
+    }
+    void ler()
+    const timer = setInterval(() => void ler(), 400)
+    return () => {
+      vivo = false
+      clearInterval(timer)
+    }
+  }, [nova, story?.id, story?.estado])
 
   const pendentes = story?.achados.filter((achado) => achado.estado === 'pendente').length ?? 0
   const cardAceito = story ? idDoCardAberto(story.achados, { somenteAceito: true }) : null
@@ -102,6 +128,22 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
     setNova(false)
   }
 
+  async function parar() {
+    if (!story) return
+    seguir.current = false
+    setOcupado('Parando')
+    setErro('')
+    try {
+      aplicar(await chamar<StoryRun>('pararEsteira', { id: story.id }))
+      await recarregar()
+    } catch (falha) {
+      seguir.current = true
+      setErro(mensagemDe(falha))
+    } finally {
+      setOcupado('')
+    }
+  }
+
   if (estado.produtos.length === 0) {
     return (
       <>
@@ -117,6 +159,11 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
       <div className="titulo">
         <h1>{nova ? <BlurText text="Nova story" /> : <DecryptedText text={story?.story.titulo || 'Story sem título'} />}</h1>
         <div className="acoes">
+          {story?.estado === 'rodando' && (
+            <button className="btn" type="button" disabled={ocupado === 'Parando'} onClick={() => void parar()}>
+              {ocupado === 'Parando' ? 'Parando' : 'Parar'}
+            </button>
+          )}
           {!nova && (
             <button
               className="btn-sec"
@@ -125,7 +172,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                 if (story?.produtoId) setProdutoId(story.produtoId)
                 setNova(true)
               }}
-              disabled={Boolean(ocupado)}
+              disabled={Boolean(ocupado) || story?.estado === 'rodando'}
             >
               Nova story
             </button>
@@ -135,10 +182,20 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
               Voltar à story
             </button>
           )}
-          {story?.estado === 'pausada' && (
+          {(story?.estado === 'pausada' || story?.estado === 'interrompida') && (
             <AcaoPrimaria type="button" disabled={Boolean(ocupado)} onClick={() => void agir('Continuando', async () => aplicar(await chamar<StoryRun>('continuar', { id: story.id })))}>
               {ocupado === 'Continuando' ? <ShinyText text="Continuando" /> : 'Continuar'}
             </AcaoPrimaria>
+          )}
+          {story?.estado === 'interrompida' && (
+            <button
+              className="btn-sec"
+              type="button"
+              disabled={Boolean(ocupado)}
+              onClick={() => void agir('Recomeçando', async () => aplicar(await chamar<StoryRun>('recomecar', { id: story.id })))}
+            >
+              {ocupado === 'Recomeçando' ? 'Recomeçando' : 'Recomeçar'}
+            </button>
           )}
           {!nova && story?.estado === 'pronta' && !story.diffPendente && !story.publicacao && (
             // A seção do board fica abaixo da story; este botão leva até ela quando publicar vira a ação principal.
@@ -221,9 +278,9 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                 ))}
               </section>
             )}
-            <ol className="trilho">
+            <ol className="trilho" aria-live="polite" aria-busy={story.estado === 'rodando'}>
               {story.passos.map((passo) => (
-                <li key={passo.blocoId} className={passo.estado} aria-current={passo.estado === 'rodando' || passo.estado === 'pausado' ? 'step' : undefined}>
+                <li key={passo.blocoId} className={passo.estado} aria-current={passo.estado === 'rodando' || passo.estado === 'pausado' || passo.estado === 'interrompido' ? 'step' : undefined}>
                   <strong>{passo.nome}</strong>
                   <small>
                     {passo.modo === 'por-clique' ? 'por clique' : 'automático'}
@@ -268,28 +325,28 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
               >
                 <label className="campo">
                   <span>Título</span>
-                  <input value={rascunho.titulo} onChange={(evento) => setRascunho({ ...rascunho, titulo: evento.target.value })} disabled={Boolean(story.diffPendente)} />
+                  <input value={rascunho.titulo} onChange={(evento) => setRascunho({ ...rascunho, titulo: evento.target.value })} disabled={Boolean(story.diffPendente) || story.estado === 'rodando'} />
                 </label>
                 <label className="campo">
                   <span>Story</span>
-                  <textarea className="alto" value={rascunho.corpo} onChange={(evento) => setRascunho({ ...rascunho, corpo: evento.target.value })} disabled={Boolean(story.diffPendente)} />
+                  <textarea className="alto" value={rascunho.corpo} onChange={(evento) => setRascunho({ ...rascunho, corpo: evento.target.value })} disabled={Boolean(story.diffPendente) || story.estado === 'rodando'} />
                 </label>
                 <label className="campo">
                   <span>Descrição</span>
-                  <textarea value={rascunho.descricao} onChange={(evento) => setRascunho({ ...rascunho, descricao: evento.target.value })} disabled={Boolean(story.diffPendente)} />
+                  <textarea value={rascunho.descricao} onChange={(evento) => setRascunho({ ...rascunho, descricao: evento.target.value })} disabled={Boolean(story.diffPendente) || story.estado === 'rodando'} />
                 </label>
                 <label className="campo">
                   <span>Critérios de aceite</span>
-                  <textarea value={rascunho.criteriosDeAceite} onChange={(evento) => setRascunho({ ...rascunho, criteriosDeAceite: evento.target.value })} disabled={Boolean(story.diffPendente)} />
+                  <textarea value={rascunho.criteriosDeAceite} onChange={(evento) => setRascunho({ ...rascunho, criteriosDeAceite: evento.target.value })} disabled={Boolean(story.diffPendente) || story.estado === 'rodando'} />
                 </label>
                 <div className="acoes">
-                  <button className="btn-sec" type="submit" disabled={!sujo || Boolean(ocupado) || Boolean(story.diffPendente)}>
+                  <button className="btn-sec" type="submit" disabled={!sujo || Boolean(ocupado) || Boolean(story.diffPendente) || story.estado === 'rodando'}>
                     Salvar texto
                   </button>
                   <button
                     className="btn-texto"
                     type="button"
-                    disabled={Boolean(ocupado) || Boolean(story.diffPendente)}
+                    disabled={Boolean(ocupado) || Boolean(story.diffPendente) || story.estado === 'rodando'}
                     onClick={() =>
                       void agir('Reconfrontando', async () => {
                         await gravarRascunho(story.id)
@@ -339,14 +396,16 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                   <h2>Achados</h2>
                   <span className="num">{pendentes} pendentes</span>
                 </header>
-                {achados.length === 0 && <Vazio>Nenhum achado nesta story.</Vazio>}
+                {achados.length === 0 && (
+                  <Vazio>{story.estado === 'rodando' ? 'Os achados aparecem aqui quando o bloco termina.' : 'Nenhum achado nesta story.'}</Vazio>
+                )}
                 <AnimatedList>
                 {achados.map((achado, indice) => (
                   <Fragment key={achado.id}>
                   {achado.estado !== 'pendente' && achados[indice - 1]?.estado === 'pendente' && <p className="achados-resolvidos">Decididos</p>}
                   <AchadoCard
                     achado={achado}
-                    travado={Boolean(ocupado) || Boolean(story.diffPendente)}
+                    travado={Boolean(ocupado) || Boolean(story.diffPendente) || story.estado === 'rodando'}
                     aoAceitar={() =>
                       void agir('Preparando', async () => {
                         await gravarRascunho(story.id)
@@ -369,6 +428,17 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
 
 function sublinha(story: StoryRun | null, pendentes: number): string {
   if (!story) return 'Abrindo a story.'
+  if (story.estado === 'rodando') {
+    const atual = story.passos.find((passo) => passo.estado === 'rodando')
+    const feitos = story.passos.filter((passo) => passo.estado === 'concluido').length
+    if (!atual) return `Começando. ${feitos} de ${story.passos.length} blocos terminaram.`
+    return `${atual.nome} está rodando. ${feitos} de ${story.passos.length} já terminaram.`
+  }
+  if (story.estado === 'interrompida') {
+    const nome = story.passos.find((passo) => passo.estado === 'interrompido')?.nome ?? 'um bloco'
+    const n = story.achados.length
+    return `Parada em ${nome}. ${n} ${n === 1 ? 'achado fica' : 'achados ficam'}. Continuar segue deste bloco.`
+  }
   if (story.estado === 'erro') return story.erro || 'A esteira parou com erro.'
   if (story.estado === 'pausada') {
     const nome = story.passos.find((passo) => passo.blocoId === story.pausadaNoBlocoId)?.nome ?? 'um bloco'
@@ -386,6 +456,7 @@ function rotuloPasso(estado: string): string {
   if (estado === 'rodando') return 'rodando'
   if (estado === 'pausado') return 'esperando'
   if (estado === 'erro') return 'erro'
+  if (estado === 'interrompido') return 'parado'
   return 'na fila'
 }
 

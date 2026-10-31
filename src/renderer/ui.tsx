@@ -50,6 +50,7 @@ export const TIPO_ACHADO: Record<TipoAchado, string> = {
 export function rotuloStory(estado: EstadoStory): string {
   if (estado === 'pronta') return 'pronta'
   if (estado === 'pausada') return 'pausada'
+  if (estado === 'interrompida') return 'parada'
   if (estado === 'erro') return 'erro'
   return 'rodando'
 }

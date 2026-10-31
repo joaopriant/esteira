@@ -50,7 +50,9 @@ const esquemas: Record<string, z.ZodTypeAny> = {
   perguntarWiki: z.object({ produtoId: z.string().min(1).max(80), pergunta: z.string().min(1).max(4_000) }),
   obterStory: id,
   iniciarEsteira: z.object({ ideia: z.string().min(1).max(20_000), produtoId: z.string().min(1).max(80) }),
+  pararEsteira: id,
   continuar: id,
+  recomecar: id,
   editarStory: id.extend({ story: storyTexto }),
   reconfrontar: id,
   aceitarAchado: id.extend({ achadoId: z.string().min(1).max(80) }),
@@ -172,8 +174,12 @@ async function executar(app: EsteiraApp, canal: string, corpo: unknown): Promise
       return app.obterStory(dados.id)
     case 'iniciarEsteira':
       return app.iniciarEsteira(dados.ideia, dados.produtoId)
+    case 'pararEsteira':
+      return app.parar(dados.id)
     case 'continuar':
       return app.continuar(dados.id)
+    case 'recomecar':
+      return app.recomecar(dados.id)
     case 'editarStory':
       return app.editarStory(dados.id, dados.story)
     case 'reconfrontar':

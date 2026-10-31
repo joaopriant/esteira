@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { melhorCitacao, classificarTipo } from '../core/radar'
 import type { Achado, StoryTexto, WorkItem } from '../shared/tipos'
 import type { AzurePort, ClaudePort, GitPort, PedidoClaude } from '../ports'
+import { ExecucaoParada } from './processo'
 import { caminhoSeguro } from './seguro'
 import { REPOS_EXEMPLO } from '../app/exemplo'
 
@@ -179,11 +180,37 @@ function storyEscrita(pedido: PedidoClaude): StoryTexto {
   }
 }
 
+// shortcut: atraso só no modo exemplo via ESTEIRA_PASSO_MS, revisar se o preview ganhar relógio próprio.
+async function pausaExemplo(sinal: AbortSignal | undefined, papel: PedidoClaude['papel']): Promise<void> {
+  if (papel !== 'escrever' && papel !== 'confrontar') {
+    if (sinal?.aborted) throw new ExecucaoParada()
+    return
+  }
+  const ms = Number(process.env.ESTEIRA_PASSO_MS ?? 0)
+  if (!Number.isFinite(ms) || ms <= 0) {
+    if (sinal?.aborted) throw new ExecucaoParada()
+    return
+  }
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      sinal?.removeEventListener('abort', abortar)
+      resolve()
+    }, ms)
+    const abortar = () => {
+      clearTimeout(timer)
+      reject(new ExecucaoParada())
+    }
+    if (sinal?.aborted) abortar()
+    else sinal?.addEventListener('abort', abortar, { once: true })
+  })
+}
+
 export function criarClaudeFalso(): ClaudePort & { modulosGerados: string[] } {
   const modulosGerados: string[] = []
   return {
     modulosGerados,
     async run(pedido) {
+      await pausaExemplo(pedido.sinal, pedido.papel)
       if (pedido.papel === 'wiki') {
         modulosGerados.push(pedido.blocoId)
         const afirmacoes = pedido.arquivos.flatMap((arquivo) => {

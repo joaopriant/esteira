@@ -115,6 +115,7 @@ h2 { font-size: 16px; font-weight: 500; }
 .titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
 .titulo > h1 { min-width: 0; flex: 1; }
 .titulo .acoes { flex: none; }
+.titulo .acoes .btn, .titulo .acoes .btn-sec { white-space: nowrap; }
 h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line-height: 28px; overflow-wrap: anywhere; }
 .sub { color: var(--muted); font-size: var(--fs-body); margin: 4px 0 20px; }
 .acoes { display: flex; gap: 8px; align-items: center; }
@@ -159,6 +160,8 @@ h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line
 }
 .trilho li.concluido { border-bottom-color: var(--text); }
 .trilho li.rodando, .trilho li.pausado { border-bottom-color: var(--accent); }
+.trilho li.rodando strong { color: var(--accent); }
+.trilho li.interrompido { border-bottom-color: var(--warning); }
 .trilho li.erro { border-bottom-color: var(--negative); }
 .trilho strong { display: block; font-size: 14px; font-weight: 500; }
 .trilho small { color: var(--muted); font-size: var(--fs-small); }

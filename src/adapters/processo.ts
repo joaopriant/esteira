@@ -8,26 +8,59 @@ const TETO_ATALHO = 64_000
 // Depois do kill, netos (ripgrep, MCP) podem segurar o pipe e o close não chega.
 export const GRACA_MS = 2_000
 
-export function matarFilho(filho: Pick<ChildProcess, 'pid' | 'kill'>, plataforma: NodeJS.Platform = process.platform): void {
-  if (plataforma === 'win32' && filho.pid) {
-    spawn('taskkill', ['/pid', String(filho.pid), '/t', '/f'], {
-      windowsHide: true,
-      stdio: 'ignore',
-      shell: false,
-    }).on('error', () => {
-      try {
-        filho.kill('SIGKILL')
-      } catch {
-        /* já saiu */
-      }
-    })
-    return
+export class ExecucaoParada extends Error {
+  constructor() {
+    super('Parado.')
+    this.name = 'AbortError'
   }
+}
+
+export function ehParada(erro: unknown): boolean {
+  return erro instanceof Error && erro.name === 'AbortError'
+}
+
+const vivos = new Set<ChildProcess>()
+
+export function planoDeMorte(pid: number, plataforma: NodeJS.Platform = process.platform): { comando: 'taskkill'; args: string[] } | { grupo: true } {
+  if (plataforma === 'win32') return { comando: 'taskkill', args: ['/pid', String(pid), '/t', '/f'] }
+  return { grupo: true }
+}
+
+function matarSo(filho: Pick<ChildProcess, 'kill'>): void {
   try {
     filho.kill('SIGKILL')
   } catch {
     /* já saiu */
   }
+}
+
+// shortcut: neto que chamar setsid escapa do grupo, revisar se o claude -p passar a soltar o processo.
+export function matarArvore(filho: Pick<ChildProcess, 'pid' | 'kill'>, plataforma: NodeJS.Platform = process.platform): void {
+  const pid = filho.pid
+  if (!pid) {
+    matarSo(filho)
+    return
+  }
+  const plano = planoDeMorte(pid, plataforma)
+  if ('comando' in plano) {
+    spawn(plano.comando, plano.args, { windowsHide: true, stdio: 'ignore', shell: false }).on('error', () => matarSo(filho))
+    return
+  }
+  try {
+    process.kill(-pid, 'SIGKILL')
+  } catch {
+    matarSo(filho)
+  }
+}
+
+export function encerrarProcessos(): void {
+  for (const filho of [...vivos]) matarArvore(filho)
+}
+
+export function ligarEncerramento(alvo: { on(evento: string, ouvinte: () => void): void }): void {
+  const matar = () => encerrarProcessos()
+  alvo.on('before-quit', matar)
+  alvo.on('will-quit', matar)
 }
 
 function avisar(
@@ -87,8 +120,12 @@ function buscaReal(env: NodeJS.ProcessEnv | undefined): BuscaNoDisco {
 
 export function criarProcesso(busca?: BuscaNoDisco, plataforma: NodeJS.Platform = process.platform): Processo {
   return {
-    executar({ comando, args, cwd, env, entrada, timeoutMs, aoSaida }) {
+    executar({ comando, args, cwd, env, entrada, timeoutMs, sinal, aoSaida }) {
       return new Promise((resolve, reject) => {
+        if (sinal?.aborted) {
+          reject(new ExecucaoParada())
+          return
+        }
         let alvo: { comando: string; args: string[] }
         try {
           alvo = Executavel.preparar(comando, args, busca ?? buscaReal(env))
@@ -102,29 +139,45 @@ export function criarProcesso(busca?: BuscaNoDisco, plataforma: NodeJS.Platform 
           shell: false,
           windowsHide: true,
           stdio: ['pipe', 'pipe', 'pipe'],
+          // Fora do Windows o filho lidera o próprio grupo, e matarArvore mata o grupo inteiro.
+          detached: plataforma !== 'win32',
         })
         let stdout = ''
         let stderr = ''
-        let estourou = false
-        let acabou = false
-        let timer: ReturnType<typeof setTimeout>
+        let terminou = false
+        let motivo: Error | undefined
         let graca: ReturnType<typeof setTimeout> | undefined
-        const estouro = () => new Error(`O processo ${comando} passou de ${timeoutMs} ms.`)
-        const terminar = (acao: () => void) => {
-          if (acabou) return
-          acabou = true
+        const fechar = () => {
+          sinal?.removeEventListener('abort', aoAbortar)
           clearTimeout(timer)
           clearTimeout(graca)
-          acao()
+          vivos.delete(filho)
         }
-        timer = setTimeout(() => {
-          estourou = true
-          matarFilho(filho, plataforma)
+        const falhar = (erro: Error) => {
+          if (terminou) return
+          terminou = true
+          fechar()
+          reject(erro)
+        }
+        const concluir = (valor: { codigo: number; stdout: string; stderr: string }) => {
+          if (terminou) return
+          terminou = true
+          fechar()
+          resolve(valor)
+        }
+        // Timeout e Parar seguem o mesmo caminho: mata a árvore e, se o close
+        // não chegar na graça, rejeita assim mesmo e solta os pipes.
+        const encerrar = (erro: Error) => {
+          if (terminou || motivo) return
+          motivo = erro
+          matarArvore(filho, plataforma)
           graca = setTimeout(() => {
-            terminar(() => reject(estouro()))
+            falhar(erro)
             soltar(filho)
           }, GRACA_MS)
-        }, timeoutMs)
+        }
+        const aoAbortar = () => encerrar(new ExecucaoParada())
+        const timer = setTimeout(() => encerrar(new Error(`O processo ${comando} passou de ${timeoutMs} ms.`)), timeoutMs)
         filho.stdout.setEncoding('utf8')
         filho.stderr.setEncoding('utf8')
         filho.stdout.on('data', (parte: string) => {
@@ -135,20 +188,18 @@ export function criarProcesso(busca?: BuscaNoDisco, plataforma: NodeJS.Platform 
           avisar(aoSaida, 'stderr', parte)
           if (stderr.length < TETO_SAIDA) stderr += parte.slice(0, TETO_SAIDA - stderr.length)
         })
-        filho.on('error', (erro) => {
-          terminar(() => reject(estourou ? estouro() : erro))
-        })
+        vivos.add(filho)
+        filho.on('error', (erro) => falhar(motivo ?? erro))
         filho.on('close', (codigo) => {
-          terminar(() => {
-            if (estourou) {
-              reject(estouro())
-              return
-            }
-            resolve({ codigo: codigo ?? 1, stdout, stderr })
-          })
+          if (motivo) {
+            falhar(motivo)
+            return
+          }
+          concluir({ codigo: codigo ?? 1, stdout, stderr })
         })
         if (entrada) filho.stdin.end(entrada)
         else filho.stdin.end()
+        sinal?.addEventListener('abort', aoAbortar, { once: true })
       })
     },
   }

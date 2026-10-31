@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { ClaudePort, PedidoClaude, Processo, RespostaClaude } from '../ports'
+import { ExecucaoParada } from './processo'
 import { redigirSegredo, validarBinario } from './seguro'
 
 const VERSAO_MINIMA: [number, number, number] = [2, 1, 259]
@@ -401,7 +402,9 @@ export function criarClaudeCli(processo: Processo, binario: string, pastaTrabalh
           cwd: dir,
           env,
           timeoutMs: DiagnosticoClaude.timeout(pedido.papel, pedido.timeoutMs),
+          sinal: pedido.sinal,
         })
+        if (pedido.sinal?.aborted) throw new ExecucaoParada()
         const falha = DiagnosticoClaude.falha(resultado)
         if (falha) throw new ErroClaude(falha)
         const json = extrairJson(resultado.stdout)

@@ -52,6 +52,11 @@ export async function criarAplicacao(opcoes: {
     skillsUsuario,
     radares: modo === 'falso' ? leitoresFalsos() : leitoresReais(dataDir, segredos),
   })
+  try {
+    await app.reconciliarPresas()
+  } catch {
+    // Não impede o app de abrir: parar() reconcilia a story presa quando o usuário pedir.
+  }
   if (opcoes.semear && modo === 'falso') {
     if ((await app.produtos()).length === 0) await semearExemplo(app)
     await app.semearRadarSeVazio()
@@ -112,9 +117,13 @@ async function semearExemplo(app: EsteiraApp): Promise<void> {
     areasBacklog: ['Empresa\\Pagamentos'],
   })
   await app.drenarWiki()
-  const story = await app.iniciarEsteira(
-    'Permitir estorno parcial de um PIX já liquidado, sem passar do valor original.',
-    'pix',
+  const story = await app.aguardar(
+    (
+      await app.iniciarEsteira(
+        'Permitir estorno parcial de um PIX já liquidado, sem passar do valor original.',
+        'pix',
+      )
+    ).id,
   )
   const pendente = story.achados.find((achado) => achado.estado === 'pendente' && !achado.semProva)
   if (pendente) await app.descartarAchado(story.id, pendente.id)

@@ -1,7 +1,7 @@
 export type PapelBloco = 'escrever' | 'confrontar'
 export type ModoBloco = 'automatico' | 'por-clique'
-export type EstadoBloco = 'aguardando' | 'rodando' | 'pausado' | 'concluido' | 'erro'
-export type EstadoStory = 'rodando' | 'pausada' | 'pronta' | 'erro'
+export type EstadoBloco = 'aguardando' | 'rodando' | 'pausado' | 'concluido' | 'erro' | 'interrompido'
+export type EstadoStory = 'rodando' | 'pausada' | 'pronta' | 'erro' | 'interrompida'
 export type EstadoAchado = 'pendente' | 'aceito' | 'descartado'
 export type TipoAchado =
   | 'existe'

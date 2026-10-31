@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron'
 import path from 'node:path'
 import { abrirNoAzure } from '../adapters/seguro'
+import { ligarEncerramento } from '../adapters/processo'
 import { criarAplicacao } from '../app/criar'
 import { despachar } from '../app/api'
 import type { EsteiraApp } from '../app/esteira-app'
@@ -72,9 +73,22 @@ function criarJanela(): BrowserWindow {
   return janela
 }
 
+// Instância única: a abertura marca como interrompida toda story 'rodando', o que quebraria a execução de outra janela.
+const instanciaUnica = app.requestSingleInstanceLock()
+if (!instanciaUnica) app.quit()
+
+app.on('second-instance', () => {
+  const janela = BrowserWindow.getAllWindows()[0]
+  if (!janela) return
+  if (janela.isMinimized()) janela.restore()
+  janela.focus()
+})
+
 app.setAppUserModelId('com.esteira.desktop')
+ligarEncerramento(app)
 
 app.whenReady().then(() => {
+  if (!instanciaUnica) return
   if (app.isPackaged) {
     session.defaultSession.webRequest.onHeadersReceived((detalhes, callback) => {
       callback({
