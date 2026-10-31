@@ -29,6 +29,13 @@ A tag `v` mais a `version` do `package.json` (por exemplo `v0.1.0`), num commit 
 
 Antes da primeira tag, crie o environment **`esteira-release`** em Settings → Environments, com pelo menos um revisor obrigatório, e grave os segredos de assinatura nesse environment. O workflow espera a aprovação e só então lê esses segredos. Se o environment ainda não existir, o GitHub cria um vazio, sem aprovação. Num repositório privado, revisor obrigatório pede GitHub Pro, Team ou Enterprise.
 
+Antes da primeira tag, confira também:
+
+- **Repositório privado.** Enquanto ele for público, nunca publique o rascunho: o instalador ficaria aberto para qualquer um.
+- **Environment `esteira-release`** com revisor obrigatório e, em "Deployment branches and tags", só tags `v*`.
+- **Ruleset de tags `v*`** em Settings → Rules, limitando quem cria a tag.
+- **Reexecutar uma tag:** apague antes o rascunho da Release dessa tag.
+
 ## Atualização
 
 Com um feed configurado, a Esteira procura versão nova ao abrir e pergunta antes de instalar. Sem o sim, nada é baixado e nada é instalado.

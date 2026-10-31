@@ -208,6 +208,14 @@ describe('assinatura condicional', () => {
     expect(texto).toContain('conferir-app-update.ts')
     expect(texto.split('jobs:')[0]).not.toContain('contents: write')
     expect(texto).toContain('contents: write')
+    expect(texto).not.toContain('extraheader')
+    const envDoJob = texto.split('    steps:')[0].split('jobs:')[1]
+    expect(envDoJob).not.toContain('secrets.')
+    for (const passo of ['Exigir assinatura', 'Build']) {
+      const bloco = texto.split(`- name: ${passo}`)[1].split('      - ')[0]
+      expect(bloco).toContain('AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}')
+      expect(bloco).toContain('WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}')
+    }
   })
 
   it('lê o publisherName do app-update.yml e recusa arquivo sem editor', () => {
