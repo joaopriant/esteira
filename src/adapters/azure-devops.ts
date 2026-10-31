@@ -10,6 +10,8 @@ import { validarOrgUrl } from './seguro'
 // Resolved não entra: no Agile e no CMMI o item ainda está no backlog.
 const ESTADOS_FECHADOS = ['Closed', 'Done', 'Completed', 'Inactive']
 const LOTE_WORK_ITEMS = 200
+// Sem $top a API recusa a consulta acima de 20 mil itens. O atalho de 500 por projeto fica no mesmo teto.
+const TETO_CONSULTA = 500
 
 const CAMPOS = [
   'System.Id',
@@ -116,7 +118,7 @@ export function azurePeloSdk(sdk: AzureSdk): AzurePort {
         if (!projeto) continue
         const encontrados = await sdk.consultar(projeto, wiql(filtro.areas, filtro.fechadosDesde))
         // shortcut: 500 itens por projeto; rever se o pré-filtro perder card antigo demais na ordenação.
-        for (const id of encontrados.slice(0, 500)) ids.add(id)
+        for (const id of encontrados.slice(0, TETO_CONSULTA)) ids.add(id)
       }
       if (ids.size === 0) return []
       const brutos = await sdk.obterVarios([...ids])
@@ -164,7 +166,12 @@ interface RegraAzure {
 export interface ClientesOficiais {
   git: { getRepositories(): Promise<RepoOficial[] | null | undefined> }
   wit: {
-    queryByWiql(wiql: { query: string }, opcoes?: { project?: string }): Promise<{ workItems?: ({ id?: number } | null)[] | null }>
+    queryByWiql(
+      wiql: { query: string },
+      opcoes?: { project?: string },
+      precisaoDeTempo?: boolean,
+      top?: number,
+    ): Promise<{ workItems?: ({ id?: number } | null)[] | null }>
     getWorkItems(ids: number[], fields?: string[]): Promise<ItemOficial[] | null | undefined>
     getWorkItem(id: number, fields?: string[]): Promise<ItemOficial>
     createWorkItem(headers: null, documento: { op: string; path: string; value: string }[], projeto: string, tipo: string): Promise<ItemOficial | null | undefined>
@@ -250,7 +257,7 @@ function sdkDosClientes(git: ClientesOficiais['git'], wit: ClientesOficiais['wit
         }))
     },
     async consultar(projeto, consulta) {
-      const resultado = await wit.queryByWiql({ query: consulta }, { project: projeto })
+      const resultado = await wit.queryByWiql({ query: consulta }, { project: projeto }, undefined, TETO_CONSULTA)
       return (resultado.workItems ?? []).map((item) => item?.id).filter((id): id is number => typeof id === 'number')
     },
     async obterVarios(ids) {

@@ -78,6 +78,21 @@ describe('sdk oficial com dublê', () => {
     expect(chamadas).toHaveLength(1)
   })
 
+  it('pede no máximo 500 itens na consulta, senão o Azure recusa acima de 20 mil', async () => {
+    const chamadas: unknown[][] = []
+    const wit = witBase({
+      async queryByWiql(...args) {
+        chamadas.push(args)
+        return { workItems: [{ id: 7 }, null, {}] }
+      },
+    })
+    const { sdk } = await sdkCom(gitBase(), wit)
+    await expect(sdk.consultar('Pagamentos', 'SELECT [System.Id] FROM WorkItems')).resolves.toEqual([7])
+    expect(chamadas[0]?.[0]).toEqual({ query: 'SELECT [System.Id] FROM WorkItems' })
+    expect(chamadas[0]?.[1]).toEqual({ project: 'Pagamentos' })
+    expect(chamadas[0]?.[3]).toBe(500)
+  })
+
   it('ignora repositório desabilitado', async () => {
     const { sdk } = await sdkCom(
       gitBase([
