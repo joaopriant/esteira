@@ -17,6 +17,15 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Binário do Electron
+        run: node -e "require('electron')"
+      - name: Sandbox do Chromium no runner
+        run: |
+          # O helper precisa ser root e 4755. Sem isso o Electron aborta no
+          # GitHub. Não usar --no-sandbox: isso desligaria o sandbox do renderer
+          # e a fumaça deixaria de provar o preload em CommonJS.
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
       - run: xvfb-run -a npm run smoke
       - run: npx electron-builder --linux dir --publish never
       - name: Fumaça do app empacotado
@@ -24,6 +33,8 @@ jobs:
           bin=release/linux-unpacked/esteira
           if [ ! -x "$bin" ]; then bin=release/linux-unpacked/Esteira; fi
           test -x "$bin"
+          sudo chown root:root release/linux-unpacked/chrome-sandbox
+          sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           xvfb-run -a node scripts/smoke-electron.mjs "$bin"
       - run: npm run scan-secrets
       - run: npm audit --audit-level=high

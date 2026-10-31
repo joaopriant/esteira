@@ -66,7 +66,12 @@ async function ate(prazoMs, passo) {
 }
 
 async function paginaDo(porta) {
-  const resposta = await fetch(`http://127.0.0.1:${porta}/json/list`)
+  let resposta
+  try {
+    resposta = await fetch(`http://127.0.0.1:${porta}/json/list`)
+  } catch {
+    throw new Error('A janela ainda não apareceu na depuração remota.')
+  }
   if (!resposta.ok) throw new Error(`Depuração remota respondeu ${resposta.status}.`)
   const lista = await resposta.json()
   const pagina = lista.find((item) => item.type === 'page' && item.webSocketDebuggerUrl && !String(item.url).startsWith('devtools://'))
