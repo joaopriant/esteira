@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { PassoId } from '../../core/primeiro-uso'
 import type { EstadoApp, Produto, Repositorio, WikiProduto } from '../../shared/tipos'
 import { chamar } from '../api'
 import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
@@ -11,7 +12,15 @@ import { Erro, Vazio, mensagemDe } from '../ui'
 
 type Remoto = { id: string; nome: string; projeto: string; remoteUrl: string; branchPadrao: string }
 
-export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarregar: () => Promise<void> }) {
+export function ProdutosView({
+  estado,
+  recarregar,
+  foco = '',
+}: {
+  estado: EstadoApp
+  recarregar: () => Promise<void>
+  foco?: Extract<PassoId, 'repos' | 'produto'> | ''
+}) {
   const [remotos, setRemotos] = useState<Remoto[]>([])
   const [marcados, setMarcados] = useState<string[]>(estado.repositorios.filter((repo) => repo.selecionado).map((repo) => repo.id))
   const [branches, setBranches] = useState<Record<string, string>>({})
@@ -82,6 +91,11 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
     }
   }, [ocupado])
 
+  useEffect(() => {
+    if (foco !== 'repos' && foco !== 'produto') return
+    document.getElementById(foco === 'repos' ? 'passo-repos' : 'passo-produto')?.scrollIntoView({ block: 'start' })
+  }, [foco, estado.repositorios, estado.produtos])
+
   const lista = remotos.length > 0 ? remotos : estado.repositorios
   const local = new Map(estado.repositorios.map((repo) => [repo.id, repo]))
 
@@ -122,6 +136,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
       <p className="sub">Um produto junta repositórios que o PM lê junto. A wiki dele só fica pronta depois do clone.</p>
       <Erro texto={erro} />
       {aviso && <p className="sub">{aviso}</p>}
+      <div id="passo-repos" className={foco === 'repos' ? 'passo-atual' : undefined}>
       {!estado.ajustes.conectado && <Vazio>Conecte a organização em Conexões para listar os repositórios.</Vazio>}
       {estado.ajustes.conectado && lista.length === 0 && <Vazio>A organização não devolveu repositório.</Vazio>}
       {lista.length > 0 && (
@@ -161,6 +176,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
         </table>
         </div>
       )}
+      </div>
       <div className="acoes" style={{ marginTop: 12 }}>
         <button
           className="btn-sec"
@@ -177,7 +193,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
         </button>
       </div>
 
-      <section className="bloco">
+      <section className={foco === 'produto' ? 'bloco passo-atual' : 'bloco'} id="passo-produto">
         <div className="titulo">
           <h2>Conjuntos</h2>
           <button className="btn-texto" type="button" onClick={() => setEditando('')}>

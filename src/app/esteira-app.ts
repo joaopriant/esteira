@@ -67,6 +67,8 @@ interface ConfigDisco {
   modeloStory: string
   fluxo: BlocoFluxo[]
   pastasRadar?: Partial<Record<'whatsapp' | 'granola' | 'plaud', string>>
+  claudeConferido?: boolean
+  modeloConferido?: boolean
 }
 
 function hashTexto(texto: string): string {
@@ -187,6 +189,8 @@ export class EsteiraApp {
       modeloStory: config.modeloStory,
       conectado: config.conectado,
       modo: this.deps.modo,
+      claudeConferido: Boolean(config.claudeConferido),
+      modeloConferido: Boolean(config.modeloConferido),
     }
   }
 
@@ -202,6 +206,9 @@ export class EsteiraApp {
       claudeBin: parcial.claudeBin ?? config.claudeBin,
       timeoutBlocoMs: parcial.timeoutBlocoMs ?? config.timeoutBlocoMs,
       modeloStory: parcial.modeloStory ?? config.modeloStory,
+      claudeConferido:
+        parcial.claudeBin !== undefined && parcial.claudeBin !== config.claudeBin ? false : Boolean(config.claudeConferido),
+      modeloConferido: parcial.modeloStory !== undefined ? true : Boolean(config.modeloConferido),
     }
     if (!proximo.modeloStory.trim()) throw new Error('O modelo da story não pode ficar vazio.')
     if (!proximo.tipoWorkItem.trim()) throw new Error('Informe o tipo do work item.')
@@ -618,17 +625,23 @@ export class EsteiraApp {
   }
 
   async testarClaude(): Promise<{ instalado: boolean; autenticado: boolean; detalhe: string }> {
+    const concluir = async (resultado: { instalado: boolean; autenticado: boolean; detalhe: string }) => {
+      const config = await this.config()
+      config.claudeConferido = resultado.autenticado
+      await this.deps.disco.gravarJson('config.json', config)
+      return resultado
+    }
     const ajustes = await this.ajustes()
     let binario: string
     try {
       binario = validarBinario(ajustes.claudeBin)
     } catch (erro) {
-      return { instalado: false, autenticado: false, detalhe: erro instanceof Error ? erro.message : 'Executável inválido.' }
+      return concluir({ instalado: false, autenticado: false, detalhe: erro instanceof Error ? erro.message : 'Executável inválido.' })
     }
     if (this.deps.modo === 'falso') {
-      return { instalado: true, autenticado: true, detalhe: 'Modo exemplo. O Claude desta máquina responde sem rede e sem chave de API.' }
+      return concluir({ instalado: true, autenticado: true, detalhe: 'Modo exemplo. O Claude desta máquina responde sem rede e sem chave de API.' })
     }
-    return diagnosticarClaude(criarProcesso(), binario)
+    return concluir(await diagnosticarClaude(criarProcesso(), binario))
   }
 
   async semearRadarSeVazio(): Promise<void> {
@@ -1712,7 +1725,9 @@ export class EsteiraApp {
     }
     const azureConectado = ajustes.conectado
     const claudeExemplo = this.deps.modo === 'falso'
-    const ativas = radar.filter((item) => item.status !== 'nao-conectado').length + (azureConectado ? 1 : 0) + (claudeExemplo ? 1 : 0)
+    const claudeConferido = Boolean(config.claudeConferido)
+    const claudeOk = claudeExemplo || claudeConferido
+    const ativas = radar.filter((item) => item.status !== 'nao-conectado').length + (azureConectado ? 1 : 0) + (claudeOk ? 1 : 0)
     return {
       radar,
       azure: {
@@ -1724,11 +1739,13 @@ export class EsteiraApp {
       claude: {
         binario: ajustes.claudeBin,
         timeoutBlocoMs: ajustes.timeoutBlocoMs,
-        instalado: claudeExemplo ? true : null,
-        autenticado: claudeExemplo ? true : null,
+        instalado: claudeOk ? true : null,
+        autenticado: claudeOk ? true : null,
         detalhe: claudeExemplo
           ? 'Modo exemplo. O Claude falso responde sem chave de API.'
-          : 'Ainda não verificado. Testar lê a versão e o claude auth status nesta máquina, sem gastar um prompt.',
+          : claudeConferido
+            ? 'O teste anterior confirmou a assinatura nesta máquina.'
+            : 'Ainda não verificado. Testar lê a versão e o claude auth status nesta máquina, sem gastar um prompt.',
       },
       ativas,
     }
@@ -1748,6 +1765,8 @@ export class EsteiraApp {
       claudeBin: 'claude',
       timeoutBlocoMs: AJUSTES_INICIAIS.timeoutBlocoMs,
       modeloStory: AJUSTES_INICIAIS.modeloStory,
+      claudeConferido: false,
+      modeloConferido: false,
       fluxo: fluxoPadrao(),
     }
     await this.deps.disco.gravarJson('config.json', inicial)

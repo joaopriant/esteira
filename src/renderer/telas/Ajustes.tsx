@@ -1,11 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Ajustes, EstadoApp } from '../../shared/tipos'
 import { chamar } from '../api'
 import { BlurText } from '../components/react-bits/BlurText'
 import { SpotlightCard } from '../components/react-bits/SpotlightCard'
 import { Erro, mensagemDe } from '../ui'
 
-export function AjustesView({ estado, recarregar, aoConexoes }: { estado: EstadoApp; recarregar: () => Promise<void>; aoConexoes?: () => void }) {
+export function AjustesView({
+  estado,
+  recarregar,
+  aoConexoes,
+  foco = '',
+}: {
+  estado: EstadoApp
+  recarregar: () => Promise<void>
+  aoConexoes?: () => void
+  foco?: 'modelo' | ''
+}) {
   const inicial = estado.ajustes
   const [modelo, setModelo] = useState(inicial.modeloStory)
   const [tipo, setTipo] = useState(inicial.tipoWorkItem)
@@ -43,6 +53,11 @@ export function AjustesView({ estado, recarregar, aoConexoes }: { estado: Estado
     )
   }
 
+  useEffect(() => {
+    if (foco !== 'modelo') return
+    document.getElementById('passo-modelo')?.scrollIntoView({ block: 'start' })
+  }, [foco])
+
   async function salvar(parcial: Partial<Ajustes>) {
     await chamar('salvarAjustes', parcial)
   }
@@ -59,7 +74,7 @@ export function AjustesView({ estado, recarregar, aoConexoes }: { estado: Estado
         )}
       </SpotlightCard>
 
-      <section className="secao">
+      <section className={foco === 'modelo' ? 'secao passo-atual' : 'secao'} id="passo-modelo">
         <div>
           <h2>Modelo da story</h2>
           <p className="ajuda">O bloco que escreve segue este texto. Troque pelo modelo da empresa.</p>
@@ -78,8 +93,8 @@ export function AjustesView({ estado, recarregar, aoConexoes }: { estado: Estado
             <textarea className="alto" value={modelo} onChange={(evento) => setModelo(evento.target.value)} />
           </label>
           <div className="acoes">
-            <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || modelo === inicial.modeloStory}>
-              {ocupado === 'Salvando modelo' ? 'Salvando' : 'Salvar modelo'}
+            <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || (modelo === inicial.modeloStory && inicial.modeloConferido)}>
+              {ocupado === 'Salvando modelo' ? 'Salvando' : modelo === inicial.modeloStory && !inicial.modeloConferido ? 'Usar este modelo' : 'Salvar modelo'}
             </button>
             {mostrarRetorno('modelo')}
           </div>

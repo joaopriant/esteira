@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { PassoId } from '../../core/primeiro-uso'
 import type { EstadoApp, FonteRadar, PainelConexoes, StatusConexao } from '../../shared/tipos'
 import { chamar } from '../api'
 import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
@@ -15,7 +16,15 @@ const ROTULO: Record<StatusConexao, string> = {
   'nao-conectado': 'Não conectado',
 }
 
-export function ConexoesView({ estado, recarregar }: { estado: EstadoApp; recarregar: () => Promise<void> }) {
+export function ConexoesView({
+  estado,
+  recarregar,
+  foco = '',
+}: {
+  estado: EstadoApp
+  recarregar: () => Promise<void>
+  foco?: Extract<PassoId, 'pat' | 'claude'> | ''
+}) {
   const [painel, setPainel] = useState<PainelConexoes | null>(null)
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState('')
@@ -34,6 +43,11 @@ export function ConexoesView({ estado, recarregar }: { estado: EstadoApp; recarr
       vivo = false
     }
   }, [])
+
+  useEffect(() => {
+    if (foco !== 'pat' && foco !== 'claude') return
+    document.getElementById(foco === 'pat' ? 'passo-pat' : 'passo-claude')?.scrollIntoView({ block: 'start' })
+  }, [foco, painel])
 
   async function agir(chave: string, trabalho: () => Promise<string>) {
     setOcupado(chave)
@@ -87,8 +101,8 @@ export function ConexoesView({ estado, recarregar }: { estado: EstadoApp; recarr
         <p className="sub">O que escreve a story e o que publica no board.</p>
         {painel && (
           <div className="conexoes-grade">
-            <CartaoAzure painel={painel} ocupado={ocupado} aviso={avisos.azure ?? ''} aoAgir={agir} />
-            <CartaoClaude painel={painel} ocupado={ocupado} aviso={avisos.claude ?? ''} aoAgir={agir} />
+            <CartaoAzure painel={painel} ocupado={ocupado} aviso={avisos.azure ?? ''} aoAgir={agir} foco={foco} />
+            <CartaoClaude painel={painel} ocupado={ocupado} aviso={avisos.claude ?? ''} aoAgir={agir} foco={foco} />
           </div>
         )}
       </section>
@@ -280,16 +294,18 @@ function CartaoAzure({
   ocupado,
   aviso,
   aoAgir,
+  foco,
 }: {
   painel: PainelConexoes
   ocupado: string
   aviso: string
   aoAgir: (chave: string, trabalho: () => Promise<string>) => Promise<void>
+  foco: 'pat' | 'claude' | ''
 }) {
   const [orgUrl, setOrgUrl] = useState(painel.azure.orgUrl)
   const [pat, setPat] = useState('')
   return (
-    <SpotlightCard as="article" className="conexao-card">
+    <SpotlightCard as="article" id="passo-pat" className={foco === 'pat' ? 'conexao-card passo-atual' : 'conexao-card'}>
       <h3>Azure DevOps</h3>
       <p className="status-conexao">
         <span className={`status-ponto ${painel.azure.conectado ? 'conectado' : 'nao-conectado'}`} />
@@ -345,18 +361,20 @@ function CartaoClaude({
   ocupado,
   aviso,
   aoAgir,
+  foco,
 }: {
   painel: PainelConexoes
   ocupado: string
   aviso: string
   aoAgir: (chave: string, trabalho: () => Promise<string>) => Promise<void>
+  foco: 'pat' | 'claude' | ''
 }) {
   const [binario, setBinario] = useState(painel.claude.binario)
   const [timeoutSeg, setTimeoutSeg] = useState(String(Math.round(painel.claude.timeoutBlocoMs / 1000)))
   const ligado = painel.claude.autenticado === true
   const status = painel.claude.instalado == null ? 'Não verificado' : ligado ? 'Conectado' : 'Não conectado'
   return (
-    <SpotlightCard as="article" className="conexao-card">
+    <SpotlightCard as="article" id="passo-claude" className={foco === 'claude' ? 'conexao-card passo-atual' : 'conexao-card'}>
       <h3>Claude Code CLI</h3>
       <p className="status-conexao">
         <span className={`status-ponto ${ligado ? 'conectado' : 'nao-conectado'}`} />

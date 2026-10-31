@@ -231,6 +231,8 @@ export interface Ajustes {
   modeloStory: string
   conectado: boolean
   modo: 'real' | 'falso'
+  claudeConferido: boolean
+  modeloConferido: boolean
 }
 
 export interface AfirmacaoWiki {
@@ -338,4 +340,6 @@ export const AJUSTES_INICIAIS: Ajustes = {
   modeloStory: MODELO_INICIAL,
   conectado: false,
   modo: 'real',
+  claudeConferido: false,
+  modeloConferido: false,
 }

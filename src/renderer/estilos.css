@@ -165,6 +165,33 @@ h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line
 .trilho li.erro { border-bottom-color: var(--negative); }
 .trilho strong { display: block; font-size: 14px; font-weight: 500; }
 .trilho small { color: var(--muted); font-size: var(--fs-small); }
+.trilho-passos li { display: flex; padding: 0; }
+.trilho-passos button {
+  flex: 1;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+}
+.trilho-passos button:hover strong { text-decoration: underline; text-decoration-color: var(--control); text-underline-offset: 3px; }
+.primeiro-uso {
+  flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  margin: calc(var(--pad) * -1) calc(var(--pad) * -1) 8px;
+  padding: var(--pad) var(--pad) 0;
+  border-bottom: 1px solid var(--border);
+}
+.primeiro-uso .pergunta { margin: 0; font-size: 16px; line-height: 22px; font-weight: 500; color: var(--text); }
+.passo-atual { outline: 2px solid var(--accent); outline-offset: 4px; }
+#passo-pat, #passo-claude, #passo-repos, #passo-produto, #passo-modelo { scroll-margin-top: 128px; }
 .indice { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 
 .grade {

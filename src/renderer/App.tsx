@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { passoAtual, passosPrimeiroUso, textoDoAviso, type PassoId, type PassoPrimeiroUso } from '../core/primeiro-uso'
 import type { EstadoApp } from '../shared/tipos'
 import { chamar } from './api'
+import { PrimeiroUso } from './PrimeiroUso'
 import { CountUp } from './components/react-bits/CountUp'
 import { GradientText } from './components/react-bits/GradientText'
 import { AjustesView } from './telas/Ajustes'
@@ -32,6 +34,8 @@ export function App() {
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [abrirStory, setAbrirStory] = useState('')
+  const [foco, setFoco] = useState<PassoId | ''>('')
+  const [adiarPrimeiroUso, setAdiarPrimeiroUso] = useState(false)
 
   const recarregar = useCallback(async () => {
     try {
@@ -49,13 +53,23 @@ export function App() {
   }, [recarregar])
 
   function ir(proxima: Tela) {
+    setFoco('')
     setTela(proxima)
+    setMenu(false)
+  }
+
+  function irPasso(passo: PassoPrimeiroUso) {
+    setFoco(passo.id)
+    setTela(passo.tela)
     setMenu(false)
   }
 
   const org = estado?.ajustes.orgUrl ? nomeOrg(estado.ajustes.orgUrl) : 'Sem organização'
   const conexao = estado?.ajustes.conectado ? 'conectado' : 'desconectado'
   const nomeTela = tela === 'ajustes' ? 'Ajustes' : TELAS.find((item) => item.id === tela)?.nome
+  const passos = estado && !adiarPrimeiroUso ? passosPrimeiroUso(estado) : null
+  const atual = passos ? passoAtual(passos) : null
+  const aviso = atual ? textoDoAviso(atual) : null
 
   return (
     <div className="app">
@@ -95,7 +109,14 @@ export function App() {
           <p>
             {org} · {nomeTela}
           </p>
-          {estado && !estado.ajustes.conectado && tela !== 'ajustes' ? (
+          {aviso && atual && tela !== atual.tela ? (
+            <p className="alerta-conexao">
+              {aviso.texto}
+              <button className="btn-texto" type="button" onClick={() => irPasso(atual)}>
+                {aviso.acao}
+              </button>
+            </p>
+          ) : !passos && estado && !estado.ajustes.conectado && tela !== 'ajustes' ? (
             // Sem organização nada roda; o aviso leva direto para onde se resolve.
             <p className="alerta-conexao">
               Nenhuma organização conectada.
@@ -110,6 +131,7 @@ export function App() {
           )}
         </header>
         <main className={tela === 'fluxo' ? 'sheet estudio' : 'sheet'}>
+          {passos && <PrimeiroUso passos={passos} onIr={irPasso} onAdiar={() => setAdiarPrimeiroUso(true)} />}
           {carregando && <p>Carregando a Esteira.</p>}
           {!carregando && erro && !estado && (
             <>
@@ -131,12 +153,18 @@ export function App() {
               }}
             />
           )}
-          {estado && tela === 'conexoes' && <ConexoesView estado={estado} recarregar={recarregar} />}
+          {estado && tela === 'conexoes' && (
+            <ConexoesView estado={estado} recarregar={recarregar} foco={foco === 'pat' || foco === 'claude' ? foco : ''} />
+          )}
           {estado && tela === 'wiki' && <WikiView estado={estado} />}
-          {estado && tela === 'produtos' && <ProdutosView estado={estado} recarregar={recarregar} />}
+          {estado && tela === 'produtos' && (
+            <ProdutosView estado={estado} recarregar={recarregar} foco={foco === 'repos' || foco === 'produto' ? foco : ''} />
+          )}
           {estado && tela === 'fluxo' && <FluxoView aoConexoes={() => ir('conexoes')} />}
           {estado && tela === 'medicao' && <MedicaoView estado={estado} recarregar={recarregar} />}
-          {estado && tela === 'ajustes' && <AjustesView estado={estado} recarregar={recarregar} aoConexoes={() => ir('conexoes')} />}
+          {estado && tela === 'ajustes' && (
+            <AjustesView estado={estado} recarregar={recarregar} aoConexoes={() => ir('conexoes')} foco={foco === 'modelo' ? foco : ''} />
+          )}
         </main>
       </div>
     </div>
