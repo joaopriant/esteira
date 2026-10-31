@@ -34,9 +34,9 @@ async function lerTudo(dir: string): Promise<string> {
 describe('conexões', () => {
   it('guarda token só no cofre e liga canal ao produto', async () => {
     const { app, dataDir } = await appDeTeste()
-    const token = 'leitura-cofre-whatsapp-9f3a'
-    await app.conectarRadar('whatsapp', token)
-    expect(await app.credenciaisRadar()).toMatchObject({ whatsapp: true, teams: false })
+    const token = 'leitura-cofre-teams-9f3a'
+    await app.conectarRadar('teams', token)
+    expect(await app.credenciaisRadar()).toMatchObject({ whatsapp: false, teams: true })
     await expect(app.salvarPastaRadar('granola', '../segredo.txt')).rejects.toThrow(/pasta permitida|inválid/i)
     await app.salvarPastaRadar('granola', 'notas/reuniao.md')
     const arquivos = await lerTudo(dataDir)
@@ -61,13 +61,17 @@ describe('conexões', () => {
     expect(painel.radar.find((item) => item.provedor === 'slack')?.fontes.find((item) => item.id === fonte!.id)?.ativa).toBe(false)
     expect(painel.radar.find((item) => item.provedor === 'granola')?.caminhoSalvo).toBe('notas/reuniao.md')
     expect(painel.radar.find((item) => item.provedor === 'granola')?.status).toBe('pasta-local')
-    expect(painel.radar.find((item) => item.provedor === 'whatsapp')?.status).toBe('conectado')
+    expect(painel.radar.find((item) => item.provedor === 'whatsapp')?.status).toBe('pasta-local')
+    expect(painel.radar.find((item) => item.provedor === 'whatsapp')?.explicacao).toContain('Não existe API')
+    expect(painel.radar.find((item) => item.provedor === 'whatsapp')?.tokenNoCofre).toBe(false)
+    expect(painel.radar.find((item) => item.provedor === 'teams')?.explicacao).toContain('token colado')
+    expect(painel.radar.find((item) => item.provedor === 'teams')?.status).toBe('conectado')
     expect(painel.azure.conectado).toBe(true)
     expect(painel.claude.autenticado).toBe(true)
     expect(painel.ativas).toBeGreaterThanOrEqual(7)
     expect((await app.estado()).conexoesAtivas).toBe(painel.ativas)
 
-    const teste = await app.testarRadar('whatsapp')
+    const teste = await app.testarRadar('teams')
     expect(teste.status).toBe('conectado')
     expect(teste.detalhe).not.toContain(token)
     expect((await app.testarAzure()).ok).toBe(true)
@@ -75,8 +79,8 @@ describe('conexões', () => {
     expect(claude.instalado).toBe(true)
     expect(claude.detalhe).not.toContain(token)
 
-    await app.desconectarRadar('whatsapp')
-    expect((await app.credenciaisRadar()).whatsapp).toBe(false)
-    expect((await app.painelConexoes()).radar.find((item) => item.provedor === 'whatsapp')?.tokenNoCofre).toBe(false)
+    await app.desconectarRadar('teams')
+    expect((await app.credenciaisRadar()).teams).toBe(false)
+    expect((await app.painelConexoes()).radar.find((item) => item.provedor === 'teams')?.tokenNoCofre).toBe(false)
   })
 })

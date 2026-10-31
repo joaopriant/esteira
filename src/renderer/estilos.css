@@ -682,6 +682,7 @@ button.chip-fonte:hover { border-color: var(--muted); }
   word-break: break-word;
 }
 .conexao-card h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.codigo-oauth { font-family: var(--mono); font-weight: 500; letter-spacing: 0.04em; color: var(--text); }
 .conexao-card .acoes, .conexao-card .escolha { flex-wrap: wrap; min-width: 0; }
 .conexao-card .btn, .conexao-card .btn-sec, .conexao-card .btn-texto {
   height: auto;

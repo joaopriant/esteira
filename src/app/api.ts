@@ -95,7 +95,14 @@ const esquemas: Record<string, z.ZodTypeAny> = {
   sugestoesRadar: vazio,
   descartarSugestao: id,
   enviarParaEsteira: id,
-  conectarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp']), token: z.string().min(8).max(500) }),
+  conectarRadar: z.object({ provedor: z.enum(['teams', 'slack']), token: z.string().min(8).max(500) }),
+  salvarClienteRadar: z.object({
+    provedor: z.enum(['teams', 'slack']),
+    clientId: z.string().max(80),
+    tenant: z.string().max(80).optional(),
+  }),
+  iniciarOauthRadar: z.object({ provedor: z.enum(['teams', 'slack']) }),
+  concluirOauthRadar: z.object({ provedor: z.enum(['teams', 'slack']) }),
   desconectarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']) }),
   salvarPastaRadar: z.object({ provedor: z.enum(['whatsapp', 'granola', 'plaud']), caminho: z.string().max(300) }),
   testarRadar: z.object({ provedor: z.enum(['teams', 'slack', 'whatsapp', 'granola', 'plaud']) }),
@@ -219,6 +226,12 @@ async function executar(app: EsteiraApp, canal: string, corpo: unknown): Promise
       return app.enviarParaEsteira(dados.id)
     case 'conectarRadar':
       return app.conectarRadar(dados.provedor, dados.token)
+    case 'salvarClienteRadar':
+      return app.salvarClienteRadar(dados.provedor, dados.clientId, dados.tenant)
+    case 'iniciarOauthRadar':
+      return app.iniciarOauthRadar(dados.provedor)
+    case 'concluirOauthRadar':
+      return app.concluirOauthRadar(dados.provedor)
     case 'desconectarRadar':
       return app.desconectarRadar(dados.provedor)
     case 'salvarPastaRadar':

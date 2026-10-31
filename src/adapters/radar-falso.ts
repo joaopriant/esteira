@@ -1,5 +1,6 @@
 import type { LeitorRadar } from '../ports'
 import type { ProvedorRadar, SinalBruto } from '../shared/tipos'
+import { marcaLeitura } from './radar-leitura'
 
 const CORPUS: SinalBruto[] = [
   {
@@ -122,7 +123,8 @@ export function leitoresFalsos(): LeitorRadar[] {
       return CANAIS[provedor]
     },
     async ler(referencia: string) {
-      return CORPUS.filter((sinal) => sinal.provedor === provedor && sinal.fonteRef === referencia).map((sinal) => ({ ...sinal }))
+      const sinais = CORPUS.filter((sinal) => sinal.provedor === provedor && sinal.fonteRef === referencia).map((sinal) => ({ ...sinal }))
+      return { sinais, marca: provedor === 'teams' || provedor === 'slack' ? marcaLeitura(provedor, sinais) : null }
     },
   }))
 }
