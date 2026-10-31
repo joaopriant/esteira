@@ -513,6 +513,35 @@ function Prova({ achado }: { achado: Achado }) {
   return <p className="prova sem">Não encontrei no código nem no backlog.</p>
 }
 
+function LinkDoCard({ url, id }: { url: string; id: number }) {
+  const [erro, setErro] = useState('')
+  return (
+    <>
+      <p className="sub">
+        <button
+          type="button"
+          className="link"
+          onClick={() => {
+            setErro('')
+            void abrirNoBoards(url).catch((falha: unknown) => setErro(mensagemDe(falha)))
+          }}
+        >
+          Abrir #{id} no Boards
+        </button>
+      </p>
+      <Erro texto={erro} />
+    </>
+  )
+}
+
+async function abrirNoBoards(url: string) {
+  if (window.esteira) {
+    await chamar('abrirNoBrowser', { url })
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 function Publicar(props: {
   publicacao?: Publicacao
   orgUrl: string
@@ -542,13 +571,7 @@ function Publicar(props: {
       {props.publicacao ? (
         <>
           <p className="sub">{frasePublicacao(props.publicacao)}</p>
-          {url && (
-            <p className="sub">
-              <a className="link" href={url} target="_blank" rel="noreferrer">
-                Abrir #{props.publicacao.workItemId} no Boards
-              </a>
-            </p>
-          )}
+          {url && <LinkDoCard url={url} id={props.publicacao.workItemId} />}
           <p className="rotulo">Quando o card voltar do time, registre o resultado.</p>
           <div className="acoes votos">
             <button className="btn-sec" type="button" disabled={Boolean(props.ocupado)} onClick={() => props.aoVoto('passou')}>

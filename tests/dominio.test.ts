@@ -9,7 +9,7 @@ import type { Achado } from '../src/shared/tipos'
 import { itensExemplo } from '../src/app/exemplo'
 import type { Produto, Repositorio, StoryTexto } from '../src/shared/tipos'
 import { STORY_VAZIA } from '../src/shared/tipos'
-import { caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl } from '../src/adapters/seguro'
+import { abrirNoAzure, caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl } from '../src/adapters/seguro'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
 
@@ -164,6 +164,21 @@ describe('achado sem prova e publicação', () => {
     expect(comMarcaDoAchado({ tipo: 'existe', texto: 'Com prova.', semProva: false }, base)).toEqual(base)
   })
 
+  it('dois achados ganham cada um a sua linha e a mesma linha não duplica', () => {
+    const um = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite um.', semProva: true }, base)
+    const dois = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite dois.', semProva: true }, um)
+    expect(dois.criteriosDeAceite).toContain('- Ajuste: Palpite um. [sem prova]')
+    expect(dois.criteriosDeAceite).toContain('- Ajuste: Palpite dois. [sem prova]')
+    const repetido = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite dois.', semProva: true }, dois)
+    expect(repetido.criteriosDeAceite.split('- Ajuste: Palpite dois. [sem prova]')).toHaveLength(2)
+
+    const primeira = comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o limite.', semProva: false }, base)
+    const segunda = comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o prazo.', semProva: false }, primeira)
+    expect(segunda.criteriosDeAceite).toContain('- Pergunta em aberto: Não achei o limite.')
+    expect(segunda.criteriosDeAceite).toContain('- Pergunta em aberto: Não achei o prazo.')
+    expect(comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o prazo.', semProva: false }, segunda)).toEqual(segunda)
+  })
+
   it('criar card usa a descrição editada e a story', () => {
     expect(descricaoDoCard(base).startsWith('Descrição editada pelo PM')).toBe(true)
     expect(descricaoDoCard(base)).toContain('Eu quero estornar uma parte.')
@@ -198,6 +213,23 @@ describe('achado sem prova e publicação', () => {
 })
 
 describe('limites de caminho e host', () => {
+  it('abre no browser só https do Azure DevOps', async () => {
+    const abertos: string[] = []
+    const abrir = async (url: string) => {
+      abertos.push(url)
+    }
+    await abrirNoAzure(abrir, 'https://dev.azure.com/fintech/Pagamentos/_workitems/edit/1300')
+    await abrirNoAzure(abrir, 'https://fintech.visualstudio.com/Pagamentos/_workitems/edit/7')
+    expect(abertos).toEqual([
+      'https://dev.azure.com/fintech/Pagamentos/_workitems/edit/1300',
+      'https://fintech.visualstudio.com/Pagamentos/_workitems/edit/7',
+    ])
+    await expect(abrirNoAzure(abrir, 'http://dev.azure.com/fintech/x')).rejects.toThrow(/https/)
+    await expect(abrirNoAzure(abrir, 'https://evil.example/org')).rejects.toThrow(/dev\.azure\.com/)
+    await expect(abrirNoAzure(abrir, 'https://usuario:segredo@dev.azure.com/fintech/x')).rejects.toThrow(/token/)
+    expect(abertos).toHaveLength(2)
+  })
+
   it('recusa host fora do Azure e branch com comando', () => {
     expect(() => validarOrgUrl('https://evil.example/org')).toThrow(/dev\.azure\.com/)
     expect(() => validarBranch('main;rm')).toThrow(/Branch/)

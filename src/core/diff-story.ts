@@ -28,14 +28,17 @@ export function storiesIguais(a: StoryTexto, b: StoryTexto): boolean {
 
 /** Achado sem prova ou “não encontrei” não entra na story como fato. */
 export function comMarcaDoAchado(achado: Pick<Achado, 'tipo' | 'texto' | 'semProva'>, proposto: StoryTexto): StoryTexto {
-  if (achado.tipo === 'nao-encontrei') return comLinha(proposto, MARCA_PERGUNTA, `- Pergunta em aberto: ${achado.texto}`)
-  if (achado.semProva) return comLinha(proposto, MARCA_SEM_PROVA, `- Ajuste: ${achado.texto} [sem prova]`)
+  if (achado.tipo === 'nao-encontrei') return comLinha(proposto, `- ${MARCA_PERGUNTA} ${achado.texto}`)
+  if (achado.semProva) return comLinha(proposto, `- Ajuste: ${achado.texto} ${MARCA_SEM_PROVA}`)
   return proposto
 }
 
-function comLinha(story: StoryTexto, marca: string, linha: string): StoryTexto {
-  const texto = `${story.titulo}\n${story.corpo}\n${story.descricao}\n${story.criteriosDeAceite}`
-  if (texto.includes(marca)) return story
+function comLinha(story: StoryTexto, linha: string): StoryTexto {
+  const exata = linha.trim()
+  const jaTem = [story.titulo, story.corpo, story.descricao, story.criteriosDeAceite].some((campo) =>
+    campo.split('\n').some((item) => item.trim() === exata),
+  )
+  if (jaTem) return story
   const criterios = story.criteriosDeAceite.trim()
-  return { ...story, criteriosDeAceite: criterios ? `${criterios}\n${linha}` : linha }
+  return { ...story, criteriosDeAceite: criterios ? `${criterios}\n${exata}` : exata }
 }
