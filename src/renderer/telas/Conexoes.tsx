@@ -114,14 +114,34 @@ function CartaoFonte({
   const [segredo, setSegredo] = useState('')
   const [caminho, setCaminho] = useState(conexao.caminhoSalvo)
   const [nova, setNova] = useState({ nome: '', referencia: '', produtoId: produtos[0]?.id ?? '' })
+  const [configurando, setConfigurando] = useState(false)
+  const [vinculando, setVinculando] = useState(false)
 
   useEffect(() => {
     setCaminho(conexao.caminhoSalvo)
   }, [conexao.caminhoSalvo])
 
+  if (!configurando) {
+    const vinculos = conexao.fontes.length
+    return (
+      <SpotlightCard as="article" className="conexao-card">
+        <h3>{conexao.nome}</h3>
+        <p className="status-conexao">
+          <span className={`status-ponto ${conexao.status}`} />
+          {ROTULO[conexao.status]}
+        </p>
+        <p className="sub">{vinculos === 0 ? 'Nenhum vínculo.' : `${vinculos} ${vinculos === 1 ? 'vínculo' : 'vínculos'}.`}</p>
+        <button className="btn-sec" type="button" onClick={() => setConfigurando(true)}>Configurar</button>
+      </SpotlightCard>
+    )
+  }
+
   return (
     <SpotlightCard as="article" className="conexao-card">
-      <h3>{conexao.nome}</h3>
+      <div className="titulo">
+        <h3>{conexao.nome}</h3>
+        <button className="btn-texto" type="button" onClick={() => setConfigurando(false)}>Fechar</button>
+      </div>
       <p className={`status-conexao`}>
         <span className={`status-ponto ${conexao.status}`} />
         {ROTULO[conexao.status]}
@@ -208,41 +228,49 @@ function CartaoFonte({
           </li>
         ))}
       </ul>
-      <form
-        onSubmit={(evento) => {
-          evento.preventDefault()
-          void aoAgir(`${conexao.provedor}-nova`, async () => {
-            await chamar<FonteRadar[]>('salvarFonteRadar', {
-              id: '',
-              produtoId: nova.produtoId,
-              provedor: conexao.provedor,
-              nome: nova.nome,
-              referencia: nova.referencia,
-              ativa: true,
+      {vinculando ? (
+        <form
+          onSubmit={(evento) => {
+            evento.preventDefault()
+            void aoAgir(`${conexao.provedor}-nova`, async () => {
+              await chamar<FonteRadar[]>('salvarFonteRadar', {
+                id: '',
+                produtoId: nova.produtoId,
+                provedor: conexao.provedor,
+                nome: nova.nome,
+                referencia: nova.referencia,
+                ativa: true,
+              })
+              setNova((atual) => ({ ...atual, nome: '', referencia: '' }))
+              setVinculando(false)
+              return 'Vínculo gravado.'
             })
-            setNova((atual) => ({ ...atual, nome: '', referencia: '' }))
-            return 'Vínculo gravado.'
-          })
-        }}
-      >
-        <label className="campo">
-          <span>Nome</span>
-          <input value={nova.nome} onChange={(evento) => setNova((atual) => ({ ...atual, nome: evento.target.value }))} required />
-        </label>
-        <label className="campo">
-          <span>Canal, grupo ou arquivo</span>
-          <input value={nova.referencia} onChange={(evento) => setNova((atual) => ({ ...atual, referencia: evento.target.value }))} required />
-        </label>
-        <label className="campo">
-          <span>Produto</span>
-          <select value={nova.produtoId} onChange={(evento) => setNova((atual) => ({ ...atual, produtoId: evento.target.value }))}>
-            {produtos.map((produto) => (
-              <option key={produto.id} value={produto.id}>{produto.nome}</option>
-            ))}
-          </select>
-        </label>
-        <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || produtos.length === 0}>Vincular ao produto</button>
-      </form>
+          }}
+        >
+          <label className="campo">
+            <span>Nome</span>
+            <input value={nova.nome} onChange={(evento) => setNova((atual) => ({ ...atual, nome: evento.target.value }))} required />
+          </label>
+          <label className="campo">
+            <span>Canal, grupo ou arquivo</span>
+            <input value={nova.referencia} onChange={(evento) => setNova((atual) => ({ ...atual, referencia: evento.target.value }))} required />
+          </label>
+          <label className="campo">
+            <span>Produto</span>
+            <select value={nova.produtoId} onChange={(evento) => setNova((atual) => ({ ...atual, produtoId: evento.target.value }))}>
+              {produtos.map((produto) => (
+                <option key={produto.id} value={produto.id}>{produto.nome}</option>
+              ))}
+            </select>
+          </label>
+          <div className="acoes">
+            <button className="btn-sec" type="submit" disabled={Boolean(ocupado) || produtos.length === 0}>Vincular ao produto</button>
+            <button className="btn-texto" type="button" onClick={() => setVinculando(false)}>Cancelar</button>
+          </div>
+        </form>
+      ) : (
+        <button className="btn-texto" type="button" onClick={() => setVinculando(true)}>+ Vincular canal</button>
+      )}
     </SpotlightCard>
   )
 }

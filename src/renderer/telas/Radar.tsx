@@ -175,40 +175,23 @@ export function RadarView({
 
       <section className="bloco medida">
         <div className="titulo">
-          <h2>Fontes monitoradas</h2>
+          <h2>Fontes</h2>
           {aoConexoes && <button className="btn-sec" type="button" onClick={aoConexoes}>Gerenciar conexões</button>}
         </div>
-        <p className="sub">O que está ligado agora. Token, pasta e vínculo novo ficam em Conexões. O token não volta para esta tela.</p>
         {fontes.length === 0 && <Vazio>Nenhuma fonte ainda. Em Conexões, vincule um canal a um produto.</Vazio>}
-        <ul className="fontes">
-          {fontes.map((fonte) => (
-            <li key={fonte.id}>
-              <div>
-                <strong>{fonte.nome}</strong>
-                <small>{NOME_PROVEDOR[fonte.provedor]} · {estado.produtos.find((produto) => produto.id === fonte.produtoId)?.nome ?? fonte.produtoId}</small>
-              </div>
-              <div className="acoes">
-                <button
-                  className="btn-sec"
-                  type="button"
-                  disabled={Boolean(ocupado)}
-                  onClick={() => void agir(fonte.id, async () => {
-                    await chamar('salvarFonteRadar', { ...fonte, ativa: !fonte.ativa })
-                  })}
-                >
-                  {fonte.ativa ? 'Ligada' : 'Desligada'}
-                </button>
-                <button className="btn-texto" type="button" disabled={Boolean(ocupado) || !fonte.ativa} onClick={() => void agir(fonte.id, async () => { await chamar('sincronizarRadar', { fonteId: fonte.id }) })}>
-                  Ler
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {fontes.length > 0 && (
+          <ul className="chips">
+            {fontes.map((fonte) => (
+              <li key={fonte.id} className={fonte.ativa ? undefined : 'pausada'}>
+                {NOME_PROVEDOR[fonte.provedor]} · {fonte.nome}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      <section className="bloco medida">
-        <h2>Importar transcrição</h2>
+      <details className="bloco medida importar">
+        <summary>Importar transcrição</summary>
         <p className="sub">Cole uma nota do Granola ou um trecho do Plaud. O texto entra como dado, não como ordem.</p>
         <form
           onSubmit={(evento) => {
@@ -243,7 +226,7 @@ export function RadarView({
           </label>
           <button className="btn-sec" type="submit" disabled={Boolean(ocupado)}>Importar</button>
         </form>
-      </section>
+      </details>
 
     </>
   )

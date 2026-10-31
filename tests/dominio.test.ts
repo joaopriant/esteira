@@ -3,11 +3,13 @@ import { aplicarContrato } from '../src/core/contrato'
 import { prefiltrarBacklog } from '../src/core/prefiltro-backlog'
 import { definirModulos, modulosParaRegenerar } from '../src/core/wiki-plano'
 import { extrairMencoes, resolverEscopo } from '../src/core/mentoes'
-import { montarComentario } from '../src/core/publicacao'
+import { acaoInicialDoBoard, descricaoDoCard, frasePublicacao, idDoCardAberto, montarComentario, urlDoCard } from '../src/core/publicacao'
+import { comMarcaDoAchado } from '../src/core/diff-story'
+import type { Achado } from '../src/shared/tipos'
 import { itensExemplo } from '../src/app/exemplo'
 import type { Produto, Repositorio, StoryTexto } from '../src/shared/tipos'
 import { STORY_VAZIA } from '../src/shared/tipos'
-import { caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl } from '../src/adapters/seguro'
+import { abrirNoAzure, caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl } from '../src/adapters/seguro'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
 
@@ -148,7 +150,87 @@ describe('menções e comentário', () => {
   })
 })
 
+describe('achado sem prova e publicação', () => {
+  const base = { titulo: 'Estorno', corpo: 'Eu quero estornar uma parte.', descricao: 'Descrição editada pelo PM', criteriosDeAceite: '- A regra está explícita.' }
+
+  it('sem prova entra marcado e não encontrei vira pergunta', () => {
+    const sem = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Isto é um palpite.', semProva: true }, base)
+    expect(sem.criteriosDeAceite).toContain('- Ajuste: Isto é um palpite. [sem prova]')
+    const deNovo = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Isto é um palpite.', semProva: true }, sem)
+    expect(deNovo.criteriosDeAceite.split('[sem prova]')).toHaveLength(2)
+    const pergunta = comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei a regra.', semProva: false }, base)
+    expect(pergunta.criteriosDeAceite).toContain('- Pergunta em aberto: Não achei a regra.')
+    expect(pergunta.criteriosDeAceite).not.toContain('[sem prova]')
+    expect(comMarcaDoAchado({ tipo: 'existe', texto: 'Com prova.', semProva: false }, base)).toEqual(base)
+  })
+
+  it('dois achados ganham cada um a sua linha e a mesma linha não duplica', () => {
+    const um = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite um.', semProva: true }, base)
+    const dois = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite dois.', semProva: true }, um)
+    expect(dois.criteriosDeAceite).toContain('- Ajuste: Palpite um. [sem prova]')
+    expect(dois.criteriosDeAceite).toContain('- Ajuste: Palpite dois. [sem prova]')
+    const repetido = comMarcaDoAchado({ tipo: 'divergencia', texto: 'Palpite dois.', semProva: true }, dois)
+    expect(repetido.criteriosDeAceite.split('- Ajuste: Palpite dois. [sem prova]')).toHaveLength(2)
+
+    const primeira = comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o limite.', semProva: false }, base)
+    const segunda = comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o prazo.', semProva: false }, primeira)
+    expect(segunda.criteriosDeAceite).toContain('- Pergunta em aberto: Não achei o limite.')
+    expect(segunda.criteriosDeAceite).toContain('- Pergunta em aberto: Não achei o prazo.')
+    expect(comMarcaDoAchado({ tipo: 'nao-encontrei', texto: 'Não achei o prazo.', semProva: false }, segunda)).toEqual(segunda)
+  })
+
+  it('criar card usa a descrição editada e a story', () => {
+    expect(descricaoDoCard(base).startsWith('Descrição editada pelo PM')).toBe(true)
+    expect(descricaoDoCard(base)).toContain('Eu quero estornar uma parte.')
+    expect(descricaoDoCard({ ...base, descricao: '   ' })).toBe(base.corpo)
+    expect(descricaoDoCard({ ...base, corpo: base.descricao })).toBe(base.descricao)
+  })
+
+  it('a frase depois de criar não diz que a descrição ficou intacta', () => {
+    expect(frasePublicacao({ acao: 'criar', workItemId: 8001, projeto: 'Pagamentos' })).toContain('foram gravados')
+    expect(frasePublicacao({ acao: 'criar', workItemId: 8001, projeto: 'Pagamentos' })).not.toContain('não foi alterada')
+    expect(frasePublicacao({ acao: 'comentar', workItemId: 1300, projeto: 'Pagamentos' })).toContain('não foi alterada')
+    expect(urlDoCard('https://dev.azure.com/fintech', 'Pagamentos', 1300)).toBe('https://dev.azure.com/fintech/Pagamentos/_workitems/edit/1300')
+  })
+
+  it('story nova começa em criar; card aberto aceito preenche o comentário', () => {
+    const aberto: Achado = {
+      id: 'c',
+      blocoId: 'backlog',
+      blocoNome: 'Backlog',
+      texto: 'Dá para ajustar o card aberto #1300.',
+      tipo: 'ajustar-aberta',
+      evidencia: { tipo: 'work-item', id: 1300, titulo: 'Estorno', projeto: 'Pagamentos' },
+      semProva: false,
+      estado: 'pendente',
+    }
+    expect(acaoInicialDoBoard([aberto])).toEqual({ acao: 'criar', cardId: '' })
+    expect(idDoCardAberto([aberto])).toBe(1300)
+    expect(acaoInicialDoBoard([{ ...aberto, estado: 'aceito' }])).toEqual({ acao: 'comentar', cardId: '1300' })
+    expect(idDoCardAberto([{ ...aberto, semProva: true }])).toBeNull()
+    expect(idDoCardAberto([{ ...aberto, estado: 'descartado' }])).toBeNull()
+  })
+})
+
 describe('limites de caminho e host', () => {
+  it('abre no browser só https do Azure DevOps', async () => {
+    const abertos: string[] = []
+    const abrir = async (url: string) => {
+      abertos.push(url)
+    }
+    await abrirNoAzure(abrir, 'https://dev.azure.com/fintech/Pagamentos/_workitems/edit/1300')
+    await abrirNoAzure(abrir, 'https://fintech.visualstudio.com/Pagamentos/_workitems/edit/7')
+    expect(abertos).toEqual([
+      'https://dev.azure.com/fintech/Pagamentos/_workitems/edit/1300',
+      'https://fintech.visualstudio.com/Pagamentos/_workitems/edit/7',
+    ])
+    await expect(abrirNoAzure(abrir, 'http://dev.azure.com/fintech/x')).rejects.toThrow(/https/)
+    await expect(abrirNoAzure(abrir, 'https://evil.example/org')).rejects.toThrow(/dev\.azure\.com/)
+    const comCredencial = ['https://usuario', 'segredo@dev.azure.com/fintech/x'].join(':')
+    await expect(abrirNoAzure(abrir, comCredencial)).rejects.toThrow(/token/)
+    expect(abertos).toHaveLength(2)
+  })
+
   it('recusa host fora do Azure e branch com comando', () => {
     expect(() => validarOrgUrl('https://evil.example/org')).toThrow(/dev\.azure\.com/)
     expect(() => validarBranch('main;rm')).toThrow(/Branch/)

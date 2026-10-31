@@ -2,7 +2,9 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { AzureFalso } from '../src/adapters/falsos'
 import { criarAplicacao } from '../src/app/criar'
+import { itensExemplo } from '../src/app/exemplo'
 import { azurePeloSdk, type AzureSdk } from '../src/adapters/azure-devops'
 import { criarClaudeCli, extrairJson } from '../src/adapters/claude-cli'
 import type { Processo } from '../src/ports'
@@ -49,6 +51,8 @@ describe('esteira padrão com falsos', () => {
     expect(comDiff.diffPendente?.linhas.some((linha) => linha.tipo === 'entrou')).toBe(true)
     const aprovada = await app.aprovarDiff(rodada.id)
     expect(aprovada.story.criteriosDeAceite).toContain('Ajuste:')
+    expect(aprovada.story.criteriosDeAceite).toContain('[sem prova]')
+    expect(aprovada.story.criteriosDeAceite.split('[sem prova]')).toHaveLength(2)
     expect(aprovada.achados.find((achado) => achado.id === alvo!.id)?.estado).toBe('aceito')
 
     const outro = aprovada.achados.find((achado) => achado.estado === 'pendente')
@@ -97,6 +101,31 @@ describe('esteira padrão com falsos', () => {
     await app.drenarWiki()
     const novos = claude.claude.modulosGerados.slice(antes)
     expect(novos).toEqual(['pagamentos-api/estorno'])
+  })
+})
+
+describe('criar card', () => {
+  it('grava a descrição editada, não o corpo no lugar dela', async () => {
+    const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-'))
+    pastas.push(dataDir)
+    const azure = new AzureFalso(itensExemplo(AGORA))
+    const criados: { descricao: string; titulo: string }[] = []
+    const original = azure.criarWorkItem.bind(azure)
+    azure.criarWorkItem = async (pedido) => {
+      criados.push({ descricao: pedido.descricao, titulo: pedido.titulo })
+      return original(pedido)
+    }
+    const app = await criarAplicacao({ dataDir, modo: 'falso', agora: () => AGORA, semear: true, azure })
+    const rodada = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    const editada = { ...rodada.story, descricao: 'Descrição editada pelo PM' }
+    await app.editarStory(rodada.id, editada)
+    const publicada = await app.publicar(rodada.id, { acao: 'criar', projeto: 'Pagamentos' })
+    expect(publicada.publicacao?.acao).toBe('criar')
+    expect(criados).toHaveLength(1)
+    expect(criados[0]?.descricao.startsWith('Descrição editada pelo PM')).toBe(true)
+    expect(criados[0]?.descricao).toContain(editada.corpo)
+    expect(criados[0]?.descricao).not.toBe(editada.corpo)
+    expect(criados[0]?.titulo).toBe(editada.titulo)
   })
 })
 

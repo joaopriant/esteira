@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron'
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron'
 import path from 'node:path'
+import { abrirNoAzure } from '../adapters/seguro'
 import { criarAplicacao } from '../app/criar'
 import { despachar } from '../app/api'
 import type { EsteiraApp } from '../app/esteira-app'
@@ -17,6 +18,13 @@ const CSP = [
 ].join('; ')
 
 let aplicacao: EsteiraApp | undefined
+
+function urlDoCorpo(corpo: unknown): string {
+  if (!corpo || typeof corpo !== 'object' || !('url' in corpo)) throw new Error('Link do card inválido.')
+  const url = (corpo as { url: unknown }).url
+  if (typeof url !== 'string' || !url.trim()) throw new Error('Link do card inválido.')
+  return url
+}
 
 function modo(): 'real' | 'falso' {
   return process.env.ESTEIRA_FAKE === '1' ? 'falso' : 'real'
@@ -79,6 +87,10 @@ app.whenReady().then(() => {
   }
   ipcMain.handle('esteira', async (_evento, canal: unknown, corpo: unknown) => {
     if (typeof canal !== 'string' || canal.length > 40) throw new Error('Canal desconhecido.')
+    if (canal === 'abrirNoBrowser') {
+      await abrirNoAzure((endereco) => shell.openExternal(endereco), urlDoCorpo(corpo))
+      return null
+    }
     return despachar(await obterApp(), canal, corpo ?? {})
   })
   criarJanela()

@@ -113,6 +113,8 @@ h2 { font-size: 16px; font-weight: 500; }
   padding: var(--pad);
 }
 .titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.titulo > h1 { min-width: 0; flex: 1; }
+.titulo .acoes { flex: none; }
 h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line-height: 28px; overflow-wrap: anywhere; }
 .sub { color: var(--muted); font-size: var(--fs-body); margin: 4px 0 20px; }
 .acoes { display: flex; gap: 8px; align-items: center; }
@@ -122,6 +124,7 @@ h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line
   padding: 0 12px;
   border-radius: var(--radius-control);
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 .btn { background: var(--primary); color: var(--primary-ink); }
 .btn:disabled { background: var(--disabled-bg); color: var(--disabled-ink); cursor: not-allowed; }
@@ -187,7 +190,22 @@ input, select { height: 36px; }
 .achado header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .achado header > span { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .achado p { margin-top: 6px; }
-.achado .acoes { margin-top: 10px; }
+.achado .acoes { margin-top: 10px; flex-wrap: wrap; }
+.achado.sem-prova:not(.resolvido) {
+  margin: 10px 0;
+  padding: 12px;
+  background: var(--pill-warning-bg);
+  border-radius: var(--radius-card);
+}
+.confirma {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.confirma p { margin: 0 0 8px; }
+.achado.sem-prova .confirma { background: var(--surface); }
 /* Achado já decidido: continua legível, mas cede o peso aos pendentes. */
 .achado .origem { color: var(--muted); font-size: var(--fs-small); }
 .achado .frase { margin-top: 4px; font-weight: 500; }
@@ -318,6 +336,20 @@ legend { padding: 0; }
   line-height: 18px;
   text-align: center;
 }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 8px; padding: 0; }
+.chips li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--raised);
+  font-size: var(--fs-small);
+}
+.chips li.pausada { color: var(--muted); }
+.importar summary { cursor: pointer; font-size: 16px; font-weight: 500; }
+.importar[open] summary { margin-bottom: 8px; }
 .fontes { list-style: none; margin: 0 0 16px; padding: 0; }
 .fontes li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule); }
 .fontes small { display: block; color: var(--muted); font-size: var(--fs-small); }
@@ -493,6 +525,7 @@ legend { padding: 0; }
 .status-ponto.conectado { background: var(--positive); }
 .status-ponto.pasta-local { background: var(--accent); }
 .canal { list-style: none; margin: 8px 0 0; padding: 0; min-width: 0; }
+.canal small { display: block; color: var(--muted); font-size: var(--fs-small); }
 .canal li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--rule); min-width: 0; }
 .canal li > div { min-width: 0; flex: 1; }
 .marca svg { display: block; flex: none; }

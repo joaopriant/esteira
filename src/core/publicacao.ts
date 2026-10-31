@@ -36,6 +36,48 @@ export function montarComentario(entrada: {
   ].join('\n')
 }
 
+/** A Descrição editada lidera o campo do card. A Story entra em seguida quando for outro texto. */
+export function descricaoDoCard(story: StoryTexto): string {
+  const descricao = story.descricao.trim()
+  const corpo = story.corpo.trim()
+  if (descricao && corpo && descricao !== corpo) return `${descricao}\n\n${corpo}`
+  return descricao || corpo
+}
+
+export function frasePublicacao(publicacao: { acao: 'criar' | 'comentar'; workItemId: number; projeto: string }): string {
+  if (publicacao.acao === 'criar') {
+    return `Card #${publicacao.workItemId} criado em ${publicacao.projeto}. A descrição e os critérios foram gravados.`
+  }
+  return `Comentário publicado no #${publicacao.workItemId} em ${publicacao.projeto}. A descrição do card não foi alterada.`
+}
+
+export function urlDoCard(orgUrl: string, projeto: string, id: number): string {
+  const base = orgUrl.trim().replace(/\/$/, '')
+  if (!base || !projeto.trim() || !Number.isInteger(id) || id <= 0) return ''
+  return `${base}/${encodeURIComponent(projeto)}/_workitems/edit/${id}`
+}
+
+/** Card aberto com prova. O aceito ganha do pendente; descartado e sem prova não preenchem o número. */
+export function idDoCardAberto(achados: Achado[], opcoes?: { somenteAceito?: boolean }): number | null {
+  const candidatos = achados.filter((achado) => {
+    if (achado.estado === 'descartado' || achado.semProva) return false
+    if (achado.tipo !== 'ajustar-aberta') return false
+    if (achado.evidencia.tipo !== 'work-item') return false
+    if (!Number.isInteger(achado.evidencia.id) || achado.evidencia.id <= 0) return false
+    if (opcoes?.somenteAceito && achado.estado !== 'aceito') return false
+    return true
+  })
+  const escolhido = candidatos.find((item) => item.estado === 'aceito') ?? candidatos[0]
+  if (!escolhido || escolhido.evidencia.tipo !== 'work-item') return null
+  return escolhido.evidencia.id
+}
+
+export function acaoInicialDoBoard(achados: Achado[]): { acao: 'criar' | 'comentar'; cardId: string } {
+  const aceito = idDoCardAberto(achados, { somenteAceito: true })
+  if (aceito) return { acao: 'comentar', cardId: String(aceito) }
+  return { acao: 'criar', cardId: '' }
+}
+
 export type PedidoPublicacao =
   | {
       acao: 'criar'

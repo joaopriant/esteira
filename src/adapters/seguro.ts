@@ -17,6 +17,12 @@ export function validarOrgUrl(valor: string): URL {
   return url
 }
 
+/** shell.openExternal só recebe https já filtrado para o Azure DevOps. */
+export async function abrirNoAzure(abrir: (url: string) => Promise<void>, valor: string): Promise<void> {
+  const url = validarOrgUrl(valor)
+  await abrir(url.toString())
+}
+
 export function validarRemoto(valor: string): URL {
   const url = validarOrgUrl(valor)
   return url

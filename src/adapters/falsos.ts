@@ -214,9 +214,15 @@ export function criarClaudeFalso(): ClaudePort & { modulosGerados: string[] } {
         }
       }
       if (pedido.papel === 'aplicar' && pedido.achado) {
+        const linha =
+          pedido.achado.tipo === 'nao-encontrei'
+            ? `- Pergunta em aberto: ${pedido.achado.texto}`
+            : pedido.achado.semProva
+              ? `- Ajuste: ${pedido.achado.texto} [sem prova]`
+              : `- Ajuste: ${pedido.achado.texto}`
         const story: StoryTexto = {
           ...pedido.story,
-          criteriosDeAceite: `${pedido.story.criteriosDeAceite}\n- Ajuste: ${pedido.achado.texto}`.trim(),
+          criteriosDeAceite: `${pedido.story.criteriosDeAceite}\n${linha}`.trim(),
         }
         return { json: { story, achados: [] }, bruto: '' }
       }

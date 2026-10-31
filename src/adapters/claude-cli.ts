@@ -122,7 +122,7 @@ export function montarContexto(pedido: PedidoClaude): string {
     `IDEIA\n${pedido.ideia}`,
     `MODELO\n${pedido.modelo}`,
     `STORY\n${pedido.story.titulo}\n${pedido.story.corpo}\n${pedido.story.descricao}\n${pedido.story.criteriosDeAceite}`,
-    pedido.achado ? `ACHADO\n${pedido.achado.texto}` : '',
+    pedido.achado ? `ACHADO\ntexto: ${pedido.achado.texto}\ntipo: ${pedido.achado.tipo}\nsemProva: ${pedido.achado.semProva}` : '',
     pedido.pergunta ? `PERGUNTA\n${pedido.pergunta}` : '',
     `WIKI\n${wiki}`,
     `ARQUIVOS\n${arquivos}`,
