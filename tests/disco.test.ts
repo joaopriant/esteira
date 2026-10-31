@@ -22,6 +22,14 @@ async function raiz(): Promise<string> {
   return pasta
 }
 
+async function esperar(pronto: () => boolean): Promise<void> {
+  for (let i = 0; i < 50; i++) {
+    if (pronto()) return
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  throw new Error('A gravação paralela não avançou.')
+}
+
 describe('gravação atômica no disco', () => {
   it('grava o json e lê de volta', async () => {
     const disco = criarDisco(await raiz())
@@ -64,6 +72,41 @@ describe('gravação atômica no disco', () => {
     expect(tentativas).toBe(4)
     expect(await disco.lerJson('config.json')).toBeNull()
     expect((await fs.readdir(pasta)).some((nome) => nome.endsWith('.tmp'))).toBe(false)
+  })
+
+  it('duas gravações paralelas no mesmo arquivo não compartilham o temporário', async () => {
+    const pasta = await raiz()
+    const temps: string[] = []
+    let soltar = () => {}
+    let travou = false
+    const disco = criarDisco(pasta, {
+      renomear: async (de, para) => {
+        temps.push(de)
+        if (!travou) {
+          travou = true
+          await new Promise<void>((resolve) => {
+            soltar = resolve
+          })
+        }
+        await fs.rename(de, para)
+      },
+    })
+    const primeira = disco.gravarJson('config.json', { id: 'a', bloco: 'a'.repeat(1000) })
+    try {
+      await esperar(() => temps.length === 1)
+      const segunda = disco.gravarJson('config.json', { id: 'b', bloco: 'b'.repeat(1000) })
+      await esperar(() => temps.length === 2)
+      soltar()
+      await Promise.all([primeira, segunda])
+    } finally {
+      soltar()
+    }
+    expect(new Set(temps).size).toBe(2)
+    expect(temps.every((nome) => nome.includes(`.${process.pid}.`) && nome.endsWith('.tmp'))).toBe(true)
+    const lido = await disco.lerJson<{ id: string; bloco: string }>('config.json')
+    expect(lido?.id).toMatch(/^[ab]$/)
+    expect(lido?.bloco).toBe((lido?.id ?? '').repeat(1000))
+    expect((await fs.readdir(pasta)).filter((nome) => nome.endsWith('.tmp'))).toEqual([])
   })
 
   it('não repete um erro que não é de arquivo ocupado', async () => {

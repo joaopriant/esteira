@@ -56,7 +56,11 @@ export async function criarAplicacao(opcoes: {
     if ((await app.produtos()).length === 0) await semearExemplo(app)
     await app.semearRadarSeVazio()
   }
-  await app.retomarWiki()
+  try {
+    await app.retomarWiki()
+  } catch (erro) {
+    console.error('Não retomei a wiki.', erro)
+  }
   return app
 }
 

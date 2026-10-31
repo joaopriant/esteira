@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { criarClaudeFalso, criarGitFalso } from '../src/adapters/falsos'
 import { criarAplicacao } from '../src/app/criar'
 import { LIMITE_CONTEXTO_WIKI } from '../src/core/wiki-plano'
@@ -65,12 +65,13 @@ async function appContado() {
   return { app, dataDir, contagem, pedidos, claude }
 }
 
-async function estadoNoIndice(dataDir: string, produtoId: string, moduloId: string, estado: string) {
+async function estadoNoIndice(dataDir: string, produtoId: string, moduloId: string, estado: string, arquivos?: string[]) {
   const indexPath = path.join(dataDir, 'wiki', produtoId, 'index.json')
-  const indice = JSON.parse(await fs.readFile(indexPath, 'utf8')) as { modulos: { id: string; estado: string; erro?: string }[] }
+  const indice = JSON.parse(await fs.readFile(indexPath, 'utf8')) as { modulos: { id: string; estado: string; erro?: string; arquivos?: string[] }[] }
   const modulo = indice.modulos.find((item) => item.id === moduloId)
   if (!modulo) throw new Error(`Não achei ${moduloId} no índice.`)
   modulo.estado = estado
+  if (arquivos) modulo.arquivos = arquivos
   if (estado === 'erro') modulo.erro = 'falhou na leitura'
   else delete modulo.erro
   await fs.writeFile(indexPath, JSON.stringify(indice))
@@ -177,6 +178,66 @@ describe('retomada da wiki', () => {
     expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/estorno')?.estado).toBe('pronto')
     expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/liquidacao')?.estado).toBe('pronto')
     expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/estorno')?.afirmacoes.some((item) => !item.semProva)).toBe(true)
+  })
+
+  it('módulo sem arquivo legível fica em erro e não chama o Claude', async () => {
+    const { dataDir } = await appContado()
+    await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/estorno', 'gerando', ['src/estorno/nao-existe.ts'])
+    const claude = criarClaudeFalso()
+    const app = await abrir(dataDir, { listas: [], leituras: [] }, claude)
+    await app.drenarWiki()
+    expect(claude.modulosGerados).toEqual([])
+    const modulo = (await app.wiki('pix')).modulos.find((item) => item.id === 'pagamentos-api/estorno')
+    expect(modulo?.estado).toBe('erro')
+    expect(modulo?.erro).toBe('Não li nenhum arquivo do módulo.')
+  })
+
+  it('json corrompido de um produto não impede a abertura nem a retomada do outro', async () => {
+    const { dataDir } = await appContado()
+    await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/estorno', 'gerando')
+    await fs.writeFile(path.join(dataDir, 'wiki', 'contas', 'index.json'), '{nao é json')
+    const claude = criarClaudeFalso()
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const app = await abrir(dataDir, { listas: [], leituras: [] }, claude)
+      await app.drenarWiki()
+      expect(claude.modulosGerados).toEqual(['pagamentos-api/estorno'])
+      expect((await app.wiki('pix')).modulos.find((modulo) => modulo.id === 'pagamentos-api/estorno')?.estado).toBe('pronto')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('a fila segue no próximo ciclo se gravar o estado falhar', async () => {
+    const { app, dataDir, claude } = await appContado()
+    await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/estorno', 'pendente')
+    await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/liquidacao', 'pendente')
+    const disco = (app as unknown as { deps: { disco: { gravarJson: (relativo: string, valor: unknown) => Promise<void> } } }).deps.disco
+    const original = disco.gravarJson.bind(disco)
+    let falhas = 0
+    disco.gravarJson = async (relativo: string, valor: unknown) => {
+      if (relativo.includes('wiki/pix/index.json') && falhas < 2) {
+        falhas += 1
+        throw new Error('disco cheio')
+      }
+      await original(relativo, valor)
+    }
+    const antes = claude.modulosGerados.length
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await app.retomarWiki()
+      await app.drenarWiki()
+      expect(spy).toHaveBeenCalled()
+      expect(claude.modulosGerados.slice(antes)).toEqual([])
+      await app.retomarWiki()
+      await app.drenarWiki()
+      expect(claude.modulosGerados.slice(antes).sort()).toEqual(['pagamentos-api/estorno', 'pagamentos-api/liquidacao'])
+      const wiki = await app.wiki('pix')
+      expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/estorno')?.estado).toBe('pronto')
+      expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/liquidacao')?.estado).toBe('pronto')
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it('ao abrir, não refaz módulo em erro; gerar de novo refaz sem mudar o hash', async () => {

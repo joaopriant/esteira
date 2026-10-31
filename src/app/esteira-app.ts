@@ -626,10 +626,21 @@ export class EsteiraApp {
   }
 
   async retomarWiki(): Promise<void> {
-    for (const produto of await this.produtos()) {
-      const wiki = await this.lerWiki(produto.id)
-      for (const modulo of wiki.modulos) {
-        if (modulo.estado === 'pendente' || modulo.estado === 'gerando') this.enfileirar(produto.id, modulo.id)
+    let produtos: Produto[] = []
+    try {
+      produtos = await this.produtos()
+    } catch (erro) {
+      console.error('Não retomei a wiki: não li os produtos.', erro)
+      return
+    }
+    for (const produto of produtos) {
+      try {
+        const wiki = await this.lerWiki(produto.id)
+        for (const modulo of wiki.modulos) {
+          if (modulo.estado === 'pendente' || modulo.estado === 'gerando') this.enfileirar(produto.id, modulo.id)
+        }
+      } catch (erro) {
+        console.error(`Não retomei a wiki de ${produto.nome}.`, erro)
       }
     }
     this.acordarFila()
@@ -1208,7 +1219,9 @@ export class EsteiraApp {
 
   private acordarFila(): void {
     if (this.fila.length === 0) return
-    this.corrente = this.corrente.then(() => this.processarFila())
+    this.corrente = this.corrente.then(() => this.processarFila()).catch((erro: unknown) => {
+      console.error('A fila da wiki parou.', erro)
+    })
   }
 
   private async processarFila(): Promise<void> {
@@ -1232,13 +1245,13 @@ export class EsteiraApp {
     if (!modulo) return
     await this.marcarModulo(produtoId, moduloId, { estado: 'gerando' })
     const arquivos = await this.arquivosDoModulo(modulo)
+    if (arquivos.length === 0) throw new Error('Não li nenhum arquivo do módulo.')
     const ajustes = await this.ajustes()
     const lotes = fatiarPorContexto(arquivos)
-    const chamadas = lotes.length > 0 ? lotes : [arquivos]
     const afirmacoes: AfirmacaoWiki[] = []
     let titulo = ''
     let resumo = ''
-    for (const lote of chamadas) {
+    for (const lote of lotes) {
       const resposta = await (await this.clienteClaude()).run({
         papel: 'wiki',
         blocoId: moduloId,

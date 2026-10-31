@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { Disco } from '../ports'
@@ -29,7 +30,7 @@ export function criarDisco(raiz: string, io?: Partial<DiscoIo>): Disco {
     async gravarJson(relativo: string, valor: unknown) {
       const destino = caminhoSeguro(raiz, relativo)
       await fs.mkdir(path.dirname(destino), { recursive: true })
-      const temp = `${destino}.${process.pid}.tmp`
+      const temp = `${destino}.${process.pid}.${randomUUID()}.tmp`
       await fs.writeFile(temp, JSON.stringify(valor, null, 2), 'utf8')
       try {
         await renomearSubstituindo(temp, destino, renomear, esperar)
