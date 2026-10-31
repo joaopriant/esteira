@@ -119,7 +119,8 @@ describe('criar card', () => {
       return original(pedido)
     }
     const app = await criarAplicacao({ dataDir, modo: 'falso', agora: () => AGORA, semear: true, azure })
-    const rodada = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    const rodada = await app.aguardar(inicio.id)
     const editada = { ...rodada.story, descricao: 'Descrição editada pelo PM' }
     await app.editarStory(rodada.id, editada)
     const publicada = await app.publicar(rodada.id, { acao: 'criar', projeto: 'Pagamentos' })

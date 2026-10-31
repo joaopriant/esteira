@@ -3,7 +3,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { spawn as TipoSpawn } from 'node:child_process'
 import { Executavel, type BuscaNoDisco } from '../src/adapters/executavel'
-import { criarProcesso, GRACA_MS, matarFilho } from '../src/adapters/processo'
+import { criarProcesso, GRACA_MS, matarArvore } from '../src/adapters/processo'
 
 const spawnMock = vi.hoisted(() => vi.fn())
 
@@ -193,7 +193,7 @@ describe('criarProcesso', () => {
   it('no Windows mata a árvore com taskkill, sem shell', () => {
     spawnMock.mockImplementation(() => filhoFalso())
     const kill = vi.fn(() => true)
-    matarFilho({ pid: 99, kill }, 'win32')
+    matarArvore({ pid: 99, kill }, 'win32')
     expect(kill).not.toHaveBeenCalled()
     expect(spawnMock).toHaveBeenCalledWith(
       'taskkill',
@@ -206,7 +206,7 @@ describe('criarProcesso', () => {
     const taskkill = new EventEmitter()
     spawnMock.mockImplementation(() => taskkill)
     const kill = vi.fn(() => true)
-    matarFilho({ pid: 99, kill }, 'win32')
+    matarArvore({ pid: 99, kill }, 'win32')
     expect(() => taskkill.emit('error', Object.assign(new Error('spawn taskkill ENOENT'), { code: 'ENOENT' }))).not.toThrow()
     expect(kill).toHaveBeenCalledWith('SIGKILL')
   })
@@ -232,6 +232,10 @@ describe('criarProcesso', () => {
       preso.unref = () => {}
       const taskkill = new EventEmitter()
       spawnMock.mockImplementation((comando: string) => (comando === 'taskkill' ? taskkill : preso))
+      // Fora do Windows o kill vai para o grupo (-pid). O dublê recusa, como faria com um pid que não existe.
+      const grupo = vi.spyOn(process, 'kill').mockImplementation(() => {
+        throw Object.assign(new Error('kill ESRCH'), { code: 'ESRCH' })
+      })
       const promessa = criarProcesso(disco({}, '', plataforma), plataforma).executar({
         comando: process.execPath,
         args: ['-e', '0'],
@@ -247,11 +251,13 @@ describe('criarProcesso', () => {
           expect.objectContaining({ shell: false, windowsHide: true, stdio: 'ignore' }),
         )
       } else {
+        expect(grupo).toHaveBeenCalledWith(-4242, 'SIGKILL')
         expect(preso.kill).toHaveBeenCalledWith('SIGKILL')
       }
       await vi.advanceTimersByTimeAsync(GRACA_MS)
       await assertiva
     } finally {
+      vi.restoreAllMocks()
       vi.useRealTimers()
     }
   })
