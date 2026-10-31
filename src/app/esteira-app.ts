@@ -49,7 +49,7 @@ import { descricaoDoCard, montarComentario } from '../core/publicacao'
 import { dataMesesAtras, novoId } from '../core/texto'
 import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
-import { criarClaudeCli } from '../adapters/claude-cli'
+import { criarClaudeCli, diagnosticarClaude } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
 import { caminhoSeguro, contaDoPat, contaRadar, nomePastaSeguro, redigirSegredo, urlSemCredencial, validarBinario, validarOrgUrl, validarRemoto } from '../adapters/seguro'
 import type { AzurePort, ClaudePort } from '../ports'
@@ -578,26 +578,7 @@ export class EsteiraApp {
     if (this.deps.modo === 'falso') {
       return { instalado: true, autenticado: true, detalhe: 'Modo exemplo. O Claude desta máquina responde sem rede e sem chave de API.' }
     }
-    const processo = criarProcesso()
-    try {
-      const versao = await processo.executar({ comando: binario, args: ['--version'], timeoutMs: 8_000 })
-      if (versao.codigo !== 0) return { instalado: false, autenticado: false, detalhe: 'O executável não respondeu a --version.' }
-    } catch {
-      return { instalado: false, autenticado: false, detalhe: 'Não encontrei o executável do Claude nesta máquina.' }
-    }
-    try {
-      const prova = await processo.executar({
-        comando: binario,
-        args: ['-p', 'Responda somente a palavra ok.', '--permission-mode', 'dontAsk'],
-        timeoutMs: Math.min(ajustes.timeoutBlocoMs, 20_000),
-      })
-      if (prova.codigo === 0 && /\bok\b/i.test(prova.stdout)) {
-        return { instalado: true, autenticado: true, detalhe: 'O Claude respondeu ao claude -p com a assinatura desta máquina.' }
-      }
-      return { instalado: true, autenticado: false, detalhe: 'O binário existe, mas o claude -p não confirmou a assinatura.' }
-    } catch {
-      return { instalado: true, autenticado: false, detalhe: 'O claude -p passou do tempo ou não pôde ser executado.' }
-    }
+    return diagnosticarClaude(criarProcesso(), binario)
   }
 
   async semearRadarSeVazio(): Promise<void> {
@@ -1430,7 +1411,7 @@ export class EsteiraApp {
         autenticado: claudeExemplo ? true : null,
         detalhe: claudeExemplo
           ? 'Modo exemplo. O Claude falso responde sem chave de API.'
-          : 'Ainda não verificado. Testar roda claude -p nesta máquina.',
+          : 'Ainda não verificado. Testar lê a versão e o claude auth status nesta máquina, sem gastar um prompt.',
       },
       ativas,
     }
