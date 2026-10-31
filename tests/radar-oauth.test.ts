@@ -221,6 +221,66 @@ describe('oauth do radar', () => {
     expect(await instavel.ler(contaExpiraRadar('slack'))).toBe('80')
   })
 
+  it('dois 401 ao mesmo tempo fazem um só refresh e o token fica inteiro', async () => {
+    const segredos = cofreMemoria()
+    await CofreRadar.gravar(segredos, 'slack', { accessToken: 'acesso-velho-slack', refreshToken: 'refresh-1', expiraEm: 0 })
+    const novo = `xoxp-${'n'.repeat(COFRE_ENTRADA_MAX * 2)}`
+    const corpos: string[] = []
+    const opcoes = {
+      segredos,
+      provedor: 'slack' as const,
+      clientId: CLIENT_SLACK,
+      tenant: '',
+      forcar: true,
+      buscar: (async (_url, init) => {
+        corpos.push(String(init?.body ?? ''))
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return json({ ok: true, authed_user: { access_token: novo, refresh_token: 'refresh-2', scope: 'channels:history', expires_in: 3600 } })
+      }) as typeof fetch,
+    }
+    const [a, b] = await Promise.all([CofreRadar.bearer(opcoes), CofreRadar.bearer(opcoes)])
+    expect(corpos).toHaveLength(1)
+    expect(corpos[0]).toContain('refresh_token=refresh-1')
+    expect(a).toBe(novo)
+    expect(b).toBe(novo)
+    expect(await CofreRadar.lerAccess(segredos, 'slack')).toBe(novo)
+    expect(await segredos.ler(contaRefreshRadar('slack'))).toBe('refresh-2')
+
+    const x = `x${'x'.repeat(COFRE_ENTRADA_MAX * 2)}`
+    const y = `y${'y'.repeat(COFRE_ENTRADA_MAX * 2)}`
+    await Promise.all([
+      CofreRadar.gravar(segredos, 'teams', { accessToken: x, refreshToken: 'rx', expiraEm: 0 }),
+      CofreRadar.gravar(segredos, 'teams', { accessToken: y, refreshToken: 'ry', expiraEm: 0 }),
+    ])
+    expect(await CofreRadar.lerAccess(segredos, 'teams')).toBe(y)
+    expect(await segredos.ler(contaRefreshRadar('teams'))).toBe('ry')
+  })
+
+  it('o fim de uma tentativa antiga de login não apaga a nova', async () => {
+    let liberar: () => void = () => undefined
+    const portao = new Promise<void>((resolve) => { liberar = resolve })
+    let dispositivos = 0
+    const { app, segredos } = await appReal(() => async (url, init) => {
+      if (String(url).endsWith('/devicecode')) {
+        dispositivos += 1
+        return json({ device_code: `dev-${dispositivos}`, user_code: 'ABCD-EFGH', verification_uri: 'https://microsoft.com/devicelogin', expires_in: 900, interval: 1 })
+      }
+      if (String(init?.body ?? '').includes('device_code=dev-1')) {
+        await portao
+        return json({ error: 'expired_token', error_description: 'expirou' }, 400)
+      }
+      return json({ access_token: ACESSO_TEAMS, refresh_token: REFRESH_TEAMS, expires_in: 3600 })
+    })
+    await app.salvarClienteRadar('teams', CLIENT_TEAMS, 'organizations')
+    await app.iniciarOauthRadar('teams')
+    const antiga = app.concluirOauthRadar('teams')
+    await app.iniciarOauthRadar('teams')
+    liberar()
+    await expect(antiga).rejects.toThrow(/expirou/)
+    await app.concluirOauthRadar('teams')
+    expect(await segredos.ler(contaRadar('teams'))).toBe(ACESSO_TEAMS)
+  })
+
   it('recusa endereço de verificação que não é da Microsoft', async () => {
     await expect(OauthRadar.pedirDispositivo({
       clientId: CLIENT_TEAMS,

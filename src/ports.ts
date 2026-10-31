@@ -47,7 +47,7 @@ export interface PedidoClaude {
 export interface LeitorRadar {
   provedor: ProvedorRadar
   listarCanais(): Promise<{ referencia: string; nome: string }[]>
-  ler(referencia: string, opcoes?: { desde?: string }): Promise<SinalBruto[]>
+  ler(referencia: string, opcoes?: { desde?: string }): Promise<{ sinais: SinalBruto[]; marca?: string | null }>
 }
 
 export interface RespostaClaude {

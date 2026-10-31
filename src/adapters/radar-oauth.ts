@@ -374,7 +374,24 @@ export class OauthRadar {
   }
 }
 
+type ProvedorCofre = 'teams' | 'slack' | 'whatsapp'
+
+interface OpcoesBearer {
+  segredos: SecretStore
+  provedor: 'teams' | 'slack'
+  clientId: string
+  tenant: string
+  buscar: typeof fetch
+  forcar?: boolean
+  agora?: number
+}
+
 export class CofreRadar {
+  // Tudo que lê ou grava as partes do token passa numa fila por cofre e provedor: duas gravações intercaladas misturariam as partes.
+  // shortcut: a fila é em memória e vale para um processo, revisar se dois processos abrirem o mesmo cofre
+  private static filas = new WeakMap<SecretStore, Map<ProvedorCofre, Promise<unknown>>>()
+  private static renovando = new WeakMap<SecretStore, Map<ProvedorCofre, Promise<string | null>>>()
+
   static partir(valor: string): string[] {
     if (!valor) return []
     const partes: string[] = []
@@ -388,13 +405,62 @@ export class CofreRadar {
   static async gravarColado(segredos: SecretStore, provedor: 'teams' | 'slack', token: string): Promise<void> {
     const limpo = token.trim()
     if (!limpo || /[\r\n\0]/.test(limpo)) throw new Error('Token de leitura inválido.')
+    await this.emFila(segredos, provedor, () => this.gravarColadoJa(segredos, provedor, limpo))
+  }
+
+  static gravar(segredos: SecretStore, provedor: 'teams' | 'slack', credencial: CredencialOAuth): Promise<void> {
+    return this.emFila(segredos, provedor, () => this.gravarJa(segredos, provedor, credencial))
+  }
+
+  static apagar(segredos: SecretStore, provedor: ProvedorCofre): Promise<void> {
+    return this.emFila(segredos, provedor, () => this.apagarJa(segredos, provedor))
+  }
+
+  static lerAccess(segredos: SecretStore, provedor: 'teams' | 'slack'): Promise<string | null> {
+    return this.emFila(segredos, provedor, async () => {
+      await this.recuperar(segredos, provedor)
+      const texto = (await this.juntar(segredos, contaRadar(provedor), false)).trim()
+      return texto || null
+    })
+  }
+
+  static bearer(opcoes: OpcoesBearer): Promise<string | null> {
+    if (!opcoes.forcar) return this.emFila(opcoes.segredos, opcoes.provedor, () => this.bearerJa(opcoes))
+    // Dois 401 ao mesmo tempo dividem um só refresh: o do Slack é rotativo e um segundo refresh invalidaria o primeiro.
+    let mapa = this.renovando.get(opcoes.segredos)
+    if (!mapa) {
+      mapa = new Map()
+      this.renovando.set(opcoes.segredos, mapa)
+    }
+    const emVoo = mapa.get(opcoes.provedor)
+    if (emVoo) return emVoo
+    const deste = mapa
+    const promessa = this.emFila(opcoes.segredos, opcoes.provedor, () => this.bearerJa(opcoes)).finally(() => {
+      if (deste.get(opcoes.provedor) === promessa) deste.delete(opcoes.provedor)
+    })
+    mapa.set(opcoes.provedor, promessa)
+    return promessa
+  }
+
+  private static emFila<T>(segredos: SecretStore, provedor: ProvedorCofre, tarefa: () => Promise<T>): Promise<T> {
+    let mapa = this.filas.get(segredos)
+    if (!mapa) {
+      mapa = new Map()
+      this.filas.set(segredos, mapa)
+    }
+    const atual = (mapa.get(provedor) ?? Promise.resolve()).then(tarefa)
+    mapa.set(provedor, atual.catch(() => undefined))
+    return atual
+  }
+
+  private static async gravarColadoJa(segredos: SecretStore, provedor: 'teams' | 'slack', limpo: string): Promise<void> {
     await this.limparNovo(segredos, provedor)
     await this.escreverPartes(segredos, contaRadar(provedor), this.partir(limpo), false)
     await this.escreverPartes(segredos, contaRefreshRadar(provedor), [], false)
     await segredos.apagar(contaExpiraRadar(provedor))
   }
 
-  static async gravar(segredos: SecretStore, provedor: 'teams' | 'slack', credencial: CredencialOAuth): Promise<void> {
+  private static async gravarJa(segredos: SecretStore, provedor: 'teams' | 'slack', credencial: CredencialOAuth): Promise<void> {
     const accessToken = credencial.accessToken.trim()
     const refreshToken = credencial.refreshToken.trim()
     if (!accessToken || /[\r\n\0]/.test(accessToken) || /[\r\n\0]/.test(refreshToken)) {
@@ -411,7 +477,7 @@ export class CofreRadar {
     await this.recuperar(segredos, provedor)
   }
 
-  static async apagar(segredos: SecretStore, provedor: 'teams' | 'slack' | 'whatsapp'): Promise<void> {
+  private static async apagarJa(segredos: SecretStore, provedor: ProvedorCofre): Promise<void> {
     if (provedor === 'whatsapp') {
       await segredos.apagar(contaRadar(provedor))
       return
@@ -422,21 +488,7 @@ export class CofreRadar {
     await segredos.apagar(contaExpiraRadar(provedor))
   }
 
-  static async lerAccess(segredos: SecretStore, provedor: 'teams' | 'slack'): Promise<string | null> {
-    await this.recuperar(segredos, provedor)
-    const texto = (await this.juntar(segredos, contaRadar(provedor), false)).trim()
-    return texto || null
-  }
-
-  static async bearer(opcoes: {
-    segredos: SecretStore
-    provedor: 'teams' | 'slack'
-    clientId: string
-    tenant: string
-    buscar: typeof fetch
-    forcar?: boolean
-    agora?: number
-  }): Promise<string | null> {
+  private static async bearerJa(opcoes: OpcoesBearer): Promise<string | null> {
     await this.recuperar(opcoes.segredos, opcoes.provedor)
     const access = (await this.juntar(opcoes.segredos, contaRadar(opcoes.provedor), false)).trim()
     const refresh = (await this.juntar(opcoes.segredos, contaRefreshRadar(opcoes.provedor), false)).trim()
@@ -454,7 +506,7 @@ export class CofreRadar {
       agora,
     })
     if (!novo) return opcoes.forcar ? null : access || null
-    await this.gravar(opcoes.segredos, opcoes.provedor, novo)
+    await this.gravarJa(opcoes.segredos, opcoes.provedor, novo)
     return novo.accessToken
   }
 

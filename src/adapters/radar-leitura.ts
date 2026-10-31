@@ -16,7 +16,8 @@ const HOSTS: Record<'teams' | 'slack', string> = {
   slack: 'slack.com',
 }
 
-// shortcut: 40 páginas por sincronização, revisar se um canal passar disso; o teto de sinais corta antes
+// shortcut: 40 páginas por sincronização. Com marca, pagina até ela e fica com as 48 mais antigas depois dela;
+// se o canal tiver mais de 40 páginas novas, o que fica entre a marca e a página 40 não é lido. Revisar se um canal passar disso.
 export const PAGINAS_MAX = 40
 // shortcut: lê só o fim da exportação, revisar se uma conversa recente passar de 200 mil bytes
 export const WHATSAPP_BYTES = 200_000
@@ -288,6 +289,8 @@ export class PaginasRadar {
     const sinais: SinalBruto[] = []
     const vistas = new Set<string>()
     let url = this.urlComMarca(opcoes.provedor, opcoes.urlInicial, opcoes.desde)
+    // Sem marca, fica com as mais novas. Com marca, lê até ela e fica com as mais antigas, para a próxima sync seguir dali.
+    const comMarca = url !== opcoes.urlInicial
     let token = opcoes.token
     let renovou = false
     for (let pagina = 0; pagina < PAGINAS_MAX; pagina++) {
@@ -299,31 +302,27 @@ export class PaginasRadar {
       const obtido = await this.pagina(url, token, opcoes.buscar, esperar)
       if (obtido.status === 401 && !renovou && opcoes.renovar) {
         const novo = await opcoes.renovar()
-        if (!novo) break
+        if (!novo) return comMarca ? [] : sinais
         token = novo
         renovou = true
         vistas.delete(url)
         pagina -= 1
         continue
       }
-      if (!obtido.json) {
-        if (pagina === 0) return []
+      const falhou = !obtido.json || (opcoes.provedor === 'slack' && (obtido.json as { ok?: boolean }).ok === false)
+      if (falhou) {
+        // Com marca, parar no meio deixaria um buraco entre ela e o que veio: a sync não conta e a marca fica onde estava.
+        if (pagina === 0 || comMarca) return []
         break
       }
-      if (opcoes.provedor === 'slack') {
-        const registro = obtido.json as { ok?: boolean }
-        if (registro.ok === false) {
-          if (pagina === 0) return []
-          break
-        }
-      }
       sinais.push(...sinaisDaApi(opcoes.provedor, opcoes.referencia, obtido.json))
-      if (sinais.length >= limite) return sinais.slice(0, limite)
+      if (!comMarca && sinais.length >= limite) return sinais.slice(0, limite)
       const proxima = this.proxima(opcoes.provedor, opcoes.referencia, obtido.json, opcoes.desde)
       if (!proxima) break
       url = proxima
     }
-    return sinais
+    if (!comMarca) return sinais.slice(0, limite)
+    return sinais.sort((a, b) => ordemSinal(opcoes.provedor, a) - ordemSinal(opcoes.provedor, b)).slice(0, limite)
   }
 
   private static proxima(provedor: 'teams' | 'slack', referencia: string, json: unknown, desde?: string): string | null {
@@ -387,6 +386,12 @@ export class PaginasRadar {
   }
 }
 
+function ordemSinal(provedor: 'teams' | 'slack', sinal: SinalBruto): number {
+  if (provedor === 'slack') return /^\d{1,16}(\.\d{1,6})?$/.test(sinal.id) ? Number(sinal.id) : 0
+  const tempo = Date.parse(sinal.em)
+  return Number.isFinite(tempo) ? tempo : 0
+}
+
 export function marcaLeitura(provedor: 'teams' | 'slack', sinais: SinalBruto[]): string | null {
   if (provedor === 'slack') {
     let melhor = ''
@@ -432,9 +437,9 @@ export function criarLeitorReal(opcoes: {
     async ler(referencia, pedidoLeituraOpcoes) {
       const locais = await lerPasta(opcoes.pasta, opcoes.provedor, referencia)
       const pedido = pedidoLeitura(opcoes.provedor, referencia)
-      if (!pedido) return locais
+      if (!pedido) return { sinais: locais }
       const token = await opcoes.token()
-      if (!token) return locais
+      if (!token) return { sinais: locais }
       try {
         const remotos = await PaginasRadar.ler({
           provedor: pedido.provedor,
@@ -446,9 +451,10 @@ export function criarLeitorReal(opcoes: {
           renovar: opcoes.renovar,
           desde: pedidoLeituraOpcoes?.desde,
         })
-        return [...locais, ...remotos]
+        // A marca vem só do que veio da API: exportação local não avança a leitura do canal.
+        return { sinais: [...locais, ...remotos], marca: marcaLeitura(pedido.provedor, remotos) }
       } catch {
-        return locais
+        return { sinais: locais }
       }
     },
   }

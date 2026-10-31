@@ -252,32 +252,55 @@ describe('leitura real', () => {
   })
 
   it('corta a sincronização em 48 sinais, guarda a marca e agrupa o dia', async () => {
+    // Slack devolve do mais novo ao mais antigo, 50 por página, só o que é posterior a `oldest`.
+    const todas = Array.from({ length: 120 }, (_, indice) => 1001 + indice)
     const pedidos: string[] = []
-    const sinais = await PaginasRadar.ler({
+    const buscarSlack: typeof fetch = async (url) => {
+      pedidos.push(String(url))
+      const pedido = new URL(String(url))
+      const oldest = Number(pedido.searchParams.get('oldest') ?? '0')
+      const inicio = Number(pedido.searchParams.get('cursor') ?? '0')
+      const novas = todas.filter((ts) => ts > oldest).reverse()
+      const fim = inicio + 50 >= novas.length
+      return jsonResposta({
+        ok: true,
+        messages: novas.slice(inicio, inicio + 50).map((ts) => ({ text: `Relato ${ts} longo o bastante para a triagem.`, user: 'U1', ts: String(ts) })),
+        has_more: !fim,
+        response_metadata: { next_cursor: fim ? '' : String(inicio + 50) },
+      })
+    }
+    const raizSlack = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-slack-'))
+    pastas.push(raizSlack)
+    const leitor = criarLeitorReal({ provedor: 'slack', pasta: raizSlack, token: async () => 'token-de-teste', buscar: buscarSlack })
+    let marca: string | null | undefined = '1000'
+    const lidas: string[][] = []
+    const marcasSlack: (string | null | undefined)[] = []
+    for (let sync = 0; sync < 4; sync++) {
+      const lida = await leitor.ler('C12345678', marca ? { desde: marca } : undefined)
+      lidas.push(lida.sinais.map((sinal) => sinal.id))
+      marcasSlack.push(lida.marca)
+      if (lida.marca) marca = lida.marca
+    }
+    expect(lidas.map((ids) => ids.length)).toEqual([SINAIS_POR_SYNC, SINAIS_POR_SYNC, 24, 0])
+    expect(lidas.flat()).toEqual(todas.map(String))
+    expect(marcasSlack).toEqual(['1048', '1096', '1120', null])
+    expect(pedidos[0]).toContain('oldest=1000')
+
+    // Página que falha no meio não avança a marca: a sync volta vazia.
+    let chamadas = 0
+    const falha = await PaginasRadar.ler({
       provedor: 'slack',
       referencia: 'C12345678',
       urlInicial: 'https://slack.com/api/conversations.history?channel=C12345678&limit=200',
       token: 'token-de-teste',
-      desde: '1500',
+      desde: '1000',
       buscar: async (url) => {
-        pedidos.push(String(url))
-        const mensagens = Array.from({ length: 60 }, (_, indice) => ({
-          text: `Relato longo o bastante para entrar na triagem numero ${indice}.`,
-          user: 'U1',
-          ts: String(2000 - indice),
-        }))
-        return jsonResposta({
-          ok: true,
-          messages: mensagens,
-          has_more: true,
-          response_metadata: { next_cursor: 'proxima-pagina' },
-        })
+        chamadas += 1
+        return chamadas === 1 ? buscarSlack(url) : new Response('', { status: 500 })
       },
     })
-    expect(sinais).toHaveLength(SINAIS_POR_SYNC)
-    expect(pedidos).toHaveLength(1)
-    expect(pedidos[0]).toContain('oldest=1500')
-    expect(marcaLeitura('slack', sinais)).toBe('2000')
+    expect(falha).toEqual([])
+    expect(marcaLeitura('slack', falha)).toBeNull()
     const teams = PaginasRadar.urlComMarca(
       'teams',
       'https://graph.microsoft.com/v1.0/teams/time-pix/channels/canal-ops/messages',

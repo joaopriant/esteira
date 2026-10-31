@@ -52,7 +52,7 @@ import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
 import { caminhoSeguro, contaDoPat, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
-import { marcaLeitura, pedidoLeitura } from '../adapters/radar-leitura'
+import { pedidoLeitura } from '../adapters/radar-leitura'
 import { CofreRadar, OauthRadar, TextoRadar } from '../adapters/radar-oauth'
 import type { AzurePort, ClaudePort } from '../ports'
 
@@ -405,12 +405,9 @@ export class EsteiraApp {
       const leitor = this.deps.radares.find((item) => item.provedor === fonte.provedor)
       if (!produto || !leitor) continue
       const desde = marcas[fonte.id]
-      const sinais = await leitor.ler(fonte.referencia, desde ? { desde } : undefined)
-      if (fonte.provedor === 'teams' || fonte.provedor === 'slack') {
-        const marca = marcaLeitura(fonte.provedor, sinais)
-        if (marca) marcas[fonte.id] = marca
-      }
-      const novas = await this.triar(sinais, produto)
+      const lida = await leitor.ler(fonte.referencia, desde ? { desde } : undefined)
+      if (lida.marca) marcas[fonte.id] = lida.marca
+      const novas = await this.triar(lida.sinais, produto)
       for (const sugestao of novas) {
         if (sugestao.provas.some((prova) => vistas.has(chaveProva(prova)))) continue
         for (const prova of sugestao.provas) vistas.add(chaveProva(prova))
@@ -582,7 +579,7 @@ export class EsteiraApp {
       return { conectado: true }
     } finally {
       pendente.fechar?.()
-      this.oauthPendente.delete(provedor)
+      if (this.oauthPendente.get(provedor) === pendente) this.oauthPendente.delete(provedor)
     }
   }
 
