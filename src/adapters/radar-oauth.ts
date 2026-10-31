@@ -13,8 +13,9 @@ export interface CredencialOAuth {
 const ESCOPO_TEAMS = 'https://graph.microsoft.com/ChannelMessage.Read.All offline_access'
 const ESCOPO_SLACK = 'channels:history,groups:history'
 const FOLGA_MS = 60_000
-// shortcut: um segredo por entrada do cofre, o blob do Windows cabe cerca de 2560 bytes; revisar se o token passar disso
-const TOKEN_MAX = 2500
+// shortcut: o blob do Windows é ~2560 bytes e a string vai em UTF-16, então ~1280 caracteres por entrada; revisar com um token real do Graph
+export const COFRE_ENTRADA_MAX = 1200
+const PARTES_MAX = 4
 
 export class OauthRadar {
   static readonly PORTA_SLACK = 43821
@@ -140,6 +141,8 @@ export class OauthRadar {
     throw new Error('O código expirou. Peça outro.')
   }
 
+  // Troca e refresh sem client_secret: https://docs.slack.dev/authentication/using-pkce
+  // (app público com PKCE; o refresh leva client_id e refresh_token, sem code_verifier).
   static async trocarSlack(opcoes: {
     clientId: string
     code: string
@@ -235,7 +238,12 @@ export class OauthRadar {
         const code = url.searchParams.get('code') ?? ''
         res.setHeader('content-type', 'text/html; charset=utf-8')
         const codigoOk = /^[A-Za-z0-9._-]{1,512}$/.test(code)
-        if (erro || state !== opcoes.state || !codigoOk) {
+        if (state !== opcoes.state) {
+          res.statusCode = 400
+          res.end('<!doctype html><meta charset="utf-8"><title>Esteira</title><p>Não deu para concluir o login. Volte para a Esteira e tente de novo.</p>')
+          return
+        }
+        if (erro || !codigoOk) {
           res.statusCode = 400
           res.end('<!doctype html><meta charset="utf-8"><title>Esteira</title><p>Não deu para concluir o login. Volte para a Esteira e tente de novo.</p>')
           if (!settled) {
@@ -367,9 +375,22 @@ export class OauthRadar {
 }
 
 export class CofreRadar {
+  static partir(valor: string): string[] {
+    if (!valor) return []
+    const partes: string[] = []
+    for (let i = 0; i < valor.length; i += COFRE_ENTRADA_MAX) partes.push(valor.slice(i, i + COFRE_ENTRADA_MAX))
+    if (partes.length > PARTES_MAX) {
+      throw new Error('O token não cabe no cofre do Windows: cada entrada cabe cerca de 1280 caracteres em UTF-16. Vale validar com um token real do Graph.')
+    }
+    return partes
+  }
+
   static async gravarColado(segredos: SecretStore, provedor: 'teams' | 'slack', token: string): Promise<void> {
-    await segredos.gravar(contaRadar(provedor), token)
-    await segredos.apagar(contaRefreshRadar(provedor))
+    const limpo = token.trim()
+    if (!limpo || /[\r\n\0]/.test(limpo)) throw new Error('Token de leitura inválido.')
+    await this.limparNovo(segredos, provedor)
+    await this.escreverPartes(segredos, contaRadar(provedor), this.partir(limpo), false)
+    await this.escreverPartes(segredos, contaRefreshRadar(provedor), [], false)
     await segredos.apagar(contaExpiraRadar(provedor))
   }
 
@@ -379,20 +400,32 @@ export class CofreRadar {
     if (!accessToken || /[\r\n\0]/.test(accessToken) || /[\r\n\0]/.test(refreshToken)) {
       throw new Error('Token de leitura inválido.')
     }
-    if (accessToken.length > TOKEN_MAX || refreshToken.length > TOKEN_MAX) {
-      throw new Error('O token não cabe no cofre do Windows.')
-    }
-    await segredos.gravar(contaRadar(provedor), accessToken)
-    if (refreshToken) await segredos.gravar(contaRefreshRadar(provedor), refreshToken)
-    if (credencial.expiraEm > 0) await segredos.gravar(contaExpiraRadar(provedor), String(credencial.expiraEm))
-    else await segredos.apagar(contaExpiraRadar(provedor))
+    const accessPartes = this.partir(accessToken)
+    const refreshPartes = this.partir(refreshToken)
+    await this.recuperar(segredos, provedor)
+    await this.escreverPartes(segredos, contaRadar(provedor), accessPartes, true)
+    await this.escreverPartes(segredos, contaRefreshRadar(provedor), refreshPartes, true)
+    if (credencial.expiraEm > 0) await segredos.gravar(`${contaExpiraRadar(provedor)}:novo`, String(credencial.expiraEm))
+    else await segredos.apagar(`${contaExpiraRadar(provedor)}:novo`)
+    await segredos.gravar(this.marcaNova(provedor), '1')
+    await this.recuperar(segredos, provedor)
   }
 
   static async apagar(segredos: SecretStore, provedor: 'teams' | 'slack' | 'whatsapp'): Promise<void> {
-    await segredos.apagar(contaRadar(provedor))
-    if (provedor === 'whatsapp') return
-    await segredos.apagar(contaRefreshRadar(provedor))
+    if (provedor === 'whatsapp') {
+      await segredos.apagar(contaRadar(provedor))
+      return
+    }
+    await this.limparNovo(segredos, provedor)
+    await this.escreverPartes(segredos, contaRadar(provedor), [], false)
+    await this.escreverPartes(segredos, contaRefreshRadar(provedor), [], false)
     await segredos.apagar(contaExpiraRadar(provedor))
+  }
+
+  static async lerAccess(segredos: SecretStore, provedor: 'teams' | 'slack'): Promise<string | null> {
+    await this.recuperar(segredos, provedor)
+    const texto = (await this.juntar(segredos, contaRadar(provedor), false)).trim()
+    return texto || null
   }
 
   static async bearer(opcoes: {
@@ -404,8 +437,9 @@ export class CofreRadar {
     forcar?: boolean
     agora?: number
   }): Promise<string | null> {
-    const access = (await opcoes.segredos.ler(contaRadar(opcoes.provedor)))?.trim() ?? ''
-    const refresh = (await opcoes.segredos.ler(contaRefreshRadar(opcoes.provedor)))?.trim() ?? ''
+    await this.recuperar(opcoes.segredos, opcoes.provedor)
+    const access = (await this.juntar(opcoes.segredos, contaRadar(opcoes.provedor), false)).trim()
+    const refresh = (await this.juntar(opcoes.segredos, contaRefreshRadar(opcoes.provedor), false)).trim()
     const expira = Number((await opcoes.segredos.ler(contaExpiraRadar(opcoes.provedor))) ?? '0')
     const agora = opcoes.agora ?? Date.now()
     const vencido = expira > 0 && agora >= expira
@@ -422,6 +456,57 @@ export class CofreRadar {
     if (!novo) return opcoes.forcar ? null : access || null
     await this.gravar(opcoes.segredos, opcoes.provedor, novo)
     return novo.accessToken
+  }
+
+  private static marcaNova(provedor: 'teams' | 'slack'): string {
+    return `radar:${provedor}:novo:ok`
+  }
+
+  private static contaParte(prefixo: string, indice: number, novo: boolean): string {
+    const base = novo ? `${prefixo}:novo` : prefixo
+    return indice === 1 ? base : `${base}:p${indice}`
+  }
+
+  private static async escreverPartes(segredos: SecretStore, prefixo: string, partes: string[], novo: boolean): Promise<void> {
+    if (partes.length === 0) await segredos.apagar(this.contaParte(prefixo, 1, novo))
+    else await segredos.gravar(this.contaParte(prefixo, 1, novo), partes[0]!)
+    for (let i = 2; i <= PARTES_MAX; i++) {
+      const parte = partes[i - 1]
+      const conta = this.contaParte(prefixo, i, novo)
+      if (parte) await segredos.gravar(conta, parte)
+      else await segredos.apagar(conta)
+    }
+  }
+
+  private static async juntar(segredos: SecretStore, prefixo: string, novo: boolean): Promise<string> {
+    const primeiro = await segredos.ler(this.contaParte(prefixo, 1, novo))
+    if (!primeiro) return ''
+    let texto = primeiro
+    for (let i = 2; i <= PARTES_MAX; i++) {
+      const parte = await segredos.ler(this.contaParte(prefixo, i, novo))
+      if (!parte) break
+      texto += parte
+    }
+    return texto
+  }
+
+  private static async recuperar(segredos: SecretStore, provedor: 'teams' | 'slack'): Promise<void> {
+    if (!(await segredos.ler(this.marcaNova(provedor)))) return
+    const access = await this.juntar(segredos, contaRadar(provedor), true)
+    const refresh = await this.juntar(segredos, contaRefreshRadar(provedor), true)
+    const expira = await segredos.ler(`${contaExpiraRadar(provedor)}:novo`)
+    await this.escreverPartes(segredos, contaRefreshRadar(provedor), refresh ? this.partir(refresh) : [], false)
+    if (expira) await segredos.gravar(contaExpiraRadar(provedor), expira)
+    else await segredos.apagar(contaExpiraRadar(provedor))
+    await this.escreverPartes(segredos, contaRadar(provedor), access ? this.partir(access) : [], false)
+    await this.limparNovo(segredos, provedor)
+  }
+
+  private static async limparNovo(segredos: SecretStore, provedor: 'teams' | 'slack'): Promise<void> {
+    await this.escreverPartes(segredos, contaRadar(provedor), [], true)
+    await this.escreverPartes(segredos, contaRefreshRadar(provedor), [], true)
+    await segredos.apagar(`${contaExpiraRadar(provedor)}:novo`)
+    await segredos.apagar(this.marcaNova(provedor))
   }
 }
 

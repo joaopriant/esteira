@@ -33,7 +33,7 @@ import { aplicarContrato } from '../core/contrato'
 import { diffStory, storiesIguais } from '../core/diff-story'
 import { fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, validarFluxo } from '../core/fluxo-padrao'
 import {
-  agruparSinais,
+  agruparParaClaude,
   ideiaDaSugestao,
   melhorCitacao,
   montarFallback,
@@ -52,7 +52,7 @@ import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
 import { caminhoSeguro, contaDoPat, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
-import { pedidoLeitura } from '../adapters/radar-leitura'
+import { marcaLeitura, pedidoLeitura } from '../adapters/radar-leitura'
 import { CofreRadar, OauthRadar, TextoRadar } from '../adapters/radar-oauth'
 import type { AzurePort, ClaudePort } from '../ports'
 
@@ -399,11 +399,18 @@ export class EsteiraApp {
     const atuais = await this.lerSugestoes()
     const vistas = new Set(atuais.flatMap((item) => item.provas.map(chaveProva)))
     const criadas: SugestaoRadar[] = []
+    const marcas = await this.lerMarcas()
     for (const fonte of fontes) {
       const produto = produtos.find((item) => item.id === fonte.produtoId)
       const leitor = this.deps.radares.find((item) => item.provedor === fonte.provedor)
       if (!produto || !leitor) continue
-      const novas = await this.triar(await leitor.ler(fonte.referencia), produto)
+      const desde = marcas[fonte.id]
+      const sinais = await leitor.ler(fonte.referencia, desde ? { desde } : undefined)
+      if (fonte.provedor === 'teams' || fonte.provedor === 'slack') {
+        const marca = marcaLeitura(fonte.provedor, sinais)
+        if (marca) marcas[fonte.id] = marca
+      }
+      const novas = await this.triar(sinais, produto)
       for (const sugestao of novas) {
         if (sugestao.provas.some((prova) => vistas.has(chaveProva(prova)))) continue
         for (const prova of sugestao.provas) vistas.add(chaveProva(prova))
@@ -412,6 +419,7 @@ export class EsteiraApp {
       }
     }
     await this.gravarSugestoes(atuais)
+    await this.gravarMarcas(marcas)
     return criadas
   }
 
@@ -1021,11 +1029,11 @@ export class EsteiraApp {
   }
 
   private async triar(sinais: SinalBruto[], produto: Produto): Promise<SugestaoRadar[]> {
-    const grupos = agruparSinais(prepararSinais(sinais))
+    const grupos = agruparParaClaude(prepararSinais(sinais))
     const ajustes = await this.ajustes()
     const saida: SugestaoRadar[] = []
     for (const grupo of grupos) {
-      let escolhida: { tipo: SugestaoRadar['tipo']; titulo: string; resumo: string; citacao: string; sinalId: string } | null = null
+      const escolhidas: { tipo: SugestaoRadar['tipo']; titulo: string; resumo: string; citacao: string; sinalId: string }[] = []
       try {
         const resposta = await (await this.clienteClaude()).run({
           papel: 'radar',
@@ -1043,56 +1051,65 @@ export class EsteiraApp {
         })
         const json = resposta.json as { sugestoes?: { sinalId?: string; tipo?: string; titulo?: string; resumo?: string; citacao?: string }[] }
         for (const item of json.sugestoes ?? []) {
-          const sinal = grupo.find((candidato) => candidato.id === item.sinalId) ?? grupo[0]
+          const sinal = grupo.find((candidato) => candidato.id === item.sinalId)
           if (!sinal) continue
           const citacao = recortarCitacao(sinal.texto, item.citacao ?? '')
           if (!citacao) continue
           const fallback = montarFallback([sinal])
           const resumoModelo = resumoSeguro(item.resumo ?? '', [sinal.texto])
-          escolhida = {
+          escolhidas.push({
             tipo: normalizarTipo(item.tipo, sinal.texto),
             titulo: (fallback?.titulo ?? citacao).slice(0, 120),
             resumo: resumoModelo && resumoModelo !== citacao ? resumoModelo : (fallback?.resumo ?? citacao),
             citacao,
             sinalId: sinal.id,
-          }
-          break
+          })
         }
       } catch {
-        escolhida = null
+        /* o plano B abaixo cobre a falha do Claude */
       }
-      if (!escolhida) {
+      if (escolhidas.length === 0) {
         const fallback = montarFallback(grupo)
         if (!fallback) continue
-        escolhida = {
+        escolhidas.push({
           tipo: fallback.tipo,
           titulo: fallback.titulo,
           resumo: fallback.resumo,
           citacao: fallback.citacao,
           sinalId: fallback.sinal.id,
+        })
+      }
+      for (const escolhida of escolhidas) {
+        const sinal = grupo.find((item) => item.id === escolhida.sinalId)
+        if (!sinal || !sinal.texto.includes(escolhida.citacao)) continue
+        const provas = [provaDe(sinal, escolhida.citacao)]
+        for (const outro of grupo) {
+          if (outro.id === sinal.id || outro.fio !== sinal.fio) continue
+          const extra = melhorCitacao(outro.texto)
+          if (extra) provas.push(provaDe(outro, extra))
         }
+        saida.push({
+          id: novoId('sug'),
+          produtoId: produto.id,
+          produtoNome: produto.nome,
+          tipo: escolhida.tipo,
+          titulo: escolhida.titulo,
+          resumo: escolhida.resumo,
+          provas,
+          estado: 'nova',
+          criadaEm: this.deps.agora().toISOString(),
+        })
       }
-      const sinal = grupo.find((item) => item.id === escolhida.sinalId) ?? grupo[0]
-      if (!sinal || !sinal.texto.includes(escolhida.citacao)) continue
-      const provas = [provaDe(sinal, escolhida.citacao)]
-      for (const outro of grupo) {
-        if (outro.id === sinal.id) continue
-        const extra = melhorCitacao(outro.texto)
-        if (extra) provas.push(provaDe(outro, extra))
-      }
-      saida.push({
-        id: novoId('sug'),
-        produtoId: produto.id,
-        produtoNome: produto.nome,
-        tipo: escolhida.tipo,
-        titulo: escolhida.titulo,
-        resumo: escolhida.resumo,
-        provas,
-        estado: 'nova',
-        criadaEm: this.deps.agora().toISOString(),
-      })
     }
     return saida
+  }
+
+  private async lerMarcas(): Promise<Record<string, string>> {
+    return (await this.deps.disco.lerJson<Record<string, string>>('radar-marcas.json')) ?? {}
+  }
+
+  private async gravarMarcas(marcas: Record<string, string>): Promise<void> {
+    await this.deps.disco.gravarJson('radar-marcas.json', marcas)
   }
 
   private async lerSugestoes(): Promise<SugestaoRadar[]> {

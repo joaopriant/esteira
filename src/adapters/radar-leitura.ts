@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { LeitorRadar } from '../ports'
+import { SINAIS_POR_SYNC } from '../core/radar'
 import type { ProvedorRadar, SinalBruto } from '../shared/tipos'
 import { caminhoSeguro } from './seguro'
 
@@ -15,8 +16,10 @@ const HOSTS: Record<'teams' | 'slack', string> = {
   slack: 'slack.com',
 }
 
-// shortcut: 40 páginas por sincronização, revisar se um canal passar disso
+// shortcut: 40 páginas por sincronização, revisar se um canal passar disso; o teto de sinais corta antes
 export const PAGINAS_MAX = 40
+// shortcut: lê só o fim da exportação, revisar se uma conversa recente passar de 200 mil bytes
+export const WHATSAPP_BYTES = 200_000
 // shortcut: espera máxima de 30s num 429, revisar se a API pedir mais
 export const ESPERA_MAX_MS = 30_000
 const TENTATIVAS_MAX = 3
@@ -98,12 +101,32 @@ export function parseWhatsApp(fonteRef: string, fonteNome: string, texto: string
   return sinais.filter((sinal) => sinal.texto.trim())
 }
 
+async function lerTextoWhatsApp(cheio: string): Promise<string> {
+  const stat = await fs.stat(cheio)
+  if (stat.size <= WHATSAPP_BYTES) return fs.readFile(cheio, 'utf8')
+  const arquivo = await fs.open(cheio, 'r')
+  try {
+    const buf = Buffer.alloc(WHATSAPP_BYTES)
+    await arquivo.read(buf, 0, WHATSAPP_BYTES, stat.size - WHATSAPP_BYTES)
+    const texto = buf.toString('utf8')
+    const corte = texto.indexOf('\n')
+    return corte >= 0 ? texto.slice(corte + 1) : texto
+  } finally {
+    await arquivo.close()
+  }
+}
+
+function limitarRecentes(sinais: SinalBruto[]): SinalBruto[] {
+  if (sinais.length <= SINAIS_POR_SYNC) return sinais
+  return sinais.slice(sinais.length - SINAIS_POR_SYNC)
+}
+
 async function lerArquivo(provedor: ProvedorRadar, pastaProvedor: string, relativo: string): Promise<SinalBruto[]> {
   const cheio = caminhoSeguro(pastaProvedor, relativo)
   const nome = path.basename(relativo)
-  const texto = await fs.readFile(cheio, 'utf8')
+  const texto = provedor === 'whatsapp' ? await lerTextoWhatsApp(cheio) : await fs.readFile(cheio, 'utf8')
   if (provedor === 'whatsapp' || nome.endsWith('.txt')) {
-    if (provedor === 'whatsapp') return parseWhatsApp(relativo, nome, texto)
+    if (provedor === 'whatsapp') return limitarRecentes(parseWhatsApp(relativo, nome, texto))
     return [{
       id: `${provedor}-${nome}`,
       provedor,
@@ -236,6 +259,19 @@ export class PaginasRadar {
     return Boolean(parsed && parsed.searchParams.get('channel') === referencia)
   }
 
+  static urlComMarca(provedor: 'teams' | 'slack', urlInicial: string, desde?: string): string {
+    if (!desde) return urlInicial
+    const url = new URL(urlInicial)
+    if (provedor === 'slack') {
+      if (!/^\d{1,16}(\.\d{1,6})?$/.test(desde)) return urlInicial
+      url.searchParams.set('oldest', desde)
+      return url.toString()
+    }
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(desde)) return urlInicial
+    url.searchParams.set('$filter', `lastModifiedDateTime gt ${desde}`)
+    return url.toString()
+  }
+
   static async ler(opcoes: {
     provedor: 'teams' | 'slack'
     referencia: string
@@ -244,11 +280,14 @@ export class PaginasRadar {
     buscar: typeof fetch
     esperar?: (ms: number) => Promise<void>
     renovar?: () => Promise<string | null>
+    desde?: string
+    limite?: number
   }): Promise<SinalBruto[]> {
     const esperar = opcoes.esperar ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
+    const limite = opcoes.limite ?? SINAIS_POR_SYNC
     const sinais: SinalBruto[] = []
     const vistas = new Set<string>()
-    let url = opcoes.urlInicial
+    let url = this.urlComMarca(opcoes.provedor, opcoes.urlInicial, opcoes.desde)
     let token = opcoes.token
     let renovou = false
     for (let pagina = 0; pagina < PAGINAS_MAX; pagina++) {
@@ -279,19 +318,21 @@ export class PaginasRadar {
         }
       }
       sinais.push(...sinaisDaApi(opcoes.provedor, opcoes.referencia, obtido.json))
-      const proxima = this.proxima(opcoes.provedor, opcoes.referencia, obtido.json)
+      if (sinais.length >= limite) return sinais.slice(0, limite)
+      const proxima = this.proxima(opcoes.provedor, opcoes.referencia, obtido.json, opcoes.desde)
       if (!proxima) break
       url = proxima
     }
     return sinais
   }
 
-  private static proxima(provedor: 'teams' | 'slack', referencia: string, json: unknown): string | null {
+  private static proxima(provedor: 'teams' | 'slack', referencia: string, json: unknown, desde?: string): string | null {
     if (!json || typeof json !== 'object') return null
     if (provedor === 'teams') {
       const link = (json as { '@odata.nextLink'?: unknown })['@odata.nextLink']
       if (typeof link !== 'string' || !this.urlTeamsPermitida(link, referencia)) return null
-      return link
+      const comMarca = this.urlComMarca('teams', link, desde)
+      return this.urlTeamsPermitida(comMarca, referencia) ? comMarca : null
     }
     const corpo = json as { has_more?: unknown; response_metadata?: { next_cursor?: unknown } }
     if (corpo.has_more === false) return null
@@ -300,6 +341,7 @@ export class PaginasRadar {
     const url = new URL(`https://${HOSTS.slack}/api/conversations.history`)
     url.searchParams.set('channel', referencia)
     url.searchParams.set('limit', '200')
+    if (desde && /^\d{1,16}(\.\d{1,6})?$/.test(desde)) url.searchParams.set('oldest', desde)
     url.searchParams.set('cursor', cursor)
     return url.toString()
   }
@@ -345,6 +387,28 @@ export class PaginasRadar {
   }
 }
 
+export function marcaLeitura(provedor: 'teams' | 'slack', sinais: SinalBruto[]): string | null {
+  if (provedor === 'slack') {
+    let melhor = ''
+    let melhorN = -Infinity
+    for (const sinal of sinais) {
+      if (!/^\d{1,16}(\.\d{1,6})?$/.test(sinal.id)) continue
+      const valor = Number(sinal.id)
+      if (valor > melhorN) {
+        melhorN = valor
+        melhor = sinal.id
+      }
+    }
+    return melhor || null
+  }
+  let melhor = ''
+  for (const sinal of sinais) {
+    if (!/^\d{4}-\d{2}-\d{2}T/.test(sinal.em)) continue
+    if (sinal.em > melhor) melhor = sinal.em
+  }
+  return melhor || null
+}
+
 export function criarLeitorReal(opcoes: {
   provedor: ProvedorRadar
   pasta: string
@@ -365,7 +429,7 @@ export function criarLeitorReal(opcoes: {
         return []
       }
     },
-    async ler(referencia) {
+    async ler(referencia, pedidoLeituraOpcoes) {
       const locais = await lerPasta(opcoes.pasta, opcoes.provedor, referencia)
       const pedido = pedidoLeitura(opcoes.provedor, referencia)
       if (!pedido) return locais
@@ -380,6 +444,7 @@ export function criarLeitorReal(opcoes: {
           buscar,
           esperar: opcoes.esperar,
           renovar: opcoes.renovar,
+          desde: pedidoLeituraOpcoes?.desde,
         })
         return [...locais, ...remotos]
       } catch {

@@ -62,6 +62,35 @@ export function agruparSinais(sinais: SinalLimpo[]): SinalLimpo[][] {
   return [...grupos.values()]
 }
 
+// shortcut: 48 mensagens por sincronização e 12 por chamada ao Claude, revisar se um canal movimentado perder relato recente
+export const SINAIS_POR_SYNC = 48
+export const MENSAGENS_POR_BLOCO = 12
+
+const CONVERSA = new Set<SinalLimpo['provedor']>(['teams', 'slack', 'whatsapp'])
+
+function diaDoSinal(em: string): string {
+  if (/^\d{4}-\d{2}-\d{2}/.test(em)) return em.slice(0, 10)
+  const casa = em.match(/^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})/)
+  return casa?.[1] ?? (em.slice(0, 10) || 'sem-data')
+}
+
+export function agruparParaClaude(sinais: SinalLimpo[]): SinalLimpo[][] {
+  if (sinais.length === 0) return []
+  if (!sinais.every((sinal) => CONVERSA.has(sinal.provedor))) return agruparSinais(sinais)
+  const porDia = new Map<string, SinalLimpo[]>()
+  for (const sinal of sinais) {
+    const dia = diaDoSinal(sinal.em)
+    const lista = porDia.get(dia) ?? []
+    lista.push(sinal)
+    porDia.set(dia, lista)
+  }
+  const grupos: SinalLimpo[][] = []
+  for (const lista of porDia.values()) {
+    for (let i = 0; i < lista.length; i += MENSAGENS_POR_BLOCO) grupos.push(lista.slice(i, i + MENSAGENS_POR_BLOCO))
+  }
+  return grupos
+}
+
 export function classificarTipo(texto: string): TipoSugestao {
   const t = texto.toLowerCase()
   if (/bug|erro|falha|quebr|chamado|passou do valor|não bate|nao bate/.test(t)) return 'bug'

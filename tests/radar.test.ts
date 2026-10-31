@@ -4,7 +4,8 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { criarAplicacao } from '../src/app/criar'
 import { corpusExemplo } from '../src/adapters/radar-falso'
-import { criarLeitorReal, lerPasta, PAGINAS_MAX, PaginasRadar, parseWhatsApp, pedidoLeitura } from '../src/adapters/radar-leitura'
+import { MENSAGENS_POR_BLOCO, SINAIS_POR_SYNC, agruparParaClaude, prepararSinais } from '../src/core/radar'
+import { WHATSAPP_BYTES, criarLeitorReal, lerPasta, marcaLeitura, PAGINAS_MAX, PaginasRadar, parseWhatsApp, pedidoLeitura } from '../src/adapters/radar-leitura'
 import { montarContexto } from '../src/adapters/claude-cli'
 import { sanitizarTextoExterno } from '../src/core/radar'
 import { duplicarBloco, fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, inserirBloco, moverBloco, validarFluxo } from '../src/core/fluxo-padrao'
@@ -248,6 +249,68 @@ describe('leitura real', () => {
       },
     })
     expect(paginas).toBe(PAGINAS_MAX)
+  })
+
+  it('corta a sincronização em 48 sinais, guarda a marca e agrupa o dia', async () => {
+    const pedidos: string[] = []
+    const sinais = await PaginasRadar.ler({
+      provedor: 'slack',
+      referencia: 'C12345678',
+      urlInicial: 'https://slack.com/api/conversations.history?channel=C12345678&limit=200',
+      token: 'token-de-teste',
+      desde: '1500',
+      buscar: async (url) => {
+        pedidos.push(String(url))
+        const mensagens = Array.from({ length: 60 }, (_, indice) => ({
+          text: `Relato longo o bastante para entrar na triagem numero ${indice}.`,
+          user: 'U1',
+          ts: String(2000 - indice),
+        }))
+        return jsonResposta({
+          ok: true,
+          messages: mensagens,
+          has_more: true,
+          response_metadata: { next_cursor: 'proxima-pagina' },
+        })
+      },
+    })
+    expect(sinais).toHaveLength(SINAIS_POR_SYNC)
+    expect(pedidos).toHaveLength(1)
+    expect(pedidos[0]).toContain('oldest=1500')
+    expect(marcaLeitura('slack', sinais)).toBe('2000')
+    const teams = PaginasRadar.urlComMarca(
+      'teams',
+      'https://graph.microsoft.com/v1.0/teams/time-pix/channels/canal-ops/messages',
+      '2026-10-01T00:00:00.000Z',
+    )
+    expect(new URL(teams).searchParams.get('$filter')).toBe('lastModifiedDateTime gt 2026-10-01T00:00:00.000Z')
+    expect(PaginasRadar.urlComMarca('slack', 'https://slack.com/api/conversations.history?channel=C1&limit=200', '1&evil=1')).not.toContain('evil')
+
+    const linhas = [
+      ...Array.from({ length: MENSAGENS_POR_BLOCO + 1 }, (_, indice) => `01/10/2026, 10:${String(indice).padStart(2, '0')} - Ana: relato do dia primeiro numero ${indice} com detalhe suficiente`),
+      '02/10/2026, 11:00 - Ana: relato do dia seguinte com detalhe suficiente para o bloco',
+    ]
+    const blocos = agruparParaClaude(prepararSinais(parseWhatsApp('grupo.txt', 'Suporte', linhas.join('\n'))))
+    expect(blocos.map((bloco) => bloco.length)).toEqual([MENSAGENS_POR_BLOCO, 1, 1])
+
+    const raiz = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-whats-'))
+    pastas.push(raiz)
+    const pasta = path.join(raiz, 'whatsapp')
+    await fs.mkdir(pasta)
+    const antigo = '01/01/2020, 10:00 - Antigo: esta linha antiga nao pode sobreviver ao corte do arquivo exportado\n'
+    const miolo = '02/02/2024, 11:00 - Meio: linha de enchimento do meio do arquivo exportado do celular\n'
+    let bruto = antigo
+    while (Buffer.byteLength(bruto) < WHATSAPP_BYTES + antigo.length) bruto += miolo
+    bruto += '31/10/2026, 18:00 - Loja: mensagem recente que precisa aparecer no corte\n'
+    await fs.writeFile(path.join(pasta, 'grupo.txt'), bruto)
+    const lidos = await lerPasta(raiz, 'whatsapp', 'grupo.txt')
+    expect(lidos.length).toBeLessThanOrEqual(SINAIS_POR_SYNC)
+    expect(lidos.some((sinal) => sinal.autor === 'Antigo')).toBe(false)
+    expect(lidos.some((sinal) => sinal.texto.includes('mensagem recente'))).toBe(true)
+
+    const { app, dataDir } = await appDeTeste()
+    const marcas = JSON.parse(await fs.readFile(path.join(dataDir, 'radar-marcas.json'), 'utf8')) as Record<string, string>
+    expect(marcas['fonte-teams-pix']).toBe('2026-10-24T12:41:00.000Z')
   })
 })
 

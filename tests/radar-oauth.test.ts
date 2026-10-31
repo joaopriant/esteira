@@ -4,8 +4,9 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { criarAplicacao } from '../src/app/criar'
 import { despachar } from '../src/app/api'
-import { CofreRadar, OauthRadar } from '../src/adapters/radar-oauth'
+import { COFRE_ENTRADA_MAX, CofreRadar, OauthRadar } from '../src/adapters/radar-oauth'
 import { cofreMemoria } from '../src/adapters/segredos'
+import type { SecretStore } from '../src/ports'
 import { contaExpiraRadar, contaRadar, contaRefreshRadar } from '../src/adapters/seguro'
 
 const pastas: string[] = []
@@ -160,6 +161,64 @@ describe('oauth do radar', () => {
     expect(whats?.explicacao).toContain('Não existe API')
     const plaud = (await app.painelConexoes()).radar.find((item) => item.provedor === 'plaud')
     expect(plaud?.explicacao).toContain('não oferece API pública')
+  })
+
+  it('responde 400 no state errado e continua esperando o certo', async () => {
+    const escuta = await OauthRadar.escutar({ porta: 0, state: 'estado-certo', timeoutMs: 3000 })
+    try {
+      const ruim = await fetch(`http://127.0.0.1:${escuta.porta}/callback?code=codigo-ruim&state=errado`)
+      expect(ruim.status).toBe(400)
+      let resolvido = false
+      const espera = escuta.codigo.then((codigo) => {
+        resolvido = true
+        return codigo
+      })
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      expect(resolvido).toBe(false)
+      const bom = await fetch(`http://127.0.0.1:${escuta.porta}/callback?code=codigo-ok&state=estado-certo`)
+      expect(bom.status).toBe(200)
+      expect(await espera).toBe('codigo-ok')
+    } finally {
+      escuta.fechar()
+    }
+  })
+
+  it('parte o token no limite do cofre e recupera se a gravação quebrar', async () => {
+    const segredos = cofreMemoria()
+    const longo = `${'a'.repeat(COFRE_ENTRADA_MAX)}b`.repeat(2).slice(0, COFRE_ENTRADA_MAX + 80)
+    await CofreRadar.gravar(segredos, 'teams', { accessToken: longo, refreshToken: 'r'.repeat(COFRE_ENTRADA_MAX + 10), expiraEm: 50 })
+    expect(await CofreRadar.lerAccess(segredos, 'teams')).toBe(longo)
+    expect(await segredos.ler(`${contaRadar('teams')}:p2`)).toBeTruthy()
+    expect(longo.length).toBeGreaterThan(COFRE_ENTRADA_MAX)
+    await expect(CofreRadar.gravar(segredos, 'teams', {
+      accessToken: 'z'.repeat(COFRE_ENTRADA_MAX * 4 + 1),
+      refreshToken: '',
+      expiraEm: 0,
+    })).rejects.toThrow(/1280|UTF-16|Windows/)
+
+    const interno = cofreMemoria()
+    await interno.gravar(contaRadar('slack'), 'token-antigo-slack')
+    let falhou = false
+    const instavel: SecretStore = {
+      ler: (conta) => interno.ler(conta),
+      apagar: (conta) => interno.apagar(conta),
+      async gravar(conta, valor) {
+        if (!falhou && conta === contaRadar('slack') && valor.startsWith('NOVO')) {
+          falhou = true
+          throw new Error('falha no cofre')
+        }
+        await interno.gravar(conta, valor)
+      },
+    }
+    await expect(CofreRadar.gravar(instavel, 'slack', {
+      accessToken: `NOVO${'c'.repeat(20)}`,
+      refreshToken: 'refresh-novo',
+      expiraEm: 80,
+    })).rejects.toThrow(/falha no cofre/)
+    expect(await interno.ler(contaRadar('slack'))).toBe('token-antigo-slack')
+    expect(await CofreRadar.lerAccess(instavel, 'slack')).toBe(`NOVO${'c'.repeat(20)}`)
+    expect(await instavel.ler(contaRefreshRadar('slack'))).toBe('refresh-novo')
+    expect(await instavel.ler(contaExpiraRadar('slack'))).toBe('80')
   })
 
   it('recusa endereço de verificação que não é da Microsoft', async () => {
