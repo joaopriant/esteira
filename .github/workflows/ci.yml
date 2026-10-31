@@ -16,6 +16,15 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run build
+      - run: xvfb-run -a npm run smoke
+      - run: npx electron-builder --linux dir --publish never
+      - name: Fumaça do app empacotado
+        run: |
+          bin=release/linux-unpacked/esteira
+          if [ ! -x "$bin" ]; then bin=release/linux-unpacked/Esteira; fi
+          test -x "$bin"
+          xvfb-run -a node scripts/smoke-electron.mjs "$bin"
       - run: npm run scan-secrets
       - run: npm audit --audit-level=high
 
@@ -29,6 +38,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run dist:win
+      - name: Fumaça do app desempacotado
+        run: node scripts/smoke-electron.mjs release/win-unpacked/Esteira.exe
       - uses: actions/upload-artifact@v4
         with:
           name: instalador-windows

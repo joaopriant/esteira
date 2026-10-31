@@ -1,5 +1,6 @@
 import path from 'node:path'
 import os from 'node:os'
+import { createRequire } from 'node:module'
 import type { AzurePort, ClaudePort, GitPort, LeitorRadar, SecretStore } from '../ports'
 import { criarDisco } from '../adapters/disco'
 import { AzureFalso, criarClaudeFalso, criarGitFalso } from '../adapters/falsos'
@@ -20,6 +21,34 @@ export function pastaDeDados(): string {
   return path.join(base, 'esteira')
 }
 
+export type AmbienteSkills = {
+  cwd: string
+  resourcesPath?: string
+  empacotado?: boolean
+}
+
+// extraResources do instalador fica em process.resourcesPath/skills.
+// Fora do pacote (electron . e os testes) as skills continuam na pasta do repositório.
+export function pastaDeSkills(ambiente: AmbienteSkills = ambienteAtual()): string {
+  if (!ambiente.empacotado) return path.join(ambiente.cwd, 'skills')
+  if (!ambiente.resourcesPath) throw new Error('App empacotado sem pasta resources.')
+  return path.join(ambiente.resourcesPath, 'skills')
+}
+
+function ambienteAtual(): AmbienteSkills {
+  const proc = process as NodeJS.Process & { resourcesPath?: string }
+  return {
+    cwd: process.cwd(),
+    resourcesPath: proc.resourcesPath,
+    empacotado: 'electron' in process.versions && appEmpacotado(),
+  }
+}
+
+function appEmpacotado(): boolean {
+  const { app } = createRequire(import.meta.url)('electron') as { app: { isPackaged: boolean } }
+  return app.isPackaged
+}
+
 export async function criarAplicacao(opcoes: {
   dataDir?: string
   modo?: 'real' | 'falso'
@@ -33,7 +62,7 @@ export async function criarAplicacao(opcoes: {
   const modo = opcoes.modo ?? (process.env.ESTEIRA_FAKE === '1' ? 'falso' : 'real')
   const dataDir = opcoes.dataDir ?? pastaDeDados()
   const agora = opcoes.agora ?? (() => new Date())
-  const skillsDir = opcoes.skillsDir ?? path.join(process.cwd(), 'skills')
+  const skillsDir = opcoes.skillsDir ?? pastaDeSkills()
   const skillsUsuario = path.join(os.homedir(), '.claude', 'skills')
   const azure = opcoes.azure ?? (modo === 'falso' ? new AzureFalso(itensExemplo(agora())) : azureRealInerte())
   const claude = opcoes.claude ?? (modo === 'falso' ? criarClaudeFalso() : claudeInerte())
