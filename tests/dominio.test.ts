@@ -7,7 +7,7 @@ import { montarComentario } from '../src/core/publicacao'
 import { itensExemplo } from '../src/app/exemplo'
 import type { Produto, Repositorio, StoryTexto } from '../src/shared/tipos'
 import { STORY_VAZIA } from '../src/shared/tipos'
-import { caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl } from '../src/adapters/seguro'
+import { caminhoSeguro, redigirSegredo, validarBranch, validarOrgUrl, validarRemoto } from '../src/adapters/seguro'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
 
@@ -141,18 +141,64 @@ describe('menções e comentário', () => {
       achadosAceitos: [],
       responsavel: { nome: 'Ana Lima', id: 'ana-lima' },
     })
-    expect(texto).toContain('data-vss-mention="user:ana-lima"')
+    expect(texto).toContain('data-vss-mention="version:2.0,ana-lima"')
     expect(texto).toContain('@Ana Lima')
     expect(texto).toContain('não foi alterada')
     expect(texto).not.toContain('System.Description')
+    expect(texto).not.toContain('data-vss-mention="user:')
+  })
+
+  it('comentário em HTML preserva quebra e escapa o texto', () => {
+    const texto = montarComentario({
+      story: { ...STORY_VAZIA, corpo: 'linha 1\r\nlinha 2', criteriosDeAceite: 'a < b & c' },
+      achadosAceitos: [
+        {
+          id: 'a1',
+          blocoId: 'codigo',
+          blocoNome: 'Código',
+          texto: 'cuidado <script>',
+          tipo: 'divergencia',
+          evidencia: { tipo: 'ausencia' },
+          semProva: true,
+          estado: 'aceito',
+        },
+      ],
+      responsavel: { nome: 'Ana <Lima>', id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+    })
+    expect(texto).toContain('data-vss-mention="version:2.0,aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"')
+    expect(texto).toContain('@Ana &lt;Lima&gt;')
+    expect(texto).toContain('<div>linha 1</div><div>linha 2</div>')
+    expect(texto).toContain('a &lt; b &amp; c')
+    expect(texto).toContain('cuidado &lt;script&gt;')
+    expect(texto).not.toContain('<script>')
+    const sujo = montarComentario({
+      story: { ...STORY_VAZIA, corpo: 'texto' },
+      achadosAceitos: [],
+      responsavel: { nome: 'Ana', id: '"><img' },
+    })
+    expect(sujo).not.toContain('data-vss-mention')
+    expect(sujo).toContain('@Ana')
+    expect(sujo).not.toContain('<img')
   })
 })
 
 describe('limites de caminho e host', () => {
   it('recusa host fora do Azure e branch com comando', () => {
     expect(() => validarOrgUrl('https://evil.example/org')).toThrow(/dev\.azure\.com/)
+    expect(() => validarOrgUrl('https://fintech@dev.azure.com/fintech')).toThrow(/token/)
     expect(() => validarBranch('main;rm')).toThrow(/Branch/)
     expect(() => caminhoSeguro('/dados/repos', '../segredo')).toThrow(/fora/)
+  })
+
+  it('tira o usuário da URL do repositório', () => {
+    expect(validarRemoto('https://fintech@dev.azure.com/fintech/P/_git/app').toString()).toBe('https://dev.azure.com/fintech/P/_git/app')
+    expect(validarRemoto('https://org@org.visualstudio.com/P/_git/app').toString()).toBe('https://org.visualstudio.com/P/_git/app')
+    const comSenha = ['https://', 'alguem:', 'segredo@', 'dev.azure.com/fintech/P/_git/app'].join('')
+    const limpa = validarRemoto(comSenha).toString()
+    expect(limpa).toBe('https://dev.azure.com/fintech/P/_git/app')
+    expect(limpa).not.toContain('segredo')
+    expect(() => validarRemoto('')).toThrow(/não é válida/)
+    expect(() => validarRemoto('http://dev.azure.com/fintech/P/_git/app')).toThrow(/https/)
   })
 
   it('tira token de mensagem de erro', () => {

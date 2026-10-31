@@ -1,15 +1,37 @@
 import type { Achado, StoryTexto } from '../shared/tipos'
 
+function escaparHtml(valor: string): string {
+  return valor.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+/** O Boards trata descrição, critérios e comentário como HTML: newline solto some. */
+export function textoEmHtml(valor: string): string {
+  if (!valor) return ''
+  return valor
+    .split(/\r\n|\n|\r/)
+    .map((linha) => `<div>${escaparHtml(linha) || '<br>'}</div>`)
+    .join('')
+}
+
+function idDeMencao(id: string | undefined): string | undefined {
+  const limpo = id?.trim() ?? ''
+  if (!/^[\w.-]+$/.test(limpo)) return undefined
+  return limpo
+}
+
+function linhaMencao(responsavel?: { nome: string; id?: string }): string {
+  if (!responsavel) return '<div>Responsável: não encontrado no card.</div>'
+  const nome = escaparHtml(responsavel.nome)
+  const id = idDeMencao(responsavel.id)
+  if (!id) return `<div>Responsável: @${nome}</div>`
+  return `<div>Responsável: <a href="#" data-vss-mention="version:2.0,${id}">@${nome}</a></div>`
+}
+
 export function montarComentario(entrada: {
   story: StoryTexto
   achadosAceitos: Achado[]
   responsavel?: { nome: string; id?: string }
 }): string {
-  const mencao = entrada.responsavel
-    ? entrada.responsavel.id
-      ? `Responsável: <a href="#" data-vss-mention="user:${entrada.responsavel.id}">@${entrada.responsavel.nome}</a>`
-      : `Responsável: @${entrada.responsavel.nome}`
-    : 'Responsável: não encontrado no card.'
   const achados = entrada.achadosAceitos
     .map((achado) => {
       const prova = achado.semProva
@@ -22,8 +44,7 @@ export function montarComentario(entrada: {
       return `- ${achado.texto} (${prova})`
     })
     .join('\n')
-  return [
-    mencao,
+  const corpo = [
     '',
     'Sugestão da Esteira. A descrição deste card não foi alterada.',
     '',
@@ -34,6 +55,7 @@ export function montarComentario(entrada: {
     '',
     achados ? `Achados aceitos:\n${achados}` : 'Nenhum achado aceito.',
   ].join('\n')
+  return linhaMencao(entrada.responsavel) + textoEmHtml(corpo)
 }
 
 export type PedidoPublicacao =

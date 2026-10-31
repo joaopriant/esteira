@@ -17,8 +17,30 @@ export function validarOrgUrl(valor: string): URL {
   return url
 }
 
+export function urlSemCredencial(valor: string): string {
+  try {
+    const url = new URL(valor.trim())
+    url.username = ''
+    url.password = ''
+    return url.toString()
+  } catch {
+    return ''
+  }
+}
+
 export function validarRemoto(valor: string): URL {
-  const url = validarOrgUrl(valor)
+  let url: URL
+  try {
+    url = new URL(valor.trim())
+  } catch {
+    throw new Error('A URL do repositório não é válida.')
+  }
+  url.username = ''
+  url.password = ''
+  if (url.protocol !== 'https:') throw new Error('A URL do repositório precisa ser https.')
+  if (!HOSTS.some((regra) => regra.test(url.hostname))) {
+    throw new Error('Só aceito dev.azure.com ou visualstudio.com.')
+  }
   return url
 }
 
