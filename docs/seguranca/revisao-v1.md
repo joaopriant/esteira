@@ -38,12 +38,12 @@ Nada em aberto que permita publicar sozinho, gravar o PAT em JSON ou marcar palp
 
 ## Incremento — Radar e canvas
 
-Data: 24/10/2026. Conferido contra a seção 8 de `modelo-de-ameacas.md` e o ADR 0006.
+Data: 31/10/2026. Conferido contra a seção 8 de `modelo-de-ameacas.md` e o ADR 0006.
 
 | Ameaça | Onde | Estado |
 |---|---|---|
-| Token do Radar em arquivo | `conectarRadar` grava só no cofre (`radar:teams`, `radar:slack`, `radar:whatsapp`). O teste varre o diretório de dados e não acha o token de exemplo. `credenciaisRadar` devolve booleano. Caminho de Granola/Plaud fica relativo a `radar-import`. | ok, com teste |
-| Envio em canal | `pedidoLeitura` só devolve GET para `graph.microsoft.com` ou `slack.com`, ou `null` para WhatsApp, Granola e Plaud. Não há método de postar mensagem. Sem token, o leitor real não chama a rede. | ok, com teste |
+| Token do Radar em arquivo | `conectarRadar` grava o access token só no cofre (`radar:teams`, `radar:slack`). Refresh e expiração ficam em contas separadas do mesmo cofre. WhatsApp não grava token. O client id fica no `config.json` porque não é segredo. O teste varre o diretório de dados e não acha o token de exemplo. `credenciaisRadar` devolve booleano. | ok, com teste |
+| Envio em canal | A leitura de canal é só GET em `graph.microsoft.com` ou `slack.com`. O único POST é a troca de token do OAuth, nos hosts de login, sem client secret. Não há método de postar mensagem. Sem token, o leitor real não chama a rede. Paginação não segue URL de outro host. | ok, com teste |
 | Caminho da importação | `lerPasta` usa `caminhoSeguro`. `../` volta lista vazia e não lê o arquivo de fora. | ok, com teste |
 | Prompt injection | Linha de ordem sai em `sanitizarTextoExterno` antes do Claude. Citação que não é substring não vira prova. O teste de importação mista não deixa o segredo na sugestão; texto só de injeção não gera sugestão. O contexto do `claude -p` marca o sinal como dado e diz para não enviar mensagem. | ok, com teste |
 | Publicar a partir do Radar | `enviarParaEsteira` chama `iniciarEsteira`. O único caminho de escrita no board continua sendo `publicar`. | ok |

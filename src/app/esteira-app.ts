@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import type {
   Ajustes,
   AchadoBruto,
@@ -51,7 +51,9 @@ import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
 import { criarClaudeCli } from '../adapters/claude-cli'
 import { criarProcesso } from '../adapters/processo'
-import { caminhoSeguro, contaDoPat, contaRadar, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
+import { caminhoSeguro, contaDoPat, nomePastaSeguro, redigirSegredo, validarBinario, validarOrgUrl } from '../adapters/seguro'
+import { pedidoLeitura } from '../adapters/radar-leitura'
+import { CofreRadar, OauthRadar, TextoRadar } from '../adapters/radar-oauth'
 import type { AzurePort, ClaudePort } from '../ports'
 
 interface ConfigDisco {
@@ -67,6 +69,10 @@ interface ConfigDisco {
   modeloStory: string
   fluxo: BlocoFluxo[]
   pastasRadar?: Partial<Record<'whatsapp' | 'granola' | 'plaud', string>>
+  clientesRadar?: {
+    teams?: { clientId: string; tenant: string }
+    slack?: { clientId: string }
+  }
 }
 
 function hashTexto(texto: string): string {
@@ -93,9 +99,22 @@ function interpretarSaida(json: unknown): { story?: Partial<StoryTexto>; achados
   return { story: obj.story, achados: Array.isArray(obj.achados) ? obj.achados : [] }
 }
 
+interface PendenciaOauth {
+  clientId: string
+  tenant: string
+  deviceCode?: string
+  intervaloMs?: number
+  expiraEm?: number
+  verifier?: string
+  redirectUri?: string
+  codigo?: Promise<string>
+  fechar?: () => void
+}
+
 export class EsteiraApp {
   private corrente: Promise<void> = Promise.resolve()
   private fila: { produtoId: string; moduloId: string }[] = []
+  private oauthPendente = new Map<'teams' | 'slack', PendenciaOauth>()
 
   constructor(private readonly deps: Dependencias) {}
 
@@ -445,17 +464,17 @@ export class EsteiraApp {
     return story
   }
 
-  async conectarRadar(provedor: 'teams' | 'slack' | 'whatsapp', token: string): Promise<{ conectado: true }> {
+  async conectarRadar(provedor: 'teams' | 'slack', token: string): Promise<{ conectado: true }> {
     const limpo = token.trim()
     if (limpo.length < 8) throw new Error('O token de leitura está curto demais.')
     if (/[\r\n\0]/.test(limpo)) throw new Error('Token inválido.')
-    await this.deps.segredos.gravar(contaRadar(provedor), limpo)
+    await CofreRadar.gravarColado(this.deps.segredos, provedor, limpo)
     return { conectado: true }
   }
 
   async desconectarRadar(provedor: ProvedorRadar): Promise<{ ok: true }> {
     if (provedor === 'teams' || provedor === 'slack' || provedor === 'whatsapp') {
-      await this.deps.segredos.apagar(contaRadar(provedor))
+      await CofreRadar.apagar(this.deps.segredos, provedor)
     }
     if (provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud') {
       const config = await this.config()
@@ -465,6 +484,98 @@ export class EsteiraApp {
       }
     }
     return { ok: true }
+  }
+
+  async salvarClienteRadar(provedor: 'teams' | 'slack', clientId: string, tenant?: string): Promise<{ clientId: string; oauthPronto: boolean }> {
+    const config = await this.config()
+    const clientes = { ...(config.clientesRadar ?? {}) }
+    const texto = clientId.trim()
+    if (!texto) delete clientes[provedor]
+    else if (provedor === 'teams') clientes.teams = { clientId: OauthRadar.clientIdTeams(texto), tenant: OauthRadar.tenant(tenant) }
+    else clientes.slack = { clientId: OauthRadar.clientIdSlack(texto) }
+    config.clientesRadar = clientes
+    await this.deps.disco.gravarJson('config.json', config)
+    const guardado = provedor === 'teams' ? clientes.teams?.clientId ?? '' : clientes.slack?.clientId ?? ''
+    return { clientId: guardado, oauthPronto: Boolean(guardado) }
+  }
+
+  async iniciarOauthRadar(provedor: 'teams' | 'slack'): Promise<{ modo: 'dispositivo' | 'navegador'; verificacao: string; codigo: string; mensagem: string }> {
+    if (this.deps.modo === 'falso') throw new Error('No modo exemplo o login não sai desta máquina.')
+    this.encerrarOauth(provedor)
+    const config = await this.config()
+    const cliente = config.clientesRadar?.[provedor]
+    if (!cliente?.clientId) throw new Error('Falta o client id. Sem ele, cole o token de leitura.')
+    const buscar = this.deps.buscar ?? fetch
+    if (provedor === 'teams') {
+      const tenant = config.clientesRadar?.teams?.tenant || 'organizations'
+      const desafio = await OauthRadar.pedirDispositivo({ clientId: cliente.clientId, tenant, buscar })
+      this.oauthPendente.set('teams', {
+        clientId: cliente.clientId,
+        tenant,
+        deviceCode: desafio.deviceCode,
+        intervaloMs: desafio.intervaloMs,
+        expiraEm: desafio.expiraEm,
+      })
+      await this.abrirLogin(desafio.verificacao)
+      return { modo: 'dispositivo', verificacao: desafio.verificacao, codigo: desafio.userCode, mensagem: desafio.mensagem }
+    }
+    const pkce = OauthRadar.pkce()
+    const state = randomBytes(16).toString('base64url')
+    const escuta = await OauthRadar.escutar({
+      porta: this.deps.portaOauth ?? OauthRadar.PORTA_SLACK,
+      state,
+      timeoutMs: this.deps.timeoutOauth ?? 180_000,
+    })
+    void escuta.codigo.catch(() => undefined)
+    const redirectUri = OauthRadar.redirectLoopback(escuta.porta)
+    const verificacao = OauthRadar.urlSlack({ clientId: cliente.clientId, challenge: pkce.challenge, redirectUri, state })
+    this.oauthPendente.set('slack', {
+      clientId: cliente.clientId,
+      tenant: '',
+      verifier: pkce.verifier,
+      redirectUri,
+      codigo: escuta.codigo,
+      fechar: escuta.fechar,
+    })
+    await this.abrirLogin(verificacao)
+    return {
+      modo: 'navegador',
+      verificacao,
+      codigo: '',
+      mensagem: 'Autorize no navegador. A volta é nesta máquina, em 127.0.0.1. Nenhuma mensagem é enviada.',
+    }
+  }
+
+  async concluirOauthRadar(provedor: 'teams' | 'slack'): Promise<{ conectado: true }> {
+    if (this.deps.modo === 'falso') throw new Error('No modo exemplo o login não sai desta máquina.')
+    const pendente = this.oauthPendente.get(provedor)
+    if (!pendente) throw new Error('Peça o login de novo.')
+    const buscar = this.deps.buscar ?? fetch
+    const esperar = this.deps.esperar ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
+    try {
+      const credencial = provedor === 'teams'
+        ? await OauthRadar.concluirDispositivo({
+          clientId: pendente.clientId,
+          tenant: pendente.tenant,
+          deviceCode: pendente.deviceCode ?? '',
+          intervaloMs: pendente.intervaloMs ?? 5000,
+          expiraEm: pendente.expiraEm ?? 0,
+          buscar,
+          esperar,
+        })
+        : await OauthRadar.trocarSlack({
+          clientId: pendente.clientId,
+          code: await pendente.codigo!,
+          redirectUri: pendente.redirectUri ?? '',
+          verifier: pendente.verifier ?? '',
+          buscar,
+        })
+      await CofreRadar.gravar(this.deps.segredos, provedor, credencial)
+      return { conectado: true }
+    } finally {
+      pendente.fechar?.()
+      this.oauthPendente.delete(provedor)
+    }
   }
 
   async salvarPastaRadar(provedor: 'whatsapp' | 'granola' | 'plaud', caminho: string): Promise<{ caminho: string }> {
@@ -483,12 +594,13 @@ export class EsteiraApp {
   }
 
   async credenciaisRadar(): Promise<{ teams: boolean; slack: boolean; whatsapp: boolean }> {
-    const [teams, slack, whatsapp] = await Promise.all([
-      this.deps.segredos.ler(contaRadar('teams')),
-      this.deps.segredos.ler(contaRadar('slack')),
-      this.deps.segredos.ler(contaRadar('whatsapp')),
+    const legado = await this.deps.segredos.ler('radar:whatsapp')
+    if (legado) await CofreRadar.apagar(this.deps.segredos, 'whatsapp')
+    const [teams, slack] = await Promise.all([
+      this.deps.segredos.ler('radar:teams'),
+      this.deps.segredos.ler('radar:slack'),
     ])
-    return { teams: Boolean(teams), slack: Boolean(slack), whatsapp: Boolean(whatsapp) }
+    return { teams: Boolean(teams), slack: Boolean(slack), whatsapp: false }
   }
 
   async painelConexoes(): Promise<PainelConexoes> {
@@ -501,12 +613,43 @@ export class EsteiraApp {
     if (this.deps.modo === 'falso' || provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud') {
       return { ok: item.status !== 'nao-conectado', status: item.status, detalhe: item.detalhe }
     }
-    const token = await this.deps.segredos.ler(contaRadar(provedor))
+    const config = await this.config()
+    const cliente = config.clientesRadar?.[provedor]
+    const token = await CofreRadar.bearer({
+      segredos: this.deps.segredos,
+      provedor,
+      clientId: cliente?.clientId ?? '',
+      tenant: provedor === 'teams' ? config.clientesRadar?.teams?.tenant || 'organizations' : '',
+      buscar: this.deps.buscar ?? fetch,
+    })
     if (!token) return { ok: item.status !== 'nao-conectado', status: item.status, detalhe: item.detalhe }
-    const url = provedor === 'teams' ? 'https://graph.microsoft.com/v1.0/me' : 'https://slack.com/api/auth.test'
+    const fonte = (await this.fontesRadar()).find((candidata) => candidata.provedor === provedor && candidata.ativa)
+    const pedido = fonte ? pedidoLeitura(provedor, fonte.referencia) : null
+    const url = provedor === 'slack' ? 'https://slack.com/api/auth.test' : pedido ? `${pedido.url}?$top=1` : ''
+    if (!url) {
+      return { ok: false, status: 'conectado', detalhe: 'Token no cofre. Vincule um canal no formato time/canal para testar a leitura. Nenhuma mensagem foi enviada.' }
+    }
     try {
-      const resposta = await fetch(url, { method: 'GET', headers: { authorization: `Bearer ${token}`, accept: 'application/json' } })
-      if (!resposta.ok) return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas o host recusou a leitura.' }
+      const resposta = await (this.deps.buscar ?? fetch)(url, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+      })
+      if (resposta.status >= 300 && resposta.status < 400) {
+        await resposta.arrayBuffer().catch(() => undefined)
+        return { ok: false, status: 'conectado', detalhe: 'O host pediu redirecionamento. A leitura não seguiu. Nenhuma mensagem foi enviada.' }
+      }
+      if (!resposta.ok) {
+        await resposta.arrayBuffer().catch(() => undefined)
+        return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas o host recusou a leitura.' }
+      }
+      if (provedor === 'slack') {
+        const json: unknown = await resposta.json().catch(() => null)
+        const aceito = Boolean(json && typeof json === 'object' && (json as { ok?: boolean }).ok !== false)
+        if (!aceito) return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas o Slack recusou a leitura.' }
+      } else {
+        await resposta.arrayBuffer().catch(() => undefined)
+      }
       return { ok: true, status: 'conectado', detalhe: 'A leitura respondeu. Nenhuma mensagem foi enviada.' }
     } catch {
       return { ok: false, status: 'conectado', detalhe: 'O token está no cofre, mas não houve resposta do host.' }
@@ -1294,6 +1437,25 @@ export class EsteiraApp {
     return achado
   }
 
+  private encerrarOauth(provedor: 'teams' | 'slack'): void {
+    const pendente = this.oauthPendente.get(provedor)
+    pendente?.fechar?.()
+    this.oauthPendente.delete(provedor)
+  }
+
+  private async abrirLogin(url: string): Promise<void> {
+    if (!this.deps.abrirUrl) return
+    let destino: URL
+    try {
+      destino = new URL(url)
+    } catch {
+      return
+    }
+    const hostOk = destino.protocol === 'https:' && (destino.hostname === 'slack.com' || destino.hostname === 'microsoft.com' || destino.hostname === 'login.microsoftonline.com' || destino.hostname === 'login.microsoft.com')
+    if (!hostOk) return
+    await this.deps.abrirUrl(destino.toString()).catch(() => undefined)
+  }
+
   private pastaRadar(provedor: ProvedorRadar): string {
     return path.join(this.deps.dataDir, 'radar-import', provedor)
   }
@@ -1337,29 +1499,36 @@ export class EsteiraApp {
     }
     const radar: PainelConexoes['radar'] = []
     for (const provedor of ['teams', 'slack', 'whatsapp', 'granola', 'plaud'] as const) {
-      const tokenNoCofre = provedor === 'granola' || provedor === 'plaud' ? false : creditos[provedor]
+      const tokenNoCofre = provedor === 'teams' || provedor === 'slack' ? creditos[provedor] : false
       const caminhoSalvo = provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud' ? config.pastasRadar?.[provedor] ?? '' : ''
+      const clientId = provedor === 'teams' || provedor === 'slack' ? config.clientesRadar?.[provedor]?.clientId ?? '' : ''
+      const tenant = provedor === 'teams' ? config.clientesRadar?.teams?.tenant ?? '' : ''
+      const oauthPronto = Boolean(clientId)
       const temArquivo = await this.pastaTemArquivo(provedor)
       const temFonte = fontes.some((fonte) => fonte.provedor === provedor && fonte.ativa)
       let status: PainelConexoes['radar'][number]['status'] = 'nao-conectado'
       let detalhe = 'Nada ligado. O app não lê este canal.'
       if (tokenNoCofre) {
         status = 'conectado'
-        detalhe = provedor === 'whatsapp'
-          ? 'Token no cofre. O app não envia mensagem. A leitura entra pela pasta local.'
-          : 'Token de leitura no cofre. A consulta, quando existe, é só GET.'
+        detalhe = 'Token de leitura no cofre. A consulta é só GET e nenhuma mensagem é enviada.'
       } else if (caminhoSalvo || temArquivo || (this.deps.modo === 'falso' && temFonte)) {
         status = 'pasta-local'
         detalhe = this.deps.modo === 'falso' && !temArquivo && !caminhoSalvo
           ? 'Exemplo local. A leitura não sai desta máquina.'
           : 'Pasta local ativa. Os arquivos ficam nesta máquina.'
+      } else if (oauthPronto) {
+        detalhe = 'Client id guardado. Entre com a conta para gravar o token no cofre.'
       }
       radar.push({
         provedor,
         nome: nomes[provedor],
         status,
         detalhe,
+        explicacao: TextoRadar.explicacao(provedor, oauthPronto),
         tokenNoCofre,
+        clientId,
+        tenant,
+        oauthPronto,
         pasta: this.pastaRadar(provedor),
         caminhoSalvo,
         fontes: fontes.filter((fonte) => fonte.provedor === provedor),

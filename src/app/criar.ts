@@ -1,11 +1,11 @@
 import path from 'node:path'
 import os from 'node:os'
-import type { AzurePort, ClaudePort, GitPort, LeitorRadar, SecretStore } from '../ports'
+import type { AzurePort, ClaudePort, Disco, GitPort, LeitorRadar, SecretStore } from '../ports'
 import { criarDisco } from '../adapters/disco'
 import { AzureFalso, criarClaudeFalso, criarGitFalso } from '../adapters/falsos'
 import { leitoresFalsos } from '../adapters/radar-falso'
 import { criarLeitorReal } from '../adapters/radar-leitura'
-import { contaRadar } from '../adapters/seguro'
+import { CofreRadar } from '../adapters/radar-oauth'
 import type { ProvedorRadar } from '../shared/tipos'
 import { criarGit } from '../adapters/git-cli'
 import { criarProcesso } from '../adapters/processo'
@@ -29,6 +29,12 @@ export async function criarAplicacao(opcoes: {
   claude?: ClaudePort
   git?: GitPort
   skillsDir?: string
+  segredos?: SecretStore
+  buscar?: typeof fetch
+  esperar?: (ms: number) => Promise<void>
+  abrirUrl?: (url: string) => Promise<void>
+  portaOauth?: number
+  timeoutOauth?: number
 } = {}): Promise<EsteiraApp> {
   const modo = opcoes.modo ?? (process.env.ESTEIRA_FAKE === '1' ? 'falso' : 'real')
   const dataDir = opcoes.dataDir ?? pastaDeDados()
@@ -38,19 +44,26 @@ export async function criarAplicacao(opcoes: {
   const azure = opcoes.azure ?? (modo === 'falso' ? new AzureFalso(itensExemplo(agora())) : azureRealInerte())
   const claude = opcoes.claude ?? (modo === 'falso' ? criarClaudeFalso() : claudeInerte())
   const git = opcoes.git ?? (modo === 'falso' ? criarGitFalso(path.join(process.cwd(), 'fixtures'), path.join(dataDir, 'repos')) : criarGit(criarProcesso(), path.join(dataDir, 'repos')))
-  const segredos = modo === 'falso' ? cofreMemoria() : cofreSistema()
+  const segredos = opcoes.segredos ?? (modo === 'falso' ? cofreMemoria() : cofreSistema())
+  const disco = criarDisco(dataDir)
+  const buscar = opcoes.buscar ?? fetch
   const app = new EsteiraApp({
     dataDir,
     modo,
     agora,
-    disco: criarDisco(dataDir),
+    disco,
     azure,
     claude,
     git,
     segredos,
     skillsDir,
     skillsUsuario,
-    radares: modo === 'falso' ? leitoresFalsos() : leitoresReais(dataDir, segredos),
+    radares: modo === 'falso' ? leitoresFalsos() : leitoresReais(dataDir, segredos, disco, buscar),
+    buscar,
+    esperar: opcoes.esperar,
+    abrirUrl: opcoes.abrirUrl ?? abrirUrlExterna,
+    portaOauth: opcoes.portaOauth,
+    timeoutOauth: opcoes.timeoutOauth,
   })
   if (opcoes.semear && modo === 'falso') {
     if ((await app.produtos()).length === 0) await semearExemplo(app)
@@ -59,16 +72,51 @@ export async function criarAplicacao(opcoes: {
   return app
 }
 
-function leitoresReais(dataDir: string, segredos: SecretStore): LeitorRadar[] {
+function leitoresReais(dataDir: string, segredos: SecretStore, disco: Disco, buscar: typeof fetch): LeitorRadar[] {
   const pasta = path.join(dataDir, 'radar-import')
   const provedores: ProvedorRadar[] = ['teams', 'slack', 'whatsapp', 'granola', 'plaud']
   return provedores.map((provedor) =>
     criarLeitorReal({
       provedor,
       pasta,
-      token: async () => (provedor === 'teams' || provedor === 'slack' ? segredos.ler(contaRadar(provedor)) : Promise.resolve(null)),
+      buscar,
+      token: () => tokenDoProvedor(disco, segredos, buscar, provedor, false),
+      renovar: () => tokenDoProvedor(disco, segredos, buscar, provedor, true),
     }),
   )
+}
+
+async function tokenDoProvedor(
+  disco: Disco,
+  segredos: SecretStore,
+  buscar: typeof fetch,
+  provedor: ProvedorRadar,
+  forcar: boolean,
+): Promise<string | null> {
+  if (provedor !== 'teams' && provedor !== 'slack') return null
+  const config = await disco.lerJson<{
+    clientesRadar?: {
+      teams?: { clientId: string; tenant: string }
+      slack?: { clientId: string }
+    }
+  }>('config.json')
+  const cliente = config?.clientesRadar?.[provedor]
+  return CofreRadar.bearer({
+    segredos,
+    provedor,
+    clientId: cliente?.clientId ?? '',
+    tenant: provedor === 'teams' ? config?.clientesRadar?.teams?.tenant || 'organizations' : '',
+    buscar,
+    forcar,
+  })
+}
+
+async function abrirUrlExterna(url: string): Promise<void> {
+  const destino = new URL(url)
+  const hostOk = destino.protocol === 'https:' && (destino.hostname === 'slack.com' || destino.hostname === 'microsoft.com' || destino.hostname === 'login.microsoftonline.com')
+  if (!hostOk || !process.versions.electron) return
+  const electron = await import('electron')
+  await electron.shell.openExternal(destino.toString())
 }
 
 function azureRealInerte(): AzurePort {

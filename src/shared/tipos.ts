@@ -102,7 +102,11 @@ export interface ConexaoRadar {
   nome: string
   status: StatusConexao
   detalhe: string
+  explicacao: string
   tokenNoCofre: boolean
+  clientId: string
+  tenant: string
+  oauthPronto: boolean
   pasta: string
   caminhoSalvo: string
   fontes: FonteRadar[]

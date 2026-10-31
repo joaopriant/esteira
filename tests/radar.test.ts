@@ -4,7 +4,7 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { criarAplicacao } from '../src/app/criar'
 import { corpusExemplo } from '../src/adapters/radar-falso'
-import { criarLeitorReal, lerPasta, parseWhatsApp, pedidoLeitura } from '../src/adapters/radar-leitura'
+import { criarLeitorReal, lerPasta, PAGINAS_MAX, PaginasRadar, parseWhatsApp, pedidoLeitura } from '../src/adapters/radar-leitura'
 import { montarContexto } from '../src/adapters/claude-cli'
 import { sanitizarTextoExterno } from '../src/core/radar'
 import { duplicarBloco, fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, inserirBloco, moverBloco, validarFluxo } from '../src/core/fluxo-padrao'
@@ -157,7 +157,107 @@ describe('leitura real', () => {
     expect(pedidos[0]?.method).toBe('GET')
     expect(pedidos[0]?.url.startsWith('https://slack.com/api/conversations.history?channel=C12345678')).toBe(true)
   })
+
+  it('lê exportação Android e continua a do iOS', () => {
+    const ios = parseWhatsApp('grupo.txt', 'Suporte', '[24/10/26, 11:02] Loja do Centro: A gente precisa estornar só uma parte do PIX.\n')
+    expect(ios[0]?.autor).toBe('Loja do Centro')
+    const android = parseWhatsApp('grupo.txt', 'Suporte', [
+      '\u200e24/10/2026, 11:02 - Loja do Centro: A gente precisa estornar só uma parte do PIX.',
+      'sem devolver o valor inteiro.',
+      '24/10/2026, 11:03 - As mensagens são protegidas com criptografia de ponta a ponta.',
+      '25/10/26, 09:01 - Ana: segunda mensagem',
+      '10/24/26, 2:22 PM - João: oi em doze horas',
+    ].join('\n'))
+    expect(android.map((sinal) => sinal.autor)).toEqual(['Loja do Centro', 'Ana', 'João'])
+    expect(android[0]?.texto).toContain('sem devolver o valor inteiro')
+    expect(android[0]?.texto).not.toContain('criptografia')
+    expect(android[0]?.em).toBe('24/10/2026 11:02')
+    expect(android[2]?.texto).toBe('oi em doze horas')
+  })
+
+  it('segue nextLink e cursor, espera 429 e não sai do host', async () => {
+    expect(PaginasRadar.espera('120')).toBe(30_000)
+    expect(PaginasRadar.espera(null)).toBe(1000)
+    expect(PaginasRadar.espera('-1')).toBe(1000)
+    const esperas: number[] = []
+    const pedidos: { url: string; method?: string; authorization?: string }[] = []
+    let teams = 0
+    const sinaisTeams = await PaginasRadar.ler({
+      provedor: 'teams',
+      referencia: 'time-pix/canal-ops',
+      urlInicial: 'https://graph.microsoft.com/v1.0/teams/time-pix/channels/canal-ops/messages',
+      token: 'token-antigo',
+      esperar: async (ms) => { esperas.push(ms) },
+      renovar: async () => 'token-renovado',
+      buscar: async (url, init) => {
+        pedidos.push({ url: String(url), method: init?.method, authorization: new Headers(init?.headers).get('authorization') ?? '' })
+        teams += 1
+        if (teams === 1) return new Response('', { status: 429, headers: { 'retry-after': '0' } })
+        if (teams === 2) return new Response('', { status: 401 })
+        if (teams === 3) {
+          return jsonResposta({
+            value: [mensagemTeams('1', 'primeira página')],
+            '@odata.nextLink': 'https://evil.example/roubo',
+          })
+        }
+        return jsonResposta({ value: [mensagemTeams('2', 'não deve entrar')] })
+      },
+    })
+    expect(sinaisTeams.map((sinal) => sinal.texto)).toEqual(['primeira página'])
+    expect(esperas).toEqual([0])
+    expect(pedidos.every((pedido) => pedido.method === 'GET')).toBe(true)
+    expect(pedidos.some((pedido) => pedido.url.includes('evil.example'))).toBe(false)
+    expect(pedidos[2]?.authorization).toBe('Bearer token-renovado')
+
+    const slack: string[] = []
+    const sinaisSlack = await PaginasRadar.ler({
+      provedor: 'slack',
+      referencia: 'C12345678',
+      urlInicial: 'https://slack.com/api/conversations.history?channel=C12345678&limit=200',
+      token: 'token-slack',
+      buscar: async (url, init) => {
+        slack.push(String(url))
+        expect(init?.method).toBe('GET')
+        if (!String(url).includes('cursor=')) {
+          return jsonResposta({
+            ok: true,
+            messages: [{ text: 'página um', user: 'U1', ts: '10' }],
+            has_more: true,
+            response_metadata: { next_cursor: 'proxima-pagina' },
+          })
+        }
+        return jsonResposta({ ok: true, messages: [{ text: 'página dois', user: 'U2', ts: '11' }], has_more: false })
+      },
+    })
+    expect(sinaisSlack.map((sinal) => sinal.texto)).toEqual(['página um', 'página dois'])
+    expect(slack[1]).toContain('cursor=proxima-pagina')
+    expect(slack[1]?.startsWith('https://slack.com/api/conversations.history?')).toBe(true)
+
+    let paginas = 0
+    await PaginasRadar.ler({
+      provedor: 'teams',
+      referencia: 'time-pix/canal-ops',
+      urlInicial: 'https://graph.microsoft.com/v1.0/teams/time-pix/channels/canal-ops/messages',
+      token: 'token',
+      buscar: async () => {
+        paginas += 1
+        return jsonResposta({
+          value: [mensagemTeams(String(paginas), `msg ${paginas}`)],
+          '@odata.nextLink': `https://graph.microsoft.com/v1.0/teams/time-pix/channels/canal-ops/messages?$skiptoken=${paginas}`,
+        })
+      },
+    })
+    expect(paginas).toBe(PAGINAS_MAX)
+  })
 })
+
+function jsonResposta(corpo: unknown): Response {
+  return new Response(JSON.stringify(corpo), { status: 200, headers: { 'content-type': 'application/json' } })
+}
+
+function mensagemTeams(id: string, texto: string) {
+  return { id, body: { content: texto }, from: { user: { displayName: 'Ana' } }, createdDateTime: '2026-10-01T00:00:00Z' }
+}
 
 describe('fluxo', () => {
   it('presets, inserção entre blocos e reordenação permanecem válidos', async () => {

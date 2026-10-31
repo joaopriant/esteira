@@ -109,15 +109,20 @@ function CartaoFonte({
   aviso: string
   aoAgir: (chave: string, trabalho: () => Promise<string>) => Promise<void>
 }) {
+  const provedorApi = conexao.provedor === 'teams' || conexao.provedor === 'slack' ? conexao.provedor : null
   const pasta = conexao.provedor === 'granola' || conexao.provedor === 'plaud' || conexao.provedor === 'whatsapp'
-  const token = conexao.provedor === 'teams' || conexao.provedor === 'slack' || conexao.provedor === 'whatsapp'
   const [segredo, setSegredo] = useState('')
   const [caminho, setCaminho] = useState(conexao.caminhoSalvo)
+  const [clientId, setClientId] = useState(conexao.clientId)
+  const [tenant, setTenant] = useState(conexao.tenant || 'organizations')
+  const [desafio, setDesafio] = useState<{ verificacao: string; codigo: string } | null>(null)
   const [nova, setNova] = useState({ nome: '', referencia: '', produtoId: produtos[0]?.id ?? '' })
 
   useEffect(() => {
     setCaminho(conexao.caminhoSalvo)
-  }, [conexao.caminhoSalvo])
+    setClientId(conexao.clientId)
+    setTenant(conexao.tenant || 'organizations')
+  }, [conexao.caminhoSalvo, conexao.clientId, conexao.tenant])
 
   return (
     <SpotlightCard as="article" className="conexao-card">
@@ -127,13 +132,63 @@ function CartaoFonte({
         {ROTULO[conexao.status]}
       </p>
       <p className="sub">{conexao.detalhe}</p>
+      <p className="sub">{conexao.explicacao}</p>
       {pasta && <p className="sub">Pasta desta máquina: {conexao.pasta}</p>}
-      {token && (
+      {provedorApi && (
         <form
           onSubmit={(evento) => {
             evento.preventDefault()
             void aoAgir(conexao.provedor, async () => {
-              await chamar('conectarRadar', { provedor: conexao.provedor, token: segredo })
+              await chamar('salvarClienteRadar', {
+                provedor: provedorApi,
+                clientId,
+                tenant: provedorApi === 'teams' ? tenant : undefined,
+              })
+              return clientId.trim() ? 'Client id guardado no config. O token, quando existir, fica no cofre.' : 'Client id apagado. A conexão volta ao token colado.'
+            })
+          }}
+        >
+          <label className="campo">
+            <span>Client ID do app</span>
+            <input value={clientId} autoComplete="off" placeholder="cole o client id" onChange={(evento) => setClientId(evento.target.value)} />
+          </label>
+          {provedorApi === 'teams' && (
+            <label className="campo">
+              <span>Diretório</span>
+              <input value={tenant} autoComplete="off" placeholder="organizations" onChange={(evento) => setTenant(evento.target.value)} />
+            </label>
+          )}
+          <button className="btn-sec" type="submit" disabled={Boolean(ocupado)}>Guardar o client id</button>
+        </form>
+      )}
+      {provedorApi && conexao.oauthPronto && (
+        <>
+          <div className="acoes">
+            <button className="btn-sec" type="button" disabled={Boolean(ocupado)} onClick={() => void aoAgir(conexao.provedor, async () => {
+              const inicio = await chamar<{ verificacao: string; codigo: string }>('iniciarOauthRadar', { provedor: provedorApi })
+              setDesafio({ verificacao: inicio.verificacao, codigo: inicio.codigo })
+              await chamar('concluirOauthRadar', { provedor: provedorApi })
+              setDesafio(null)
+              return 'Conta no cofre. Nenhuma mensagem foi enviada.'
+            })}>
+              {ocupado === conexao.provedor ? <ShinyText text="Aguardando a conta" /> : provedorApi === 'teams' ? 'Entrar com a Microsoft' : 'Entrar com o Slack'}
+            </button>
+          </div>
+          {desafio && (
+            <p className="sub" role="status">
+              {desafio.codigo
+                ? <>Abra {desafio.verificacao} e digite <strong className="codigo-oauth">{desafio.codigo}</strong>.</>
+                : <>Se o navegador não abrir, cole este endereço: <span className="codigo-oauth">{desafio.verificacao}</span></>}
+            </p>
+          )}
+        </>
+      )}
+      {provedorApi && !conexao.oauthPronto && (
+        <form
+          onSubmit={(evento) => {
+            evento.preventDefault()
+            void aoAgir(conexao.provedor, async () => {
+              await chamar('conectarRadar', { provedor: provedorApi, token: segredo })
               setSegredo('')
               return 'Token no cofre. Esta tela não guarda a cópia.'
             })
@@ -161,7 +216,7 @@ function CartaoFonte({
           }}
         >
           <label className="campo">
-            <span>Arquivo ou pasta dentro de radar-import</span>
+            <span>{conexao.provedor === 'whatsapp' ? 'Exportação .txt dentro de radar-import' : 'Arquivo ou pasta dentro de radar-import'}</span>
             <input value={caminho} onChange={(evento) => setCaminho(evento.target.value)} placeholder="notas/reuniao.md" />
           </label>
           <button className="btn-sec" type="submit" disabled={Boolean(ocupado)}>Conectar</button>

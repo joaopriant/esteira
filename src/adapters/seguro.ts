@@ -61,6 +61,14 @@ export function contaRadar(provedor: 'teams' | 'slack' | 'whatsapp'): string {
   return `radar:${provedor}`
 }
 
+export function contaRefreshRadar(provedor: 'teams' | 'slack'): string {
+  return `radar:${provedor}:refresh`
+}
+
+export function contaExpiraRadar(provedor: 'teams' | 'slack'): string {
+  return `radar:${provedor}:expira`
+}
+
 export function redigirSegredo(texto: string): string {
   return texto
     .replace(/Authorization:\s*Basic\s+\S+/gi, 'Authorization: Basic [redigido]')

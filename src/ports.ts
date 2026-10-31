@@ -104,6 +104,11 @@ export interface Dependencias {
   skillsUsuario?: string
   radares: LeitorRadar[]
   pat?: () => Promise<string | null>
+  buscar?: typeof fetch
+  esperar?: (ms: number) => Promise<void>
+  abrirUrl?: (url: string) => Promise<void>
+  portaOauth?: number
+  timeoutOauth?: number
 }
 
 export type { Ajustes, ArquivoLido }

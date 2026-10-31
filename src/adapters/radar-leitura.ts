@@ -15,6 +15,12 @@ const HOSTS: Record<'teams' | 'slack', string> = {
   slack: 'slack.com',
 }
 
+// shortcut: 40 páginas por sincronização, revisar se um canal passar disso
+export const PAGINAS_MAX = 40
+// shortcut: espera máxima de 30s num 429, revisar se a API pedir mais
+export const ESPERA_MAX_MS = 30_000
+const TENTATIVAS_MAX = 3
+
 export function pedidoLeitura(provedor: ProvedorRadar, referencia: string, _token?: string | null): PedidoLeitura | null {
   if (provedor === 'whatsapp' || provedor === 'granola' || provedor === 'plaud') return null
   if (provedor === 'teams') {
@@ -30,7 +36,7 @@ export function pedidoLeitura(provedor: ProvedorRadar, referencia: string, _toke
   if (!/^[A-Z0-9]{2,32}$/.test(referencia)) return null
   return {
     method: 'GET',
-    url: `https://${HOSTS.slack}/api/conversations.history?channel=${encodeURIComponent(referencia)}`,
+    url: `https://${HOSTS.slack}/api/conversations.history?channel=${encodeURIComponent(referencia)}&limit=200`,
     provedor: 'slack',
   }
 }
@@ -58,14 +64,21 @@ function sinaisDeJson(provedor: ProvedorRadar, fonteRef: string, fonteNome: stri
   return sinais
 }
 
+const MARCAS_BIDI = /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
+const IOS = /^\[(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})[, ]\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)\]\s([^:]+):\s([\s\S]*)$/i
+const ANDROID = /^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)\s+[-–—]\s+([^:]+):\s([\s\S]*)$/i
+
 export function parseWhatsApp(fonteRef: string, fonteNome: string, texto: string): SinalBruto[] {
   const sinais: SinalBruto[] = []
   const linhas = texto.split(/\r?\n/)
   let atual: SinalBruto | null = null
-  for (const linha of linhas) {
-    const casa = linha.match(/^\[(\d{1,2}\/\d{1,2}\/\d{2,4})[, ]\s*(\d{1,2}:\d{2}(?::\d{2})?)\]\s([^:]+):\s([\s\S]*)$/)
+  for (const bruta of linhas) {
+    const linha = bruta.replace(MARCAS_BIDI, '').replace(/\u00a0|\u202f/g, ' ')
+    const casa = linha.match(IOS) ?? linha.match(ANDROID)
     if (!casa) {
-      if (atual && linha.trim()) atual.texto = `${atual.texto}\n${linha.trim()}`
+      const texto = linha.trim()
+      const cabecalho = /^\[?\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}/.test(texto)
+      if (atual && texto && !cabecalho) atual.texto = `${atual.texto}\n${texto}`
       continue
     }
     if (atual) sinais.push(atual)
@@ -189,11 +202,156 @@ function sinaisDaApi(provedor: 'teams' | 'slack', referencia: string, json: unkn
   })
 }
 
+function urlHttps(valor: string, host: string, caminho: string): URL | null {
+  let url: URL
+  try {
+    url = new URL(valor)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'https:' || url.hostname !== host) return null
+  if (url.username || url.password) return null
+  if (url.port && url.port !== '443') return null
+  if (url.pathname !== caminho) return null
+  return url
+}
+
+export class PaginasRadar {
+  static espera(retryAfter: string | null): number {
+    if (retryAfter == null || retryAfter.trim() === '') return 1000
+    const segundos = Number(retryAfter)
+    if (!Number.isFinite(segundos) || segundos < 0) return 1000
+    return Math.min(Math.round(segundos * 1000), ESPERA_MAX_MS)
+  }
+
+  static urlTeamsPermitida(url: string, referencia: string): boolean {
+    const partes = referencia.split('/')
+    if (partes.length !== 2) return false
+    const [time, canal] = partes
+    return Boolean(urlHttps(url, HOSTS.teams, `/v1.0/teams/${time}/channels/${canal}/messages`))
+  }
+
+  static urlSlackPermitida(url: string, referencia: string): boolean {
+    const parsed = urlHttps(url, HOSTS.slack, '/api/conversations.history')
+    return Boolean(parsed && parsed.searchParams.get('channel') === referencia)
+  }
+
+  static async ler(opcoes: {
+    provedor: 'teams' | 'slack'
+    referencia: string
+    urlInicial: string
+    token: string
+    buscar: typeof fetch
+    esperar?: (ms: number) => Promise<void>
+    renovar?: () => Promise<string | null>
+  }): Promise<SinalBruto[]> {
+    const esperar = opcoes.esperar ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
+    const sinais: SinalBruto[] = []
+    const vistas = new Set<string>()
+    let url = opcoes.urlInicial
+    let token = opcoes.token
+    let renovou = false
+    for (let pagina = 0; pagina < PAGINAS_MAX; pagina++) {
+      const permitida = opcoes.provedor === 'teams'
+        ? this.urlTeamsPermitida(url, opcoes.referencia)
+        : this.urlSlackPermitida(url, opcoes.referencia)
+      if (!permitida || vistas.has(url)) break
+      vistas.add(url)
+      const obtido = await this.pagina(url, token, opcoes.buscar, esperar)
+      if (obtido.status === 401 && !renovou && opcoes.renovar) {
+        const novo = await opcoes.renovar()
+        if (!novo) break
+        token = novo
+        renovou = true
+        vistas.delete(url)
+        pagina -= 1
+        continue
+      }
+      if (!obtido.json) {
+        if (pagina === 0) return []
+        break
+      }
+      if (opcoes.provedor === 'slack') {
+        const registro = obtido.json as { ok?: boolean }
+        if (registro.ok === false) {
+          if (pagina === 0) return []
+          break
+        }
+      }
+      sinais.push(...sinaisDaApi(opcoes.provedor, opcoes.referencia, obtido.json))
+      const proxima = this.proxima(opcoes.provedor, opcoes.referencia, obtido.json)
+      if (!proxima) break
+      url = proxima
+    }
+    return sinais
+  }
+
+  private static proxima(provedor: 'teams' | 'slack', referencia: string, json: unknown): string | null {
+    if (!json || typeof json !== 'object') return null
+    if (provedor === 'teams') {
+      const link = (json as { '@odata.nextLink'?: unknown })['@odata.nextLink']
+      if (typeof link !== 'string' || !this.urlTeamsPermitida(link, referencia)) return null
+      return link
+    }
+    const corpo = json as { has_more?: unknown; response_metadata?: { next_cursor?: unknown } }
+    if (corpo.has_more === false) return null
+    const cursor = corpo.response_metadata?.next_cursor
+    if (typeof cursor !== 'string' || !/^[\w+/=-]{1,512}$/.test(cursor)) return null
+    const url = new URL(`https://${HOSTS.slack}/api/conversations.history`)
+    url.searchParams.set('channel', referencia)
+    url.searchParams.set('limit', '200')
+    url.searchParams.set('cursor', cursor)
+    return url.toString()
+  }
+
+  private static async pagina(
+    url: string,
+    token: string,
+    buscar: typeof fetch,
+    esperar: (ms: number) => Promise<void>,
+  ): Promise<{ status: number; json: unknown | null }> {
+    let status = 0
+    for (let tentativa = 0; tentativa < TENTATIVAS_MAX; tentativa++) {
+      const resposta = await buscar(url, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+      })
+      status = resposta.status
+      if (status >= 300 && status < 400) {
+        await resposta.arrayBuffer().catch(() => undefined)
+        return { status, json: null }
+      }
+      if (status === 429 || status === 503) {
+        await resposta.arrayBuffer().catch(() => undefined)
+        if (tentativa === TENTATIVAS_MAX - 1) return { status, json: null }
+        await esperar(this.espera(resposta.headers.get('retry-after')))
+        continue
+      }
+      if (!resposta.ok) {
+        await resposta.arrayBuffer().catch(() => undefined)
+        return { status, json: null }
+      }
+      const json: unknown = await resposta.json().catch(() => null)
+      const erro = json && typeof json === 'object' ? String((json as { error?: string }).error ?? '') : ''
+      if (erro === 'ratelimited') {
+        if (tentativa === TENTATIVAS_MAX - 1) return { status: 429, json: null }
+        await esperar(this.espera(resposta.headers.get('retry-after')))
+        continue
+      }
+      return { status, json }
+    }
+    return { status, json: null }
+  }
+}
+
 export function criarLeitorReal(opcoes: {
   provedor: ProvedorRadar
   pasta: string
   token: () => Promise<string | null>
+  renovar?: () => Promise<string | null>
   buscar?: typeof fetch
+  esperar?: (ms: number) => Promise<void>
 }): LeitorRadar {
   const buscar = opcoes.buscar ?? fetch
   return {
@@ -213,13 +371,20 @@ export function criarLeitorReal(opcoes: {
       if (!pedido) return locais
       const token = await opcoes.token()
       if (!token) return locais
-      const resposta = await buscar(pedido.url, {
-        method: 'GET',
-        headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
-      })
-      if (!resposta.ok) return locais
-      const json: unknown = await resposta.json()
-      return [...locais, ...sinaisDaApi(pedido.provedor, referencia, json)]
+      try {
+        const remotos = await PaginasRadar.ler({
+          provedor: pedido.provedor,
+          referencia,
+          urlInicial: pedido.url,
+          token,
+          buscar,
+          esperar: opcoes.esperar,
+          renovar: opcoes.renovar,
+        })
+        return [...locais, ...remotos]
+      } catch {
+        return locais
+      }
     },
   }
 }

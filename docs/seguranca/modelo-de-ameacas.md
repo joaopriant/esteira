@@ -72,11 +72,12 @@ O app roda na máquina do fundador, com o PAT dele e o código da empresa dele. 
 
 ### 8. Radar (Teams, Slack, WhatsApp, Granola, Plaud)
 
-Atualizado em 24/10/2026, com o ADR 0006.
+Atualizado em 31/10/2026. O OAuth e a paginação entram aqui; o ADR 0006 continua valendo para o resto do Radar.
 
-- Token de leitura só no cofre, contas `radar:teams`, `radar:slack` e `radar:whatsapp`. Não entra em `fontes-radar.json`, `radar-sugestoes.json`, `config.json`, story, log ou resposta de IPC. `conectarRadar` devolve `{ conectado: true }`. WhatsApp não tem host aprovado: o token não é enviado; a leitura é a pasta.
-- WhatsApp, Granola e Plaud não têm token de envio. A leitura real é arquivo dentro de `radar-import/<provedor>`, com o mesmo `caminhoSeguro` do clone. `..` não sai da pasta.
-- Teams e Slack, quando há token, fazem um GET. Hosts fechados: `graph.microsoft.com` e `slack.com`. Referência que não casa com o formato do canal não vira URL. Não há POST, resposta em thread nem envio em nome do PM.
+- Token de leitura só no cofre, contas `radar:teams` e `radar:slack`. O refresh fica em `radar:<provedor>:refresh` e a expiração em `radar:<provedor>:expira`. Nada disso entra em `fontes-radar.json`, `radar-sugestoes.json`, `config.json`, story, log ou resposta de IPC. O client id do app (não é segredo) fica em `config.json`. `conectarRadar` devolve `{ conectado: true }`. WhatsApp não tem token: a conta `radar:whatsapp`, se sobrou de uma versão antiga, é apagada.
+- WhatsApp, Granola e Plaud não têm token de envio. A leitura real é arquivo dentro de `radar-import/<provedor>`, com o mesmo `caminhoSeguro` do clone. `..` não sai da pasta. O WhatsApp lê a exportação .txt do iOS e do Android.
+- Teams e Slack, quando há token, fazem GET paginado. Hosts fechados: `graph.microsoft.com` e `slack.com`. O `@odata.nextLink` só é seguido se continuar nesse host e nesse canal. O cursor do Slack não vira URL vinda de fora. Referência que não casa com o formato do canal não vira URL. Um 429 espera o `Retry-After`, com teto. Não há resposta em thread nem envio em nome do PM.
+- O único POST do Radar é a troca de token do OAuth, para `login.microsoftonline.com` (código de dispositivo) ou `https://slack.com/api/oauth.v2.access` (PKCE, sem client secret). O retorno do Slack escuta só em `127.0.0.1`. Redirect com o bearer não é seguido.
 - Texto de chat e transcrição é dado hostil. `sanitizarTextoExterno` tira caractere de controle, quebra de delimitador `<<<` `>>>` e linha que tenta dar ordem (`ignore as instruções`, `publique no board`, `PAT=`). O que sobra vai ao `claude -p` dentro de `<<<SINAL>>>`, com a frase fixa de que aquilo não é ordem e de que nada é enviado ao canal.
 - A prova não depende do modelo obedecer: a citação tem de ser substring do texto já sanitizado. Senão a sugestão não entra na fila. O resumo que traz ordem ou segredo que não está na fonte é descartado.
 - Mandar para a Esteira copia a prova para a story local e roda os blocos. Não publica no Azure e não escreve no canal.
@@ -86,7 +87,7 @@ Atualizado em 24/10/2026, com o ADR 0006.
 Atualizado em 25/10/2026, com o ADR 0007.
 
 - `salvarPastaRadar` só aceita caminho relativo a `radar-import/<provedor>`. `..` e caminho absoluto fora dessa pasta são recusados. O valor vai para `config.json` porque não é segredo.
-- `testarRadar` no modo real, para Teams e Slack, faz GET no host já fechado. O detalhe que volta para a tela não inclui o token nem o corpo. WhatsApp, Granola e Plaud não disparam rede nesse teste.
+- `testarRadar` no modo real, para o Slack, faz GET em `slack.com/api/auth.test`. Para o Teams, faz GET da primeira página do canal já vinculado (`$top=1`), no host fechado. O detalhe que volta para a tela não inclui o token nem o corpo. WhatsApp, Granola e Plaud não disparam rede nesse teste.
 - `testarClaude` pode executar o binário configurado (`--version` e `claude -p`). O stdout não volta para a tela. Não há chave de API no argumento.
 - `testarAzure` usa o PAT que já está no cofre e devolve só a contagem de repositórios. Erro passa por `redigirSegredo`.
 
