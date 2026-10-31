@@ -83,16 +83,6 @@
   mask-composite: exclude;
   animation: rb-giro 8s linear infinite;
 }
-.rb-star-bloco { display: block; width: 100%; }
-.rb-dots {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
 @keyframes rb-brilho { to { background-position: -120% 0; } }
 @keyframes rb-revelar { from { filter: blur(6px); opacity: 0.35; } to { filter: blur(0); opacity: 1; } }
 @keyframes rb-decifrar { from { letter-spacing: 0.12em; opacity: 0.4; } to { letter-spacing: -0.02em; opacity: 1; } }

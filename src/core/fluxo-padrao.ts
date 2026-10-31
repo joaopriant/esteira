@@ -70,6 +70,18 @@ export function duplicarBloco(blocos: BlocoFluxo[], indice: number, id: string):
   return inserirBloco(blocos, indice + 1, copia)
 }
 
+export function fraseContrato(blocos: BlocoFluxo[], indice: number): string {
+  const bloco = blocos[indice]
+  if (!bloco) return ''
+  if (bloco.papel === 'escrever') {
+    const recebe = indice === 0 ? 'Ideia do PM ou sugestão do Radar' : `Story do bloco ${indice}`
+    return `${recebe} → story no modelo`
+  }
+  const confrontosAntes = blocos.slice(0, indice).filter((item) => item.papel === 'confrontar').length
+  const recebe = indice === 0 ? 'Ideia do PM, ainda sem story' : `Story do bloco ${indice} + achados ${confrontosAntes}`
+  return `${recebe} → só novos achados (não reescreve a story)`
+}
+
 export function validarFluxo(blocos: BlocoFluxo[]): string | null {
   if (blocos.length === 0) return 'A esteira precisa de pelo menos um bloco.'
   const ids = new Set<string>()

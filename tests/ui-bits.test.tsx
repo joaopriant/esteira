@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -14,6 +15,12 @@ describe('react bits', () => {
     expect(renderToStaticMarkup(createElement(BlurText, { text: 'Fluxo' }))).toContain('Fluxo')
     expect(renderToStaticMarkup(createElement(SpotlightCard, null, 'confrontar-backlog · da Esteira'))).toContain('confrontar-backlog · da Esteira')
     expect(renderToStaticMarkup(createElement(FluxoView, {}))).toContain('Abrindo o fluxo.')
+    const css = readFileSync(new URL('../src/renderer/estilos.css', import.meta.url), 'utf8')
+    const auto = css.match(/\.fio-auto \{[^}]+\}/)?.[0] ?? ''
+    const pausa = css.match(/\.fio-pausa \{[^}]+\}/)?.[0] ?? ''
+    expect(auto).not.toMatch(/dash/)
+    expect(pausa).toMatch(/dashed/)
+    expect(css).not.toContain('stroke-dasharray')
     expect(renderToStaticMarkup(createElement(ConexoesView, { estado: { conexoesAtivas: 0, produtos: [] } as EstadoApp, recarregar: async () => {} }))).toContain('Abrindo as conexões.')
   })
 })
