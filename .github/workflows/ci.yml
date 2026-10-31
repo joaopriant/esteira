@@ -28,7 +28,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx vitest run tests/cofre-windows.test.ts
       - run: npm run dist:win
+      - run: node scripts/conferir-cofre-asar.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: instalador-windows

@@ -13,6 +13,7 @@
     "build": "electron-vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "dist:win": "npm run build && electron-builder --win nsis --publish never",
     "scan-secrets": "node scripts/scan-secrets.mjs"
   },
@@ -31,6 +32,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^5.0.5",
     "electron": "^45.0.0",
     "electron-builder": "^26.18.0",
     "electron-vite": "^3.0.0",
@@ -42,12 +44,18 @@
     "appId": "com.esteira.desktop",
     "productName": "Esteira",
     "asar": true,
+    "asarUnpack": [
+      "**/node_modules/@napi-rs/keyring/**",
+      "**/node_modules/@napi-rs/keyring-*/**"
+    ],
     "directories": {
       "output": "release"
     },
     "files": [
       "out/**",
-      "package.json"
+      "package.json",
+      "node_modules/@napi-rs/keyring/**",
+      "node_modules/@napi-rs/keyring-*/**"
     ],
     "extraResources": [
       {

@@ -9,10 +9,11 @@ import type { EsteiraApp } from '../app/esteira-app'
 let pendente: Promise<EsteiraApp> | undefined
 
 function aplicacao(): Promise<EsteiraApp> {
+  // shortcut: ESTEIRA_SEMEAR=0 só no preview vazio, revisar se o app empacotado precisar abrir sem o exemplo.
   pendente ??= criarAplicacao({
     modo: 'falso',
-    semear: true,
-    dataDir: path.join(os.tmpdir(), 'esteira-ui-preview'),
+    semear: process.env.ESTEIRA_SEMEAR !== '0',
+    dataDir: process.env.ESTEIRA_DATA ?? path.join(os.tmpdir(), 'esteira-ui-preview'),
     agora: () => new Date('2026-10-24T12:00:00.000Z'),
   })
   return pendente
