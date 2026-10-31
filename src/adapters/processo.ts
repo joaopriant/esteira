@@ -1,13 +1,54 @@
+import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import type { Processo } from '../ports'
+import { Executavel, type BuscaNoDisco } from './executavel'
 
 const TETO_SAIDA = 2_000_000
+const TETO_ATALHO = 64_000
 
-export function criarProcesso(): Processo {
+function buscaReal(env: NodeJS.ProcessEnv | undefined): BuscaNoDisco {
+  const fonte = env ?? process.env
+  let pathEnv = ''
+  for (const chave of Object.keys(fonte)) {
+    if (chave.toLowerCase() === 'path') {
+      pathEnv = fonte[chave] ?? ''
+      break
+    }
+  }
+  return {
+    plataforma: process.platform,
+    pathEnv,
+    existe(caminho) {
+      try {
+        return fs.statSync(caminho).isFile()
+      } catch {
+        return false
+      }
+    },
+    ler(caminho) {
+      try {
+        const stat = fs.statSync(caminho)
+        if (!stat.isFile() || stat.size > TETO_ATALHO) return null
+        return fs.readFileSync(caminho, 'utf8')
+      } catch {
+        return null
+      }
+    },
+  }
+}
+
+export function criarProcesso(busca?: BuscaNoDisco): Processo {
   return {
     executar({ comando, args, cwd, env, entrada, timeoutMs }) {
       return new Promise((resolve, reject) => {
-        const filho = spawn(comando, args, {
+        let alvo: { comando: string; args: string[] }
+        try {
+          alvo = Executavel.preparar(comando, args, busca ?? buscaReal(env))
+        } catch (erro) {
+          reject(erro instanceof Error ? erro : new Error('Não consegui abrir o executável.'))
+          return
+        }
+        const filho = spawn(alvo.comando, alvo.args, {
           cwd,
           env,
           shell: false,

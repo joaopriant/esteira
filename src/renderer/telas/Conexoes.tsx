@@ -351,7 +351,7 @@ function CartaoClaude({
           <input value={binario} onChange={(evento) => setBinario(evento.target.value)} />
         </label>
         <label className="campo">
-          <span>Tempo limite de cada bloco, em segundos</span>
+          <span>Tempo de cada bloco, em segundos (a wiki usa no mínimo 10 min)</span>
           <input value={timeoutSeg} inputMode="numeric" onChange={(evento) => setTimeoutSeg(evento.target.value)} />
         </label>
         <div className="acoes">
@@ -360,7 +360,7 @@ function CartaoClaude({
             const teste = await chamar<{ detalhe: string }>('testarClaude')
             return teste.detalhe
           })}>
-            {ocupado === 'claude' ? <ShinyText text="Testando claude -p" /> : 'Testar conexão'}
+            {ocupado === 'claude' ? <ShinyText text="Testando o Claude" /> : 'Testar conexão'}
           </button>
         </div>
       </form>

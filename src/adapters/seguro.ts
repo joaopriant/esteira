@@ -29,12 +29,20 @@ export function validarBranch(branch: string): string {
   return branch
 }
 
+const NOME_BINARIO = /^(claude|git)(\.(exe|cmd|bat))?$/i
+
+function caminhoAbsoluto(texto: string): boolean {
+  return path.win32.isAbsolute(texto) || path.posix.isAbsolute(texto)
+}
+
 export function validarBinario(valor: string): string {
   const texto = valor.trim()
   if (!texto || texto.includes('\0') || /[\r\n]/.test(texto)) throw new Error('Executável inválido.')
-  if (texto.includes(' ')) throw new Error('O caminho do executável não pode levar argumento.')
-  if (texto === 'git' || texto === 'claude') return texto
-  if (!path.isAbsolute(texto)) throw new Error('Informe claude ou um caminho absoluto.')
+  if (texto.includes('"') || texto.includes("'")) throw new Error('Não use aspas no caminho do executável.')
+  if (/[&|;<>^%!$]/.test(texto)) throw new Error('Executável inválido.')
+  if (/\s/.test(texto) && !caminhoAbsoluto(texto)) throw new Error('O caminho do executável não pode levar argumento.')
+  if (NOME_BINARIO.test(texto)) return texto
+  if (!caminhoAbsoluto(texto)) throw new Error('Informe claude ou um caminho absoluto.')
   return texto
 }
 

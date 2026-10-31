@@ -4,7 +4,7 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { criarAplicacao } from '../src/app/criar'
 import { azurePeloSdk, type AzureSdk } from '../src/adapters/azure-devops'
-import { criarClaudeCli, extrairJson } from '../src/adapters/claude-cli'
+import { criarClaudeCli, DiagnosticoClaude, extrairJson } from '../src/adapters/claude-cli'
 import type { Processo } from '../src/ports'
 
 const AGORA = new Date('2026-10-24T12:00:00.000Z')
@@ -133,10 +133,12 @@ describe('adaptadores reais com dublês', () => {
   })
 
   it('o claude sobe sem shell, sem bare e sem a chave de API', async () => {
+    DiagnosticoClaude.esquecer()
     const vistos: { args: string[]; env: NodeJS.ProcessEnv; comando: string }[] = []
     const processo: Processo = {
       async executar(pedido) {
         vistos.push({ args: pedido.args, env: pedido.env ?? {}, comando: pedido.comando })
+        if (pedido.args[0] === '--version') return { codigo: 0, stdout: '2.1.259 (Claude Code)', stderr: '' }
         return { codigo: 0, stdout: JSON.stringify({ structured_output: { achados: [] } }), stderr: '' }
       },
     }
@@ -164,13 +166,16 @@ describe('adaptadores reais com dublês', () => {
       if (envAntes === undefined) delete process.env.ANTHROPIC_API_KEY
       else process.env.ANTHROPIC_API_KEY = envAntes
     }
-    expect(vistos[0]?.comando).toBe('claude')
-    expect(vistos[0]?.args.join(' ')).not.toContain('--bare')
-    expect(vistos[0]?.args).toContain('--disallowedTools')
-    expect(vistos[0]?.args.join(' ')).toContain('Bash')
-    expect(vistos[0]?.args).toContain('--add-dir')
-    expect(vistos[0]?.env.ANTHROPIC_API_KEY).toBeUndefined()
-    expect(vistos[0]?.args.join(' ')).not.toContain('nao-pode-ir')
+    const chamada = vistos.find((item) => item.args[0] === '-p')
+    expect(chamada?.comando).toBe('claude')
+    expect(chamada?.args.join(' ')).not.toContain('--bare')
+    expect(chamada?.args).toContain('--permission-prompts')
+    expect(chamada?.args).toContain('--no-session-persistence')
+    expect(chamada?.args).toContain('--disallowedTools')
+    expect(chamada?.args.join(' ')).toContain('Bash')
+    expect(chamada?.args).toContain('--add-dir')
+    expect(vistos.every((item) => item.env.ANTHROPIC_API_KEY === undefined)).toBe(true)
+    expect(chamada?.args.join(' ')).not.toContain('nao-pode-ir')
   })
 })
 
