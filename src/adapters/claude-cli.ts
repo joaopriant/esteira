@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { ClaudePort, PedidoClaude, Processo, RespostaClaude } from '../ports'
+import { ExecucaoParada } from './processo'
 import { redigirSegredo, validarBinario } from './seguro'
 
 const SCHEMA_BLOCO = {
@@ -197,7 +198,9 @@ export function criarClaudeCli(processo: Processo, binario: string, pastaTrabalh
           cwd: dir,
           env,
           timeoutMs: pedido.timeoutMs,
+          sinal: pedido.sinal,
         })
+        if (pedido.sinal?.aborted) throw new ExecucaoParada()
         if (resultado.codigo !== 0) {
           throw new Error(redigirSegredo(resultado.stderr.trim()) || 'O Claude Code falhou.')
         }

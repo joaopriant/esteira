@@ -156,6 +156,8 @@ h1 { font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.02em; line
 }
 .trilho li.concluido { border-bottom-color: var(--text); }
 .trilho li.rodando, .trilho li.pausado { border-bottom-color: var(--accent); }
+.trilho li.rodando strong { color: var(--accent); }
+.trilho li.interrompido { border-bottom-color: var(--warning); }
 .trilho li.erro { border-bottom-color: var(--negative); }
 .trilho strong { display: block; font-size: 14px; font-weight: 500; }
 .trilho small { color: var(--muted); font-size: var(--fs-small); }

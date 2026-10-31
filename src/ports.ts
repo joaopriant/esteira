@@ -42,6 +42,7 @@ export interface PedidoClaude {
   sinais?: SinalParaClaude[]
   diretorios: string[]
   timeoutMs: number
+  sinal?: AbortSignal
 }
 
 export interface LeitorRadar {
@@ -88,6 +89,7 @@ export interface Processo {
     env?: NodeJS.ProcessEnv
     entrada?: string
     timeoutMs: number
+    sinal?: AbortSignal
   }): Promise<{ codigo: number; stdout: string; stderr: string }>
 }
 

@@ -112,9 +112,13 @@ async function semearExemplo(app: EsteiraApp): Promise<void> {
     areasBacklog: ['Empresa\\Pagamentos'],
   })
   await app.drenarWiki()
-  const story = await app.iniciarEsteira(
-    'Permitir estorno parcial de um PIX já liquidado, sem passar do valor original.',
-    'pix',
+  const story = await app.aguardar(
+    (
+      await app.iniciarEsteira(
+        'Permitir estorno parcial de um PIX já liquidado, sem passar do valor original.',
+        'pix',
+      )
+    ).id,
   )
   const palpite = story.achados.find((achado) => achado.semProva)
   if (palpite) {
