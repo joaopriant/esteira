@@ -60,8 +60,8 @@ export interface ClaudePort {
 }
 
 export interface GitPort {
-  clone(pedido: { url: string; dest: string; branch: string; pat: string }): Promise<void>
-  atualizar(pedido: { dest: string; branch: string; pat: string }): Promise<{ arquivosAlterados: string[] }>
+  clone(pedido: { url: string; dest: string; branch: string; pat: string; aoProgredir?: (linha: string) => void }): Promise<void>
+  atualizar(pedido: { dest: string; branch: string; pat: string; aoProgredir?: (linha: string) => void }): Promise<{ arquivosAlterados: string[] }>
   listarArquivos(dest: string): Promise<string[]>
   lerArquivo(dest: string, relativo: string): Promise<string>
   head(dest: string): Promise<string>
@@ -88,6 +88,7 @@ export interface Processo {
     env?: NodeJS.ProcessEnv
     entrada?: string
     timeoutMs: number
+    aoSaida?: (canal: 'stdout' | 'stderr', texto: string) => void
   }): Promise<{ codigo: number; stdout: string; stderr: string }>
 }
 

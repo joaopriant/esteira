@@ -96,6 +96,7 @@ function interpretarSaida(json: unknown): { story?: Partial<StoryTexto>; achados
 export class EsteiraApp {
   private corrente: Promise<void> = Promise.resolve()
   private fila: { produtoId: string; moduloId: string }[] = []
+  private andamento = new Map<string, string>()
 
   constructor(private readonly deps: Dependencias) {}
 
@@ -213,11 +214,13 @@ export class EsteiraApp {
       }
       const pasta = path.join(this.deps.dataDir, 'repos', nomePastaSeguro(remoto.nome))
       registro.caminhoLocal = pasta
+      this.andamento.set(remoto.id, 'clonando')
       try {
+        const aoProgredir = (linha: string) => this.andamento.set(remoto.id, linha)
         if (anterior?.estado === 'pronto' && anterior.caminhoLocal) {
-          await this.deps.git.atualizar({ dest: pasta, branch, pat })
+          await this.deps.git.atualizar({ dest: pasta, branch, pat, aoProgredir })
         } else {
-          await this.deps.git.clone({ url: remoto.remoteUrl, dest: pasta, branch, pat })
+          await this.deps.git.clone({ url: remoto.remoteUrl, dest: pasta, branch, pat, aoProgredir })
         }
         registro.estado = 'pronto'
         registro.ultimoCommit = await this.deps.git.head(pasta)
@@ -225,6 +228,8 @@ export class EsteiraApp {
       } catch (erro) {
         registro.estado = 'erro'
         registro.erro = erro instanceof Error ? erro.message : 'Falha ao clonar.'
+      } finally {
+        this.andamento.delete(remoto.id)
       }
       proximos.push(registro)
     }
@@ -239,10 +244,20 @@ export class EsteiraApp {
     const alterados: string[] = []
     for (const repo of repos) {
       if (!repo.selecionado || !repo.caminhoLocal || repo.estado === 'nao-clonado') continue
-      const resultado = await this.deps.git.atualizar({ dest: repo.caminhoLocal, branch: repo.branchAcompanhada, pat })
-      repo.ultimoCommit = await this.deps.git.head(repo.caminhoLocal)
-      repo.estado = 'pronto'
-      alterados.push(...resultado.arquivosAlterados.map((arquivo) => `${repo.nome}/${arquivo}`))
+      this.andamento.set(repo.id, 'atualizando')
+      try {
+        const resultado = await this.deps.git.atualizar({
+          dest: repo.caminhoLocal,
+          branch: repo.branchAcompanhada,
+          pat,
+          aoProgredir: (linha) => this.andamento.set(repo.id, linha),
+        })
+        repo.ultimoCommit = await this.deps.git.head(repo.caminhoLocal)
+        repo.estado = 'pronto'
+        alterados.push(...resultado.arquivosAlterados.map((arquivo) => `${repo.nome}/${arquivo}`))
+      } finally {
+        this.andamento.delete(repo.id)
+      }
     }
     await this.deps.disco.gravarJson('repositorios.json', repos)
     if (alterados.length > 0) {
@@ -287,6 +302,10 @@ export class EsteiraApp {
 
   async repositorios(): Promise<Repositorio[]> {
     return (await this.deps.disco.lerJson<Repositorio[]>('repositorios.json')) ?? []
+  }
+
+  andamentoClone(): { id: string; progresso: string }[] {
+    return [...this.andamento].map(([id, progresso]) => ({ id, progresso }))
   }
 
   async fluxo(): Promise<BlocoFluxo[]> {

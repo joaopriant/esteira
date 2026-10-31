@@ -1,6 +1,7 @@
 import type { WorkItem } from '../shared/tipos'
 import type { AzurePort } from '../ports'
 import { dataMesesAtras } from '../core/texto'
+import { RedeDoSistema } from './rede'
 import { validarOrgUrl } from './seguro'
 
 const CAMPOS = [
@@ -136,7 +137,9 @@ export async function sdkOficial(orgUrl: string, pat: string): Promise<AzureSdk>
   const url = validarOrgUrl(orgUrl)
   const azdev = await import('azure-devops-node-api')
   const auth = azdev.getPersonalAccessTokenHandler(pat)
-  const conexao = new azdev.WebApi(url.toString().replace(/\/$/, ''), auth)
+  // O SDK usa o https do Node, que não lê o proxy nem a loja de certificados do Windows.
+  const opcoes = await RedeDoSistema.opcoesPara(url.toString())
+  const conexao = new azdev.WebApi(url.toString().replace(/\/$/, ''), auth, opcoes)
   const git = await conexao.getGitApi()
   const wit = await conexao.getWorkItemTrackingApi()
   return {

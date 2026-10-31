@@ -160,5 +160,6 @@ describe('limites de caminho e host', () => {
     expect(texto).not.toContain('dXNlcjpwYXQ')
     expect(texto).toContain('[redigido]')
     expect(redigirSegredo('https://usuario:segredo@example.com/org')).not.toContain('segredo')
+    expect(redigirSegredo('fatal: proxy http://ana:segredo-proxy@proxy:8080')).not.toContain('segredo-proxy')
   })
 })

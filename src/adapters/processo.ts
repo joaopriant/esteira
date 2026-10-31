@@ -3,9 +3,22 @@ import type { Processo } from '../ports'
 
 const TETO_SAIDA = 2_000_000
 
+function avisar(
+  ouvir: ((canal: 'stdout' | 'stderr', texto: string) => void) | undefined,
+  canal: 'stdout' | 'stderr',
+  texto: string,
+) {
+  if (!ouvir) return
+  try {
+    ouvir(canal, texto)
+  } catch {
+    // progresso não pode derrubar o processo
+  }
+}
+
 export function criarProcesso(): Processo {
   return {
-    executar({ comando, args, cwd, env, entrada, timeoutMs }) {
+    executar({ comando, args, cwd, env, entrada, timeoutMs, aoSaida }) {
       return new Promise((resolve, reject) => {
         const filho = spawn(comando, args, {
           cwd,
@@ -24,9 +37,11 @@ export function criarProcesso(): Processo {
         filho.stdout.setEncoding('utf8')
         filho.stderr.setEncoding('utf8')
         filho.stdout.on('data', (parte: string) => {
+          avisar(aoSaida, 'stdout', parte)
           if (stdout.length < TETO_SAIDA) stdout += parte.slice(0, TETO_SAIDA - stdout.length)
         })
         filho.stderr.on('data', (parte: string) => {
+          avisar(aoSaida, 'stderr', parte)
           if (stderr.length < TETO_SAIDA) stderr += parte.slice(0, TETO_SAIDA - stderr.length)
         })
         filho.on('error', (erro) => {
