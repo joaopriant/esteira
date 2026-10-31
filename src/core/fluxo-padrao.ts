@@ -77,8 +77,11 @@ export function fraseContrato(blocos: BlocoFluxo[], indice: number): string {
     const recebe = indice === 0 ? 'Ideia do PM ou sugestão do Radar' : `Story do bloco ${indice}`
     return `${recebe} → story no modelo`
   }
-  const confrontosAntes = blocos.slice(0, indice).filter((item) => item.papel === 'confrontar').length
-  const recebe = indice === 0 ? 'Ideia do PM, ainda sem story' : `Story do bloco ${indice} + achados ${confrontosAntes}`
+  const antes = blocos.slice(0, indice)
+  const confrontosAntes = antes.filter((item) => item.papel === 'confrontar').length
+  const autor = antes.map((item) => item.papel).lastIndexOf('escrever')
+  const story = autor < 0 ? 'Ideia do PM, ainda sem story' : `Story do bloco ${autor + 1}`
+  const recebe = indice === 0 ? story : `${story} + achados ${confrontosAntes}`
   return `${recebe} → só novos achados (não reescreve a story)`
 }
 

@@ -34,6 +34,7 @@ export function FluxoView({ aoConexoes }: { aoConexoes?: () => void }) {
   const [pilha, setPilha] = useState<Marco[]>([])
   const [pendente, setPendente] = useState<Preset | null>(null)
   const [soltar, setSoltar] = useState<number | null>(null)
+  const [tentativa, setTentativa] = useState(0)
   const marcoTexto = useRef(false)
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export function FluxoView({ aoConexoes }: { aoConexoes?: () => void }) {
     return () => {
       vivo = false
     }
-  }, [])
+  }, [tentativa])
 
   const selecionado = blocos.find((bloco) => bloco.id === selecao) ?? null
   const indiceSelecionado = selecionado ? blocos.findIndex((bloco) => bloco.id === selecionado.id) : -1
@@ -163,6 +164,18 @@ export function FluxoView({ aoConexoes }: { aoConexoes?: () => void }) {
   }
 
   if (!pronto && !erro) return <p>Abrindo o fluxo.</p>
+  // Sem o fluxo gravado lido, editar e salvar sobrescreveria o fluxo real.
+  if (!pronto) {
+    return (
+      <FalhaAoAbrir
+        texto={erro}
+        aoTentar={() => {
+          setErro('')
+          setTentativa((atual) => atual + 1)
+        }}
+      />
+    )
+  }
 
   const numeros = selecionado ? stats.find((item) => item.blocoId === selecionado.id) ?? stats.find((item) => item.blocoNome === selecionado.nome) : undefined
   const taxa = numeros && numeros.gerados > 0 ? Math.round((numeros.aceitos / numeros.gerados) * 100) : null
@@ -269,9 +282,10 @@ export function FluxoView({ aoConexoes }: { aoConexoes?: () => void }) {
                   }}
                   onDrop={(evento) => {
                     evento.preventDefault()
-                    const de = Number(evento.dataTransfer.getData('text/plain'))
+                    const dado = evento.dataTransfer.getData('text/plain')
+                    const de = Number(dado)
                     setSoltar(null)
-                    if (Number.isNaN(de)) return
+                    if (!/^\d+$/.test(dado)) return
                     mover(de, indice)
                   }}
                 >
@@ -563,5 +577,14 @@ function Seta({ para }: { para: 'cima' | 'baixo' }) {
     <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true">
       <path d={d} fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  )
+}
+
+export function FalhaAoAbrir({ texto, aoTentar }: { texto: string; aoTentar: () => void }) {
+  return (
+    <div className="fluxo-estudio">
+      <Erro texto={texto} />
+      <button className="btn-sec" type="button" onClick={aoTentar}>Tentar de novo</button>
+    </div>
   )
 }

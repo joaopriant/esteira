@@ -6,7 +6,7 @@ import { BlurText } from '../src/renderer/components/react-bits/BlurText'
 import { CountUp } from '../src/renderer/components/react-bits/CountUp'
 import { SpotlightCard } from '../src/renderer/components/react-bits/SpotlightCard'
 import { ConexoesView } from '../src/renderer/telas/Conexoes'
-import { FluxoView } from '../src/renderer/telas/Fluxo'
+import { FalhaAoAbrir, FluxoView } from '../src/renderer/telas/Fluxo'
 import type { EstadoApp } from '../src/shared/tipos'
 
 describe('react bits', () => {
@@ -22,5 +22,15 @@ describe('react bits', () => {
     expect(pausa).toMatch(/dashed/)
     expect(css).not.toContain('stroke-dasharray')
     expect(renderToStaticMarkup(createElement(ConexoesView, { estado: { conexoesAtivas: 0, produtos: [] } as EstadoApp, recarregar: async () => {} }))).toContain('Abrindo as conexões.')
+  })
+})
+
+describe('fluxo sem leitura', () => {
+  it('mostra só o erro e tentar de novo, sem editor nem salvar', () => {
+    const html = renderToStaticMarkup(createElement(FalhaAoAbrir, { texto: 'Não consegui ler o fluxo.', aoTentar: () => {} }))
+    expect(html).toContain('Não consegui ler o fluxo.')
+    expect(html).toContain('Tentar de novo')
+    expect(html).not.toContain('Salvar fluxo')
+    expect(html).not.toContain('fluxo-blocos')
   })
 })

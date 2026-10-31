@@ -186,8 +186,11 @@ describe('fluxo', () => {
     const fluxo = fluxoPadrao()
     expect(fraseContrato(fluxo, 0)).toBe('Ideia do PM ou sugestão do Radar → story no modelo')
     expect(fraseContrato(fluxo, 1)).toBe('Story do bloco 1 + achados 0 → só novos achados (não reescreve a story)')
-    expect(fraseContrato(fluxo, 2)).toBe('Story do bloco 2 + achados 1 → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxo, 2)).toBe('Story do bloco 1 + achados 1 → só novos achados (não reescreve a story)')
     expect(fraseContrato(fluxoSoConfrontos(), 0)).toBe('Ideia do PM, ainda sem story → só novos achados (não reescreve a story)')
+    expect(fraseContrato(fluxoSoConfrontos(), 1)).toBe('Ideia do PM, ainda sem story + achados 1 → só novos achados (não reescreve a story)')
+    const escreveDepois = [...fluxoSoConfrontos().slice(0, 1), fluxoPadrao()[0]!, ...fluxoSoConfrontos().slice(1)]
+    expect(fraseContrato(escreveDepois, 2)).toBe('Story do bloco 2 + achados 1 → só novos achados (não reescreve a story)')
     expect(fraseContrato(fluxo, 9)).toBe('')
   })
 })
