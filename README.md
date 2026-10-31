@@ -21,9 +21,60 @@ npm ci
 npm run dist:win
 ```
 
-O instalador sai em `release/`. Ele instala para o seu usuário, sem pedir elevação. O atalho se chama Esteira.
+O instalador sai em `release/`, com o nome `Esteira-Setup-<versão>.exe`. Ele instala para o seu usuário, sem pedir elevação. O atalho se chama Esteira.
 
-O mesmo comando roda no GitHub Actions, no job `instalador-windows`. O repositório é privado. Não publique o `.exe` fora da empresa: ele não é assinado.
+O mesmo comando roda no GitHub Actions, no job `instalador-windows`, sem certificado. Esse job só gera o `.exe` de verificação do pull request.
+
+A tag `v` mais a `version` do `package.json` (por exemplo `v0.1.0`), num commit que já está na `main`, dispara o workflow `release`. Ele assina o instalador e abre um **rascunho** da GitHub Release. O rascunho não fica público sozinho: alguém com permissão publica quando quiser. Sem certificado completo, ou com segredo pela metade, esse job falha e não publica.
+
+Antes da primeira tag, crie o environment **`esteira-release`** em Settings → Environments, com pelo menos um revisor obrigatório, e grave os segredos de assinatura nesse environment. O workflow espera a aprovação e só então lê esses segredos. Se o environment ainda não existir, o GitHub cria um vazio, sem aprovação. Num repositório privado, revisor obrigatório pede GitHub Pro, Team ou Enterprise.
+
+Antes da primeira tag, confira também:
+
+- **Repositório privado.** Enquanto ele for público, nunca publique o rascunho: o instalador ficaria aberto para qualquer um.
+- **Environment `esteira-release`** com revisor obrigatório e, em "Deployment branches and tags", só tags `v*`.
+- **Ruleset de tags `v*`** em Settings → Rules, limitando quem cria a tag.
+- **Reexecutar uma tag:** apague antes o rascunho da Release dessa tag.
+
+## Atualização
+
+Com um feed configurado, a Esteira procura versão nova ao abrir e pergunta antes de instalar. Sem o sim, nada é baixado e nada é instalado.
+
+O feed é um diretório HTTPS com três arquivos da Release: `latest.yml`, o `.exe` e o `.exe.blockmap`. Na máquina, uma destas formas:
+
+- variável de usuário `ESTEIRA_UPDATE_URL`
+- arquivo `%APPDATA%\Esteira\atualizacao.json` com `{ "url": "https://servidor/esteira/" }`
+
+A variável ganha do arquivo. A URL é `https`, sem usuário e senha. Um query string (por exemplo o SAS de leitura de um container) fica só nessa máquina.
+
+O app instalado fala com esse diretório. Num repositório privado, a permissão do GitHub que lê o anexo de uma Release também lê o código (`contents: read`). O token que publica o rascunho fica no GitHub Actions e não entra no binário. O endereço `https://feed.esteira.invalid/updates/` dentro do instalador não resolve: ele só segura o lugar para o empacotador gerar o `latest.yml`. Quem serve o feed é o endereço configurado na máquina, um blob da empresa ou um HTTPS interno. Depois de cada Release, copie os três arquivos para esse diretório, por cima dos anteriores.
+
+## Assinatura do instalador
+
+Sem as variáveis de certificado, o `npm run dist:win` local e o job `instalador-windows` seguem sem assinatura. Nesse estado o SmartScreen mostra editor desconhecido e pode bloquear o arquivo. O AppLocker da empresa também pode barrar. A TI libera o `.exe`, ou o certificado entra no environment `esteira-release`.
+
+O workflow `release` exige um dos conjuntos abaixo, completo. Falta ou metade faz o job falhar, com o nome do segredo que ficou de fora. O `app-update.yml` do build assinado leva `publisherName`; sem esse nome a atualização não confere o editor do instalador, e o job também falha. No PFX, o electron-builder grava o CN lido do certificado. No Azure, o nome é o `AZURE_TRUSTED_SIGNING_PUBLISHER`.
+
+Certificado Authenticode em `.pfx` exportável. O token físico de um certificado EV não entra no GitHub Actions. Segredos:
+
+- `WIN_CSC_LINK`: o `.pfx` em base64
+- `WIN_CSC_KEY_PASSWORD`: a senha do arquivo
+
+`CSC_LINK` e `CSC_KEY_PASSWORD` valem no lugar desse par.
+
+Azure Trusted Signing assina na nuvem da Microsoft, sem `.pfx` no repositório. Na conta: um perfil de certificado e um app registration no Entra com o papel **Trusted Signing Certificate Profile Signer**. Segredos:
+
+- `AZURE_TENANT_ID`
+- `AZURE_CLIENT_ID`
+- `AZURE_CLIENT_SECRET`
+- `AZURE_TRUSTED_SIGNING_ENDPOINT` (o endpoint da região, como `https://eus.codesigning.azure.net`)
+- `AZURE_TRUSTED_SIGNING_ACCOUNT` (o nome da conta Trusted Signing)
+- `AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE` (o nome do perfil)
+- `AZURE_TRUSTED_SIGNING_PUBLISHER` (o CN do certificado, o mesmo texto que o Windows deve mostrar)
+
+Com os dois conjuntos presentes, vale o Azure Trusted Signing.
+
+Com assinatura, o Windows mostra o nome do editor. Esse build grava o nome no app, e a atualização seguinte recusa um instalador de outro editor. Enquanto o build sai sem assinatura, a confiança do download é o HTTPS do feed. O aviso do SmartScreen pode continuar nos primeiros downloads: a reputação se acumula com o uso, e um certificado novo não apaga o aviso no primeiro dia. Desde 2024 a Microsoft também não dá reputação imediata a um EV. A assinatura faz o aviso falar de um editor conhecido. Sem ela, cada `.exe` novo é um arquivo sem dono.
 
 ## Rodar sem instalar
 
@@ -65,7 +116,7 @@ Apagar essa pasta zera a Esteira. Não apaga nada no Azure.
 
 ## O que a v1 não faz
 
-Não abre Jira, o fluxo é um canvas linear (sem ramificação) e não atende outro PM na mesma instalação. Não atualiza sozinha. Fechar o app no meio de um bloco deixa a story no último passo gravado. O Radar lê Teams, Slack, WhatsApp, Granola e Plaud; não envia mensagem em nome de ninguém.
+Não abre Jira, o fluxo é um canvas linear (sem ramificação) e não atende outro PM na mesma instalação. A atualização pede um feed HTTPS configurado na máquina e um sim antes de instalar. Fechar o app no meio de um bloco deixa a story no último passo gravado. O Radar lê Teams, Slack, WhatsApp, Granola e Plaud; não envia mensagem em nome de ninguém.
 
 ## Testes
 
