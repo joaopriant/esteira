@@ -228,12 +228,12 @@ describe('progresso ao vivo', () => {
 
   it('recusa editar a story enquanto a esteira roda', async () => {
     const { app, soltar } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
     const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
     try {
-      await vi.waitFor(async () => {
-        const atual = await app.obterStory(inicio.id)
-        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
-      })
+      await rodando
       await expect(
         app.editarStory(inicio.id, { titulo: 'mudou', corpo: 'x', descricao: '', criteriosDeAceite: '' }),
       ).rejects.toThrow('A esteira está rodando. Pare ou espere o fim para editar a story.')
@@ -252,12 +252,12 @@ describe('progresso ao vivo', () => {
 
   it('continuar retoma do bloco interrompido sem perder o que já foi gravado', async () => {
     const { app, soltar } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
     const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
     try {
-      await vi.waitFor(async () => {
-        const atual = await app.obterStory(inicio.id)
-        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
-      })
+      await rodando
       const parada = await app.parar(inicio.id)
       const ids = parada.achados.map((achado) => achado.id)
       expect(ids.length).toBeGreaterThan(0)
@@ -277,12 +277,12 @@ describe('progresso ao vivo', () => {
 
   it('recomeçar roda do início e mantém os achados já gravados', async () => {
     const { app, soltar } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
     const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
     try {
-      await vi.waitFor(async () => {
-        const atual = await app.obterStory(inicio.id)
-        expect(atual.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('rodando')
-      })
+      await rodando
       const parada = await app.parar(inicio.id)
       const ids = parada.achados.map((achado) => achado.id)
       soltar()
@@ -292,6 +292,81 @@ describe('progresso ao vivo', () => {
       expect(pronta.passos.every((passo) => passo.estado === 'concluido')).toBe(true)
     } finally {
       soltar()
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
+
+  it('parar interrompe uma execução disparada por continuar', async () => {
+    const { app } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
+    try {
+      await rodando
+      await app.parar(inicio.id)
+      const denovo = quandoCodigoRodar(app, () => inicio.id)
+      const continuando = app.continuar(inicio.id)
+      await denovo
+      const parada = await app.parar(inicio.id)
+      expect(parada.estado).toBe('interrompida')
+      expect(parada.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('interrompido')
+      await expect(continuando).resolves.toMatchObject({ estado: 'interrompida' })
+    } finally {
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
+
+  it('parar interrompe uma execução disparada por recomeçar', async () => {
+    const { app } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
+    try {
+      await rodando
+      await app.parar(inicio.id)
+      const denovo = quandoCodigoRodar(app, () => inicio.id)
+      const recomecando = app.recomecar(inicio.id)
+      await denovo
+      const parada = await app.parar(inicio.id)
+      expect(parada.estado).toBe('interrompida')
+      expect(parada.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('interrompido')
+      await expect(recomecando).resolves.toMatchObject({ estado: 'interrompida' })
+    } finally {
+      await app.parar(inicio.id).catch(() => undefined)
+    }
+  })
+
+  it('parar reconcilia uma story rodando sem execução viva', async () => {
+    const { app, dataDir } = await appDeTeste()
+    const [resumo] = await app.listarStories()
+    const arquivo = path.join(dataDir, 'stories', `${resumo!.id}.json`)
+    const story = JSON.parse(await fs.readFile(arquivo, 'utf8')) as { estado: string; passos: { estado: string }[] }
+    story.estado = 'rodando'
+    story.passos[2]!.estado = 'rodando'
+    story.passos[3]!.estado = 'aguardando'
+    await fs.writeFile(arquivo, JSON.stringify(story))
+    const parada = await app.parar(resumo!.id)
+    expect(parada.estado).toBe('interrompida')
+    expect(parada.passos.map((passo) => passo.estado)).toEqual(['concluido', 'concluido', 'interrompido', 'aguardando'])
+    expect(JSON.parse(await fs.readFile(arquivo, 'utf8'))).toMatchObject({ estado: 'interrompida' })
+  })
+
+  it('abrir o app marca como interrompida a story que ficou rodando', async () => {
+    const { app, dataDir } = await appQueTravaNoCodigo()
+    let id = ''
+    const rodando = quandoCodigoRodar(app, () => id)
+    const inicio = await app.iniciarEsteira('Permitir estorno parcial de um PIX já liquidado.', 'pix')
+    id = inicio.id
+    try {
+      await rodando
+      const reaberto = await criarAplicacao({ dataDir, modo: 'falso', agora: () => AGORA })
+      const story = await reaberto.obterStory(inicio.id)
+      expect(story.estado).toBe('interrompida')
+      expect(story.passos.find((passo) => passo.blocoId === 'confrontar-codigo')?.estado).toBe('interrompido')
+      await expect(reaberto.continuar(inicio.id)).resolves.toMatchObject({ estado: 'pronta' })
+    } finally {
       await app.parar(inicio.id).catch(() => undefined)
     }
   })
@@ -518,7 +593,18 @@ function scriptNeto(): string {
   ].join('\n')
 }
 
-async function appQueTravaNoCodigo(): Promise<{ app: EsteiraApp; soltar: () => void }> {
+// Espera pelo evento, não pelo disco: ler o arquivo enquanto a esteira grava dá EPERM no rename do Windows.
+function quandoCodigoRodar(app: EsteiraApp, id: () => string): Promise<void> {
+  return new Promise((resolve) => {
+    const largar = app.ouvir((evento) => {
+      if (evento.storyId !== id() || evento.blocoId !== 'confrontar-codigo' || evento.fase !== 'rodando') return
+      largar()
+      resolve()
+    })
+  })
+}
+
+async function appQueTravaNoCodigo(): Promise<{ app: EsteiraApp; dataDir: string; soltar: () => void }> {
   const base = criarClaudeFalso()
   let travar = false
   const claude: ClaudePort = {
@@ -539,6 +625,7 @@ async function appQueTravaNoCodigo(): Promise<{ app: EsteiraApp; soltar: () => v
   travar = true
   return {
     app,
+    dataDir,
     soltar() {
       travar = false
     },

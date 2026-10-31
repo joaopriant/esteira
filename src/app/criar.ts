@@ -52,6 +52,11 @@ export async function criarAplicacao(opcoes: {
     skillsUsuario,
     radares: modo === 'falso' ? leitoresFalsos() : leitoresReais(dataDir, segredos),
   })
+  try {
+    await app.reconciliarPresas()
+  } catch {
+    // Não impede o app de abrir: parar() reconcilia a story presa quando o usuário pedir.
+  }
   if (opcoes.semear && modo === 'falso') {
     if ((await app.produtos()).length === 0) await semearExemplo(app)
     await app.semearRadarSeVazio()

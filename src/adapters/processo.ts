@@ -27,7 +27,13 @@ export function matarArvore(filho: ChildProcess): void {
   if (!pid) return
   const plano = planoDeMorte(pid)
   if ('comando' in plano) {
-    spawn(plano.comando, plano.args, { windowsHide: true, stdio: 'ignore' })
+    spawn(plano.comando, plano.args, { windowsHide: true, stdio: 'ignore' }).on('error', () => {
+      try {
+        filho.kill()
+      } catch {
+        /* já saiu */
+      }
+    })
     return
   }
   try {

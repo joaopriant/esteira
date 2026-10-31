@@ -127,11 +127,18 @@ export class EsteiraApp {
     if (!exec) {
       const story = await this.obterStory(id)
       if (story.estado !== 'rodando') return story
-      throw new Error('Nada para parar.')
+      return this.reconciliarPresa(story)
     }
     exec.controle.abort()
     await exec.promessa
     return this.obterStory(id)
+  }
+
+  async reconciliarPresas(): Promise<void> {
+    for (const resumo of await this.listarStories()) {
+      if (resumo.estado !== 'rodando' || this.execucoes.has(resumo.id)) continue
+      await this.reconciliarPresa(await this.obterStory(resumo.id))
+    }
   }
 
   async estado(): Promise<EstadoApp> {
@@ -762,20 +769,21 @@ export class EsteiraApp {
 
   async continuar(id: string): Promise<StoryRun> {
     const story = await this.obterStory(id)
-    if (story.estado === 'rodando') throw new Error('A esteira ainda está rodando.')
+    if (story.estado === 'rodando' || this.execucoes.has(id)) throw new Error('A esteira ainda está rodando.')
     const passo = story.passos.find((item) => item.estado === 'pausado' || item.estado === 'erro' || item.estado === 'interrompido')
     if (!passo) throw new Error('Nada para continuar.')
     const bloco = story.blocos.find((item) => item.id === passo.blocoId)
     if (!bloco) throw new Error('O bloco não está mais nesta story.')
-    const sinal = new AbortController().signal
-    const resultado = await this.rodarBloco(story, bloco, sinal)
-    if (resultado !== 'ok') return story
-    return this.avancar(story, false, sinal)
+    return this.executar(story, async (sinal) => {
+      const resultado = await this.rodarBloco(story, bloco, sinal)
+      if (resultado !== 'ok') return story
+      return this.avancar(story, false, sinal)
+    })
   }
 
   async recomecar(id: string): Promise<StoryRun> {
     const story = await this.obterStory(id)
-    if (story.estado === 'rodando') throw new Error('A esteira ainda está rodando.')
+    if (story.estado === 'rodando' || this.execucoes.has(id)) throw new Error('A esteira ainda está rodando.')
     if (story.estado !== 'interrompida' && story.estado !== 'erro') throw new Error('Nada para recomeçar.')
     if (story.diffPendente) throw new Error('Aprove ou cancele o ajuste antes de recomeçar.')
     for (const passo of story.passos) {
@@ -786,8 +794,10 @@ export class EsteiraApp {
     story.erro = undefined
     story.pausadaNoBlocoId = undefined
     story.atualizadaEm = this.deps.agora().toISOString()
-    await this.gravarStory(story)
-    return this.avancar(story, false, new AbortController().signal)
+    return this.executar(story, async (sinal) => {
+      await this.gravarStory(story)
+      return this.avancar(story, false, sinal)
+    })
   }
 
   async editarStory(id: string, texto: StoryTexto): Promise<StoryRun> {
@@ -1018,8 +1028,14 @@ export class EsteiraApp {
   }
 
   private disparar(story: StoryRun): void {
+    void this.executar(story, (sinal) => this.avancar(story, false, sinal)).catch(() => undefined)
+  }
+
+  // Registra a execução em `execucoes` para que parar() e aguardar() a enxerguem; resolve com a story já fechada.
+  private async executar(story: StoryRun, corpo: (sinal: AbortSignal) => Promise<StoryRun>): Promise<StoryRun> {
     const controle = new AbortController()
-    const promessa = this.avancar(story, false, controle.signal).then(
+    const resultado = corpo(controle.signal)
+    const promessa = resultado.then(
       () => undefined,
       async (erro: unknown) => {
         await this.forcarFim(story, controle.signal, erro)
@@ -1030,6 +1046,22 @@ export class EsteiraApp {
       const atual = this.execucoes.get(story.id)
       if (atual?.controle === controle) this.execucoes.delete(story.id)
     })
+    await promessa
+    return resultado
+  }
+
+  private async reconciliarPresa(story: StoryRun): Promise<StoryRun> {
+    const passo = story.passos.find((item) => item.estado === 'rodando')
+    if (passo) {
+      passo.estado = 'interrompido'
+      passo.erro = undefined
+    }
+    story.estado = 'interrompida'
+    story.pausadaNoBlocoId = passo?.blocoId
+    story.erro = undefined
+    story.atualizadaEm = this.deps.agora().toISOString()
+    await this.gravarStory(story)
+    return story
   }
 
   private emitir(story: StoryRun, passo: PassoExecucao, fase: EventoBloco['fase']): void {
