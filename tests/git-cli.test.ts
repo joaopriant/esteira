@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { pausaCloneExemplo } from '../src/adapters/falsos'
 import { criarAplicacao } from '../src/app/criar'
 import { criarProcesso } from '../src/adapters/processo'
 import {
@@ -288,6 +289,38 @@ describe('progresso na tela', () => {
     expect(repos.find((repo) => repo.id === 'repo-pagamentos')?.estado).toBe('pronto')
     expect(await app.andamentoClone()).toEqual([])
     await fs.rm(dataDir, { recursive: true, force: true })
+  })
+})
+
+describe('pausa do clone no modo exemplo', () => {
+  it('não segura o clone quando ESTEIRA_FAKE não está ligado', async () => {
+    const anterior = process.env.ESTEIRA_FAKE
+    delete process.env.ESTEIRA_FAKE
+    const linhas: string[] = []
+    try {
+      await pausaCloneExemplo((linha) => linhas.push(linha))
+    } finally {
+      if (anterior === undefined) delete process.env.ESTEIRA_FAKE
+      else process.env.ESTEIRA_FAKE = anterior
+    }
+    expect(linhas).toEqual([])
+  })
+
+  it('mostra uma linha de progresso do git enquanto o exemplo segura o clone', async () => {
+    vi.useFakeTimers()
+    const anterior = process.env.ESTEIRA_FAKE
+    process.env.ESTEIRA_FAKE = '1'
+    const linhas: string[] = []
+    try {
+      const pendente = pausaCloneExemplo((linha) => linhas.push(linha))
+      expect(linhas).toEqual(['Receiving objects: 42% (120/286)'])
+      await vi.advanceTimersByTimeAsync(12_000)
+      await pendente
+    } finally {
+      if (anterior === undefined) delete process.env.ESTEIRA_FAKE
+      else process.env.ESTEIRA_FAKE = anterior
+      vi.useRealTimers()
+    }
   })
 })
 
