@@ -109,9 +109,13 @@ export class EsteiraApp {
     let pendentes = 0
     let gerando = false
     for (const produto of produtos) {
-      const wiki = await this.lerWiki(produto.id)
-      pendentes += wiki.modulos.filter((modulo) => modulo.estado === 'pendente' || modulo.estado === 'gerando').length
-      if (wiki.modulos.some((modulo) => modulo.estado === 'gerando')) gerando = true
+      try {
+        const wiki = await this.lerWiki(produto.id)
+        pendentes += wiki.modulos.filter((modulo) => modulo.estado === 'pendente' || modulo.estado === 'gerando').length
+        if (wiki.modulos.some((modulo) => modulo.estado === 'gerando')) gerando = true
+      } catch (erro) {
+        console.error(`Não li a wiki de ${produto.nome}.`, erro instanceof Error ? erro.message : erro)
+      }
     }
     const sugestoes = await this.lerSugestoes()
     const painel = await this.montarPainel()
@@ -1231,10 +1235,14 @@ export class EsteiraApp {
       try {
         await this.gerarModulo(job.produtoId, job.moduloId)
       } catch (erro) {
-        await this.marcarModulo(job.produtoId, job.moduloId, {
-          estado: 'erro',
-          erro: erro instanceof Error ? erro.message : 'Falha ao gerar o módulo.',
-        })
+        try {
+          await this.marcarModulo(job.produtoId, job.moduloId, {
+            estado: 'erro',
+            erro: erro instanceof Error ? erro.message : 'Falha ao gerar o módulo.',
+          })
+        } catch (falha) {
+          console.error(`Não gravei o erro do módulo ${job.moduloId}.`, falha instanceof Error ? falha.message : falha)
+        }
       }
     }
   }

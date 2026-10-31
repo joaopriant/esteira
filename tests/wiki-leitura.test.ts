@@ -208,7 +208,7 @@ describe('retomada da wiki', () => {
     }
   })
 
-  it('a fila segue no próximo ciclo se gravar o estado falhar', async () => {
+  it('gravar o erro falhando não para os jobs seguintes e o módulo volta no próximo ciclo', async () => {
     const { app, dataDir, claude } = await appContado()
     await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/estorno', 'pendente')
     await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/liquidacao', 'pendente')
@@ -228,13 +228,27 @@ describe('retomada da wiki', () => {
       await app.retomarWiki()
       await app.drenarWiki()
       expect(spy).toHaveBeenCalled()
-      expect(claude.modulosGerados.slice(antes)).toEqual([])
+      expect(claude.modulosGerados.slice(antes)).toEqual(['pagamentos-api/liquidacao'])
       await app.retomarWiki()
       await app.drenarWiki()
       expect(claude.modulosGerados.slice(antes).sort()).toEqual(['pagamentos-api/estorno', 'pagamentos-api/liquidacao'])
       const wiki = await app.wiki('pix')
       expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/estorno')?.estado).toBe('pronto')
       expect(wiki.modulos.find((modulo) => modulo.id === 'pagamentos-api/liquidacao')?.estado).toBe('pronto')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('índice corrompido não derruba o estado()', async () => {
+    const { app, dataDir } = await appContado()
+    await estadoNoIndice(dataDir, 'pix', 'pagamentos-api/estorno', 'pendente')
+    await fs.writeFile(path.join(dataDir, 'wiki', 'contas', 'index.json'), '{nao é json')
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const estado = await app.estado()
+      expect(estado.filaWiki.pendentes).toBe(1)
+      expect(spy).toHaveBeenCalled()
     } finally {
       spy.mockRestore()
     }
