@@ -158,6 +158,28 @@ describe('versão, assinatura, cota e timeout', () => {
     await expect(criarClaudeCli(processo, 'claude', pasta).run(pedido())).rejects.toThrow(/weekly limit/)
   })
 
+  it('aviso de limite no stderr não derruba execução que deu certo', async () => {
+    const { processo } = comVersao('2.1.259', {
+      codigo: 0,
+      stdout: JSON.stringify({ structured_output: { achados: [] } }),
+      stderr: 'warning: you are close to your usage limit',
+    })
+    const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
+    pastas.push(pasta)
+    await expect(criarClaudeCli(processo, 'claude', pasta).run(pedido())).resolves.toMatchObject({ json: { achados: [] } })
+  })
+
+  it('corta em 500 caracteres o stderr e o erro do JSON', () => {
+    const longo = `inicio ${'x'.repeat(3_000)} RABO_QUE_NAO_ENTRA`
+    const doStderr = DiagnosticoClaude.falha({ codigo: 1, stdout: '', stderr: longo }) ?? ''
+    const doJson = DiagnosticoClaude.falha({ codigo: 1, stdout: JSON.stringify({ is_error: true, result: longo, error: longo }), stderr: '' }) ?? ''
+    for (const mensagem of [doStderr, doJson]) {
+      expect(mensagem).toContain('inicio')
+      expect(mensagem.length).toBeLessThanOrEqual(500)
+      expect(mensagem).not.toContain('RABO_QUE_NAO_ENTRA')
+    }
+  })
+
   it('lê a versão só no começo do stdout', async () => {
     expect(DiagnosticoClaude.lerVersao('2.1.259 (Claude Code)')).toEqual([2, 1, 259])
     expect(DiagnosticoClaude.lerVersao('Node.js v22.4.0')).toBeNull()

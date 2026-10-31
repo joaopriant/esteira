@@ -14,6 +14,12 @@ export function matarFilho(filho: Pick<ChildProcess, 'pid' | 'kill'>, plataforma
       windowsHide: true,
       stdio: 'ignore',
       shell: false,
+    }).on('error', () => {
+      try {
+        filho.kill('SIGKILL')
+      } catch {
+        /* já saiu */
+      }
     })
     return
   }
@@ -66,7 +72,7 @@ function buscaReal(env: NodeJS.ProcessEnv | undefined): BuscaNoDisco {
   }
 }
 
-export function criarProcesso(busca?: BuscaNoDisco): Processo {
+export function criarProcesso(busca?: BuscaNoDisco, plataforma: NodeJS.Platform = process.platform): Processo {
   return {
     executar({ comando, args, cwd, env, entrada, timeoutMs }) {
       return new Promise((resolve, reject) => {
@@ -100,7 +106,7 @@ export function criarProcesso(busca?: BuscaNoDisco): Processo {
         }
         timer = setTimeout(() => {
           estourou = true
-          matarFilho(filho)
+          matarFilho(filho, plataforma)
           graca = setTimeout(() => {
             terminar(() => reject(estouro()))
             soltar(filho)

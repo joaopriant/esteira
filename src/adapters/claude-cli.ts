@@ -121,11 +121,11 @@ export class DiagnosticoClaude {
   }
 
   static falha(resultado: { codigo: number; stdout: string; stderr: string }): string | null {
-    const frase = this.fraseDeLimite(resultado.stderr)
-    if (frase) return redigirSegredo(`A assinatura do Claude atingiu o limite de uso. ${frase}`)
     const doJson = this.erroDoTexto(resultado.stdout)
     if (doJson) return doJson
     if (resultado.codigo === 0) return null
+    const frase = this.fraseDeLimite(resultado.stderr)
+    if (frase) return redigirSegredo(`A assinatura do Claude atingiu o limite de uso. ${frase}`)
     return redigirSegredo(resultado.stderr.trim() || 'O Claude Code falhou.')
   }
 

@@ -202,7 +202,16 @@ describe('criarProcesso', () => {
     )
   })
 
-  it('rejeita o estouro mesmo sem o close', async () => {
+  it('se o taskkill não abre, cai no kill do filho', () => {
+    const taskkill = new EventEmitter()
+    spawnMock.mockImplementation(() => taskkill)
+    const kill = vi.fn(() => true)
+    matarFilho({ pid: 99, kill }, 'win32')
+    expect(() => taskkill.emit('error', Object.assign(new Error('spawn taskkill ENOENT'), { code: 'ENOENT' }))).not.toThrow()
+    expect(kill).toHaveBeenCalledWith('SIGKILL')
+  })
+
+  it.each(['linux', 'win32'] as const)('rejeita o estouro mesmo sem o close (%s)', async (plataforma) => {
     vi.useFakeTimers()
     try {
       const stdout = new EventEmitter()
@@ -221,15 +230,25 @@ describe('criarProcesso', () => {
       preso.kill = vi.fn(() => true)
       preso.pid = 4242
       preso.unref = () => {}
-      spawnMock.mockImplementation(() => preso)
-      const promessa = criarProcesso().executar({
+      const taskkill = new EventEmitter()
+      spawnMock.mockImplementation((comando: string) => (comando === 'taskkill' ? taskkill : preso))
+      const promessa = criarProcesso(disco({}, '', plataforma), plataforma).executar({
         comando: process.execPath,
         args: ['-e', '0'],
         timeoutMs: 400,
       })
       const assertiva = expect(promessa).rejects.toThrow(/passou de 400 ms/)
       await vi.advanceTimersByTimeAsync(400)
-      expect(preso.kill).toHaveBeenCalledWith('SIGKILL')
+      if (plataforma === 'win32') {
+        expect(preso.kill).not.toHaveBeenCalled()
+        expect(spawnMock).toHaveBeenCalledWith(
+          'taskkill',
+          ['/pid', '4242', '/t', '/f'],
+          expect.objectContaining({ shell: false, windowsHide: true, stdio: 'ignore' }),
+        )
+      } else {
+        expect(preso.kill).toHaveBeenCalledWith('SIGKILL')
+      }
       await vi.advanceTimersByTimeAsync(GRACA_MS)
       await assertiva
     } finally {
