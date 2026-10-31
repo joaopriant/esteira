@@ -5,6 +5,8 @@ import { redigirSegredo, validarBinario } from './seguro'
 
 const VERSAO_MINIMA: [number, number, number] = [2, 1, 259]
 const TIMEOUT_WIKI_MS = 600_000
+const ESPERA_CLAUDE_MS = 30_000
+const FRASE_LIMITE = /you'?ve hit your\b[\s\S]{0,160}?\b(?:limit|budget)|usage limit|spend limit/i
 
 export class ErroClaude extends Error {
   constructor(message: string) {
@@ -27,8 +29,8 @@ export class DiagnosticoClaude {
     this.versoesOk.add(comando)
   }
 
-  static lerVersao(texto: string): [number, number, number] | null {
-    const achado = texto.match(/(\d+)\.(\d+)\.(\d+)/)
+  static lerVersao(stdout: string): [number, number, number] | null {
+    const achado = stdout.match(/^\s*(\d+)\.(\d+)\.(\d+)/)
     if (!achado) return null
     return [Number(achado[1]), Number(achado[2]), Number(achado[3])]
   }
@@ -54,14 +56,14 @@ export class DiagnosticoClaude {
     if (this.versoesOk.has(comando)) return
     let saida: { codigo: number; stdout: string; stderr: string }
     try {
-      saida = await processo.executar({ comando, args: ['--version'], env, timeoutMs: 8_000 })
-    } catch {
-      throw new ErroClaude('Não consegui executar o Claude para ler a versão. A opção --permission-prompts exige a 2.1.259 ou mais nova.')
+      saida = await processo.executar({ comando, args: ['--version'], env, timeoutMs: ESPERA_CLAUDE_MS })
+    } catch (erro) {
+      throw new ErroClaude(detalheDaChamada(erro, 'Não encontrei o executável do Claude nesta máquina.', 'A leitura da versão do Claude demorou demais.'))
     }
     if (saida.codigo !== 0) {
       throw new ErroClaude('O executável não respondeu a --version. A opção --permission-prompts exige a 2.1.259 ou mais nova.')
     }
-    const lida = this.lerVersao(`${saida.stdout}\n${saida.stderr}`)
+    const lida = this.lerVersao(saida.stdout)
     if (!lida) {
       throw new ErroClaude('Não consegui ler a versão do Claude Code. A opção --permission-prompts exige a 2.1.259 ou mais nova.')
     }
@@ -102,6 +104,10 @@ export class DiagnosticoClaude {
     return { autenticado: false, detalhe: 'O Claude não está logado na assinatura. Rode claude auth login.' }
   }
 
+  static fraseDeLimite(stderr: string): string | null {
+    return stderr.match(FRASE_LIMITE)?.[0]?.trim() ?? null
+  }
+
   static erroDoTexto(bruto: string): string | null {
     const texto = bruto.trim()
     if (!texto) return null
@@ -115,19 +121,12 @@ export class DiagnosticoClaude {
   }
 
   static falha(resultado: { codigo: number; stdout: string; stderr: string }): string | null {
+    const frase = this.fraseDeLimite(resultado.stderr)
+    if (frase) return redigirSegredo(`A assinatura do Claude atingiu o limite de uso. ${frase}`)
     const doJson = this.erroDoTexto(resultado.stdout)
     if (doJson) return doJson
     if (resultado.codigo === 0) return null
-    const texto = `${resultado.stderr}\n${resultado.stdout}`
-    if (this.limiteDeUso(texto)) {
-      const miolo = resultado.stderr.trim() || resultado.stdout.trim()
-      return redigirSegredo(`A assinatura do Claude atingiu o limite de uso. ${miolo}`)
-    }
     return redigirSegredo(resultado.stderr.trim() || 'O Claude Code falhou.')
-  }
-
-  static limiteDeUso(texto: string): boolean {
-    return /you'?ve hit your\b.+\b(limit|budget)|usage limit|spend limit/i.test(texto)
   }
 
   private static mensagemErro(dados: { result?: unknown; error?: unknown }): string {
@@ -135,7 +134,6 @@ export class DiagnosticoClaude {
       .filter((item): item is string => typeof item === 'string' && item.trim() !== '')
       .join('\n')
       .trim()
-    if (this.limiteDeUso(texto)) return redigirSegredo(`A assinatura do Claude atingiu o limite de uso. ${texto}`)
     if (texto) return redigirSegredo(`O Claude Code devolveu erro: ${texto}`)
     return 'O Claude Code devolveu erro.'
   }
@@ -156,14 +154,18 @@ export async function diagnosticarClaude(
   const env = ambienteSemChave(process.env)
   let versao: { codigo: number; stdout: string; stderr: string }
   try {
-    versao = await processo.executar({ comando, args: ['--version'], env, timeoutMs: 8_000 })
-  } catch {
-    return { instalado: false, autenticado: false, detalhe: 'Não encontrei o executável do Claude nesta máquina.' }
+    versao = await processo.executar({ comando, args: ['--version'], env, timeoutMs: ESPERA_CLAUDE_MS })
+  } catch (erro) {
+    return {
+      instalado: false,
+      autenticado: false,
+      detalhe: detalheDaChamada(erro, 'Não encontrei o executável do Claude nesta máquina.', 'A leitura da versão do Claude demorou demais.'),
+    }
   }
   if (versao.codigo !== 0) {
     return { instalado: false, autenticado: false, detalhe: 'O executável não respondeu a --version.' }
   }
-  const lida = DiagnosticoClaude.lerVersao(`${versao.stdout}\n${versao.stderr}`)
+  const lida = DiagnosticoClaude.lerVersao(versao.stdout)
   if (!lida) {
     return {
       instalado: true,
@@ -177,12 +179,22 @@ export async function diagnosticarClaude(
   DiagnosticoClaude.marcarVersao(comando)
   let status: { codigo: number; stdout: string; stderr: string }
   try {
-    status = await processo.executar({ comando, args: ['auth', 'status'], env, timeoutMs: 8_000 })
-  } catch {
-    return { instalado: true, autenticado: false, detalhe: 'Não consegui rodar claude auth status.' }
+    status = await processo.executar({ comando, args: ['auth', 'status'], env, timeoutMs: ESPERA_CLAUDE_MS })
+  } catch (erro) {
+    return {
+      instalado: true,
+      autenticado: false,
+      detalhe: detalheDaChamada(erro, 'Não consegui rodar claude auth status.', 'O claude auth status demorou demais.'),
+    }
   }
   const auth = DiagnosticoClaude.auth(status.stdout, status.codigo)
   return { instalado: true, autenticado: auth.autenticado, detalhe: `${auth.detalhe} Claude Code ${lida.join('.')}.` }
+}
+
+function detalheDaChamada(erro: unknown, ausente: string, demorou: string): string {
+  const texto = erro instanceof Error ? erro.message : ''
+  if (/passou de \d+ ms/.test(texto)) return demorou
+  return ausente
 }
 
 function ambienteSemChave(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {

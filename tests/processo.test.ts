@@ -3,7 +3,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { spawn as TipoSpawn } from 'node:child_process'
 import { Executavel, type BuscaNoDisco } from '../src/adapters/executavel'
-import { criarProcesso } from '../src/adapters/processo'
+import { criarProcesso, GRACA_MS, matarFilho } from '../src/adapters/processo'
 
 const spawnMock = vi.hoisted(() => vi.fn())
 
@@ -105,13 +105,23 @@ describe('executável do Claude no Windows', () => {
     expect(alvo.args).toEqual([script, '--version'])
   })
 
-  it('abre o .cmd do npm via node, sem cmd.exe e sem partir o argumento', () => {
-    const busca = disco({ [atalho]: shimNode(), [script]: '' }, 'C:\\Program Files\\npm')
+  it('abre o .cmd do npm pelo node.exe do PATH, sem cmd.exe e sem partir o argumento', () => {
+    const nodeExe = path.win32.normalize('C:\\Program Files\\nodejs\\node.exe')
+    const busca = disco(
+      { [atalho]: shimNode(), [script]: '', [nodeExe]: '' },
+      'C:\\Program Files\\npm;C:\\Program Files\\nodejs',
+    )
     const alvo = Executavel.preparar('claude', ['-p', 'linha\n& whoami'], busca)
-    expect(alvo.comando).toBe('node')
+    expect(alvo.comando).toBe(nodeExe)
     expect(alvo.args).toEqual([script, '-p', 'linha\n& whoami'])
-    expect(alvo.comando.toLowerCase()).not.toContain('cmd')
     expect(alvo.args).not.toContain('/c')
+  })
+
+  it('não lança o nome nu quando o executável não está no PATH', () => {
+    expect(() => Executavel.preparar('claude', ['--version'], disco({}))).toThrow(/PATH/)
+    expect(() =>
+      Executavel.preparar('claude', ['-p', 'oi'], disco({ [atalho]: shimNode(), [script]: '' }, 'C:\\Program Files\\npm')),
+    ).toThrow(/node\.exe/)
   })
 
   it('usa o claude.exe citado pelo atalho e ignora comando fora das aspas', () => {
@@ -154,6 +164,16 @@ describe('executável do Claude no Windows', () => {
     )
   })
 
+  it('não chama o spawn quando o claude não está no PATH', async () => {
+    spawnMock.mockImplementation(() => {
+      throw new Error('não devia spawnar')
+    })
+    await expect(
+      criarProcesso(disco({})).executar({ comando: 'claude', args: ['--version'], timeoutMs: 1_000 }),
+    ).rejects.toThrow(/PATH/)
+    expect(spawnMock).not.toHaveBeenCalled()
+  })
+
   it('não chama o spawn quando o caminho absoluto não existe', async () => {
     spawnMock.mockImplementation(() => {
       throw new Error('não devia spawnar')
@@ -170,6 +190,53 @@ describe('executável do Claude no Windows', () => {
 })
 
 describe('criarProcesso', () => {
+  it('no Windows mata a árvore com taskkill, sem shell', () => {
+    spawnMock.mockImplementation(() => filhoFalso())
+    const kill = vi.fn(() => true)
+    matarFilho({ pid: 99, kill }, 'win32')
+    expect(kill).not.toHaveBeenCalled()
+    expect(spawnMock).toHaveBeenCalledWith(
+      'taskkill',
+      ['/pid', '99', '/t', '/f'],
+      expect.objectContaining({ shell: false, windowsHide: true, stdio: 'ignore' }),
+    )
+  })
+
+  it('rejeita o estouro mesmo sem o close', async () => {
+    vi.useFakeTimers()
+    try {
+      const stdout = new EventEmitter()
+      const stderr = new EventEmitter()
+      const preso = new EventEmitter() as EventEmitter & {
+        stdout: EventEmitter & { setEncoding: () => void; destroy: () => void }
+        stderr: EventEmitter & { setEncoding: () => void; destroy: () => void }
+        stdin: { end: () => void; destroy: () => void }
+        kill: ReturnType<typeof vi.fn>
+        pid: number
+        unref: () => void
+      }
+      preso.stdout = Object.assign(stdout, { setEncoding() {}, destroy() {} })
+      preso.stderr = Object.assign(stderr, { setEncoding() {}, destroy() {} })
+      preso.stdin = { end() {}, destroy() {} }
+      preso.kill = vi.fn(() => true)
+      preso.pid = 4242
+      preso.unref = () => {}
+      spawnMock.mockImplementation(() => preso)
+      const promessa = criarProcesso().executar({
+        comando: process.execPath,
+        args: ['-e', '0'],
+        timeoutMs: 400,
+      })
+      const assertiva = expect(promessa).rejects.toThrow(/passou de 400 ms/)
+      await vi.advanceTimersByTimeAsync(400)
+      expect(preso.kill).toHaveBeenCalledWith('SIGKILL')
+      await vi.advanceTimersByTimeAsync(GRACA_MS)
+      await assertiva
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('devolve stdout, stderr e o código', async () => {
     const saida = await criarProcesso().executar({
       comando: process.execPath,

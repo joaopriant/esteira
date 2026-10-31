@@ -18,9 +18,9 @@ export class Executavel {
   static preparar(comando: string, args: string[], busca: BuscaNoDisco): { comando: string; args: string[] } {
     if (busca.plataforma !== 'win32' || !Executavel.ehClaude(comando)) return { comando, args }
     const achado = Executavel.achar(comando, busca)
-    if (!achado) {
+    if (!achado || !Executavel.absoluto(achado)) {
       if (Executavel.absoluto(comando)) throw new Error(`Não encontrei o executável em ${comando}.`)
-      return { comando, args }
+      throw new Error('Não encontrei o claude no PATH. Aponte o caminho do claude.exe.')
     }
     const ext = path.win32.extname(achado).toLowerCase()
     if (ext !== '.cmd' && ext !== '.bat') return { comando: achado, args }
@@ -31,15 +31,25 @@ export class Executavel {
     if (!aberto) {
       throw new Error(`O atalho ${achado} não abre sem o prompt de comando. Aponte o caminho do claude.exe.`)
     }
-    if (aberto.comando !== 'node' && aberto.comando !== 'node.exe' && !busca.existe(aberto.comando)) {
-      throw new Error(`O atalho aponta para ${aberto.comando}, e esse arquivo não está lá.`)
+    const comandoAberto = Executavel.semNomeNu(aberto.comando, busca)
+    if (!busca.existe(comandoAberto)) {
+      throw new Error(`O atalho aponta para ${comandoAberto}, e esse arquivo não está lá.`)
     }
     for (const prefixo of aberto.prefixo) {
       if (prefixo.toLowerCase().endsWith('.js') && !busca.existe(prefixo)) {
         throw new Error(`O atalho aponta para ${prefixo}, e esse arquivo não está lá.`)
       }
     }
-    return { comando: aberto.comando, args: [...aberto.prefixo, ...args] }
+    return { comando: comandoAberto, args: [...aberto.prefixo, ...args] }
+  }
+
+  private static semNomeNu(comando: string, busca: BuscaNoDisco): string {
+    if (comando !== 'node' && comando.toLowerCase() !== 'node.exe') return comando
+    const achado = Executavel.achar('node', busca)
+    if (!achado || !Executavel.absoluto(achado)) {
+      throw new Error('Não encontrei o node.exe no PATH. Aponte o caminho do claude.exe.')
+    }
+    return achado
   }
 
   static ehClaude(comando: string): boolean {

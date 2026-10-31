@@ -98,23 +98,30 @@ describe('versão, assinatura, cota e timeout', () => {
     expect(blocos.every((item) => item.env?.ANTHROPIC_API_KEY === undefined)).toBe(true)
   })
 
-  it('explica o limite de uso da assinatura e o is_error', async () => {
-    const limite = "You've hit your session limit · resets 3:45pm"
+  it('explica o limite de uso só com a frase do stderr, sem o código do stdout', async () => {
+    const codigoCliente = 'TOKEN_CODIGO_CLIENTE_9f3a'
     const { processo } = comVersao('2.1.300 (Claude Code)', {
       codigo: 1,
-      stdout: JSON.stringify({ type: 'result', is_error: true, result: limite }),
-      stderr: '',
+      stdout: `export const segredo = "${codigoCliente}"\nThe usage limit of this story is 3`,
+      stderr: "prefixo\nYou've hit your session limit · resets 3:45pm\nconst vazou = true",
     })
     const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
     pastas.push(pasta)
-    const claude = criarClaudeCli(processo, 'claude', pasta)
-    await expect(claude.run(pedido())).rejects.toThrow(/limite de uso/)
-    await expect(claude.run(pedido())).rejects.toThrow(/session limit/)
+    const erro = await criarClaudeCli(processo, 'claude', pasta).run(pedido()).then(
+      () => {
+        throw new Error('devia falhar')
+      },
+      (capturado: unknown) => capturado,
+    )
+    expect(erro).toBeInstanceOf(Error)
+    const mensagem = erro instanceof Error ? erro.message : ''
+    expect(mensagem).toMatch(/limite de uso/)
+    expect(mensagem).toMatch(/You've hit your session limit/)
+    expect(mensagem).not.toContain(codigoCliente)
+    expect(mensagem).not.toContain('vazou')
+    expect(mensagem).not.toContain('usage limit of this story')
     expect(await fs.readdir(pasta)).toEqual([])
 
-    expect(() =>
-      extrairJson(JSON.stringify({ is_error: true, result: "You've hit your team's shared budget" })),
-    ).toThrow(/limite de uso/)
     expect(() => extrairJson(JSON.stringify({ is_error: true, result: 'Failed to authenticate' }))).toThrow(
       /O Claude Code devolveu erro: Failed to authenticate/,
     )
@@ -122,6 +129,22 @@ describe('versão, assinatura, cota e timeout', () => {
       achados: [{ texto: 'a' }],
     })
     expect(extrairJson('antes ```json\n{"achados":[]}\n``` depois')).toMatchObject({ achados: [] })
+  })
+
+  it('não trata story sobre usage limit como cota', async () => {
+    const codigoCliente = 'TOKEN_STORY_USAGE_1c'
+    const { processo } = comVersao('2.1.259', {
+      codigo: 1,
+      stdout: JSON.stringify({
+        is_error: false,
+        structured_output: { story: `The usage limit of the product is 3. ${codigoCliente}` },
+      }),
+      stderr: 'falha de rede',
+    })
+    const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
+    pastas.push(pasta)
+    await expect(criarClaudeCli(processo, 'claude', pasta).run(pedido())).rejects.toThrow(/falha de rede/)
+    await expect(criarClaudeCli(processo, 'claude', pasta).run(pedido())).rejects.not.toThrow(/limite de uso/)
   })
 
   it('lê o limite de uso no stderr quando não há JSON', async () => {
@@ -133,6 +156,57 @@ describe('versão, assinatura, cota e timeout', () => {
     const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
     pastas.push(pasta)
     await expect(criarClaudeCli(processo, 'claude', pasta).run(pedido())).rejects.toThrow(/weekly limit/)
+  })
+
+  it('lê a versão só no começo do stdout', async () => {
+    expect(DiagnosticoClaude.lerVersao('2.1.259 (Claude Code)')).toEqual([2, 1, 259])
+    expect(DiagnosticoClaude.lerVersao('Node.js v22.4.0')).toBeNull()
+    expect(DiagnosticoClaude.lerVersao('aviso 2.1.259')).toBeNull()
+    const { processo, vistos } = duble(() => ({
+      codigo: 0,
+      stdout: 'Node.js v22.4.0',
+      stderr: '2.1.259 (Claude Code)',
+    }))
+    const teste = await diagnosticarClaude(processo, 'claude')
+    expect(teste.autenticado).toBe(false)
+    expect(teste.detalhe).toMatch(/Não consegui ler a versão/)
+    expect(teste.detalhe).not.toContain('22.4.0')
+    expect(vistos.some((item) => item.args[0] === 'auth')).toBe(false)
+
+    DiagnosticoClaude.esquecer()
+    const antiga = duble(() => ({ codigo: 0, stdout: '2.1.200 (Claude Code)', stderr: 'Node.js v22.4.0' }))
+    const pasta = await fs.mkdtemp(path.join(os.tmpdir(), 'esteira-claude-'))
+    pastas.push(pasta)
+    await expect(criarClaudeCli(antiga.processo, 'claude', pasta).run(pedido())).rejects.toThrow(/2\.1\.200/)
+  })
+
+  it('separa versão e auth que demoram de executável que não está', async () => {
+    const demorou = duble(() => {
+      throw new Error('O processo claude passou de 30000 ms.')
+    })
+    const lento = await diagnosticarClaude(demorou.processo, 'claude')
+    expect(lento.detalhe).toMatch(/demorou/)
+    expect(lento.detalhe).not.toMatch(/não encontrei/i)
+    expect(demorou.vistos[0]?.timeoutMs).toBe(30_000)
+
+    DiagnosticoClaude.esquecer()
+    const sumiu = duble(() => {
+      throw new Error('spawn ENOENT')
+    })
+    const ausente = await diagnosticarClaude(sumiu.processo, 'claude')
+    expect(ausente.detalhe).toMatch(/não encontrei/i)
+    expect(ausente.detalhe).not.toMatch(/demorou/)
+
+    DiagnosticoClaude.esquecer()
+    const authLento = duble((chamada) => {
+      if (chamada.args[0] === '--version') return { codigo: 0, stdout: '2.1.259 (Claude Code)', stderr: '' }
+      throw new Error('O processo claude passou de 30000 ms.')
+    })
+    const status = await diagnosticarClaude(authLento.processo, 'claude')
+    expect(status.instalado).toBe(true)
+    expect(status.detalhe).toMatch(/auth status demorou/)
+    expect(status.detalhe).not.toMatch(/não encontrei/i)
+    expect(authLento.vistos.every((item) => item.timeoutMs === 30_000)).toBe(true)
   })
 
   it('mostra se auth status é a assinatura, sem gastar prompt', async () => {

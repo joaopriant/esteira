@@ -1,10 +1,39 @@
 import fs from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import type { Processo } from '../ports'
 import { Executavel, type BuscaNoDisco } from './executavel'
 
 const TETO_SAIDA = 2_000_000
 const TETO_ATALHO = 64_000
+// Depois do kill, netos (ripgrep, MCP) podem segurar o pipe e o close não chega.
+export const GRACA_MS = 2_000
+
+export function matarFilho(filho: Pick<ChildProcess, 'pid' | 'kill'>, plataforma: NodeJS.Platform = process.platform): void {
+  if (plataforma === 'win32' && filho.pid) {
+    spawn('taskkill', ['/pid', String(filho.pid), '/t', '/f'], {
+      windowsHide: true,
+      stdio: 'ignore',
+      shell: false,
+    })
+    return
+  }
+  try {
+    filho.kill('SIGKILL')
+  } catch {
+    /* já saiu */
+  }
+}
+
+function soltar(filho: ChildProcess): void {
+  filho.stdout?.destroy()
+  filho.stderr?.destroy()
+  filho.stdin?.destroy()
+  try {
+    filho.unref()
+  } catch {
+    /* o dublê de teste não tem unref */
+  }
+}
 
 function buscaReal(env: NodeJS.ProcessEnv | undefined): BuscaNoDisco {
   const fonte = env ?? process.env
@@ -58,9 +87,24 @@ export function criarProcesso(busca?: BuscaNoDisco): Processo {
         let stdout = ''
         let stderr = ''
         let estourou = false
-        const timer = setTimeout(() => {
+        let acabou = false
+        let timer: ReturnType<typeof setTimeout>
+        let graca: ReturnType<typeof setTimeout> | undefined
+        const estouro = () => new Error(`O processo ${comando} passou de ${timeoutMs} ms.`)
+        const terminar = (acao: () => void) => {
+          if (acabou) return
+          acabou = true
+          clearTimeout(timer)
+          clearTimeout(graca)
+          acao()
+        }
+        timer = setTimeout(() => {
           estourou = true
-          filho.kill()
+          matarFilho(filho)
+          graca = setTimeout(() => {
+            terminar(() => reject(estouro()))
+            soltar(filho)
+          }, GRACA_MS)
         }, timeoutMs)
         filho.stdout.setEncoding('utf8')
         filho.stderr.setEncoding('utf8')
@@ -71,16 +115,16 @@ export function criarProcesso(busca?: BuscaNoDisco): Processo {
           if (stderr.length < TETO_SAIDA) stderr += parte.slice(0, TETO_SAIDA - stderr.length)
         })
         filho.on('error', (erro) => {
-          clearTimeout(timer)
-          reject(erro)
+          terminar(() => reject(estourou ? estouro() : erro))
         })
         filho.on('close', (codigo) => {
-          clearTimeout(timer)
-          if (estourou) {
-            reject(new Error(`O processo ${comando} passou de ${timeoutMs} ms.`))
-            return
-          }
-          resolve({ codigo: codigo ?? 1, stdout, stderr })
+          terminar(() => {
+            if (estourou) {
+              reject(estouro())
+              return
+            }
+            resolve({ codigo: codigo ?? 1, stdout, stderr })
+          })
         })
         if (entrada) filho.stdin.end(entrada)
         else filho.stdin.end()
