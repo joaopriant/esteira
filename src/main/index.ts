@@ -3,6 +3,7 @@ import path from 'node:path'
 import { criarAplicacao } from '../app/criar'
 import { despachar } from '../app/api'
 import type { EsteiraApp } from '../app/esteira-app'
+import { Atualizacao } from './atualizacao'
 
 const CSP = [
   "default-src 'self'",
@@ -58,7 +59,16 @@ function criarJanela(): BrowserWindow {
     evento.preventDefault()
   })
 
-  janela.once('ready-to-show', () => janela.show())
+  janela.once('ready-to-show', () => {
+    janela.show()
+    if (!app.isPackaged || modo() !== 'real') return
+    void import('./atualizador-nsis')
+      .then(({ checarAtualizacao }) => checarAtualizacao(janela))
+      .catch((erro: unknown) => {
+        const texto = erro instanceof Error ? erro.message : 'Falha ao procurar atualização.'
+        console.error(Atualizacao.redigir(texto))
+      })
+  })
   if (process.env.ELECTRON_RENDERER_URL) void janela.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void janela.loadFile(path.join(__dirname, '../renderer/index.html'))
   return janela
