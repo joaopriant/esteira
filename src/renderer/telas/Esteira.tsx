@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import type { Achado, EstadoApp, LinhaDiff, StoryRun, StoryTexto } from '../../shared/tipos'
+import type { Achado, EstadoApp, LinhaDiff, Publicacao, StoryRun, StoryTexto } from '../../shared/tipos'
 import { STORY_VAZIA } from '../../shared/tipos'
+import { acaoInicialDoBoard, frasePublicacao, idDoCardAberto, urlDoCard } from '../../core/publicacao'
 import { chamar } from '../api'
 import { AcaoPrimaria } from '../components/react-bits/AcaoPrimaria'
 import { AnimatedList } from '../components/react-bits/AnimatedList'
@@ -21,7 +22,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
   const [produtoId, setProdutoId] = useState(estado.produtos[0]?.id ?? '')
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState('')
-  const [acaoPublicar, setAcaoPublicar] = useState<'criar' | 'comentar'>('comentar')
+  const [acaoPublicar, setAcaoPublicar] = useState<'criar' | 'comentar'>('criar')
   const [projeto, setProjeto] = useState('')
   const [area, setArea] = useState(estado.ajustes.areaPadrao)
   const [iteracao, setIteracao] = useState(estado.ajustes.iteracaoPadrao)
@@ -59,6 +60,14 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
   }, [storyId, nova])
 
   const pendentes = story?.achados.filter((achado) => achado.estado === 'pendente').length ?? 0
+  const cardAceito = story ? idDoCardAberto(story.achados, { somenteAceito: true }) : null
+  const cardSugerido = story ? idDoCardAberto(story.achados) : null
+
+  useEffect(() => {
+    const inicial = acaoInicialDoBoard(story?.achados ?? [])
+    setAcaoPublicar(inicial.acao)
+    setCardId(inicial.cardId)
+  }, [story?.id, cardAceito])
   const achados = useMemo(() => {
     if (!story) return []
     return [...story.achados].sort((a, b) => ORDEM[a.estado] - ORDEM[b.estado])
@@ -293,8 +302,10 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                 </div>
                 {story.estado === 'pronta' && !story.diffPendente && (
                   <Publicar
-                    publicada={Boolean(story.publicacao)}
-                    registro={story.publicacao ? `${story.publicacao.acao === 'criar' ? 'Card criado' : 'Comentário'} #${story.publicacao.workItemId} em ${story.publicacao.projeto}` : ''}
+                    publicacao={story.publicacao}
+                    orgUrl={estado.ajustes.orgUrl}
+                    pendentes={pendentes}
+                    cardSugerido={cardSugerido}
                     acao={acaoPublicar}
                     setAcao={setAcaoPublicar}
                     projeto={projeto}
@@ -323,7 +334,7 @@ export function EsteiraView({ estado, recarregar, abrirId }: { estado: EstadoApp
                   />
                 )}
               </form>
-              <section className="achados">
+              <section className="achados" id="achados">
                 <header className="titulo">
                   <h2>Achados</h2>
                   <span className="num">{pendentes} pendentes</span>
@@ -365,10 +376,7 @@ function sublinha(story: StoryRun | null, pendentes: number): string {
   }
   if (story.diffPendente) return 'Um ajuste está esperando aprovação. A story ainda não mudou.'
   if (pendentes > 0) return `${pendentes} ${pendentes === 1 ? 'achado pede' : 'achados pedem'} uma decisão antes do board.`
-  if (story.publicacao) {
-    const verbo = story.publicacao.acao === 'criar' ? 'Card criado' : 'Comentário publicado'
-    return `${verbo} no #${story.publicacao.workItemId}. A descrição do card não foi alterada.`
-  }
+  if (story.publicacao) return frasePublicacao(story.publicacao)
   if (story.estado === 'pronta') return `${story.produtoNome} · pronta para o board. Publicar só acontece no clique.`
   return `${story.produtoNome} · ${rotuloStory(story.estado)}`
 }
@@ -406,12 +414,15 @@ function AchadoCard({
   aoAceitar: () => void
   aoDescartar: () => void
 }) {
+  const [confirma, setConfirma] = useState(false)
+  const pergunta = achado.tipo === 'nao-encontrei'
+  const classe = [achado.estado === 'pendente' ? 'achado' : 'achado resolvido', achado.semProva ? 'sem-prova' : ''].filter(Boolean).join(' ')
   return (
-    <SpotlightCard as="article" className={achado.estado === 'pendente' ? 'achado' : 'achado resolvido'}>
+    <SpotlightCard as="article" className={classe}>
       <header>
         {/* O que foi achado lidera; o bloco que achou é metadado. */}
         <span className="origem">{achado.blocoNome}</span>
-        {/* Pendente não leva pílula: os botões Aceitar e Descartar já dizem que falta decidir. */}
+        {/* Pendente não leva pílula: os botões já dizem que falta decidir. Sem prova é a exceção: o selo muda o peso do aceite. */}
         <span>
           <span className="pilula">{TIPO_ACHADO[achado.tipo]}</span>
           {achado.semProva && <span className="pilula aviso">sem prova</span>}
@@ -421,7 +432,40 @@ function AchadoCard({
       </header>
       <p className="frase">{achado.texto}</p>
       <Prova achado={achado} />
-      {achado.estado === 'pendente' && (
+      {achado.estado === 'pendente' && achado.semProva && confirma && (
+        <div className="confirma" role="group" aria-label="Confirmar achado sem prova">
+          <p>Este achado não tem prova. O trecho entra na story marcado [sem prova].</p>
+          <div className="acoes">
+            <button className="btn" type="button" disabled={travado} onClick={aoAceitar}>
+              Confirmar
+            </button>
+            <button className="btn-texto" type="button" disabled={travado} onClick={() => setConfirma(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+      {achado.estado === 'pendente' && achado.semProva && !confirma && (
+        <div className="acoes">
+          <button className="btn" type="button" disabled={travado} onClick={aoDescartar}>
+            Descartar
+          </button>
+          <button className="btn-texto" type="button" disabled={travado} onClick={() => setConfirma(true)}>
+            Aceitar mesmo sem prova
+          </button>
+        </div>
+      )}
+      {achado.estado === 'pendente' && !achado.semProva && pergunta && (
+        <div className="acoes">
+          <button className="btn-sec" type="button" disabled={travado} onClick={aoAceitar}>
+            Virar pergunta em aberto
+          </button>
+          <button className="btn-texto" type="button" disabled={travado} onClick={aoDescartar}>
+            Descartar
+          </button>
+        </div>
+      )}
+      {achado.estado === 'pendente' && !achado.semProva && !pergunta && (
         <div className="acoes">
           <button className="btn-sec" type="button" disabled={travado} onClick={aoAceitar}>
             Aceitar
@@ -470,8 +514,10 @@ function Prova({ achado }: { achado: Achado }) {
 }
 
 function Publicar(props: {
-  publicada: boolean
-  registro: string
+  publicacao?: Publicacao
+  orgUrl: string
+  pendentes: number
+  cardSugerido: number | null
   acao: 'criar' | 'comentar'
   setAcao: (acao: 'criar' | 'comentar') => void
   projeto: string
@@ -489,12 +535,20 @@ function Publicar(props: {
   aoPublicar: () => void
   aoVoto: (voto: 'passou' | 'voltou') => void
 }) {
+  const url = props.publicacao ? urlDoCard(props.orgUrl, props.publicacao.projeto, props.publicacao.workItemId) : ''
   return (
     <section className="bloco" id="board">
       <h2>Board</h2>
-      {props.publicada ? (
+      {props.publicacao ? (
         <>
-          <p className="sub">{props.registro}. A descrição do card não foi alterada.</p>
+          <p className="sub">{frasePublicacao(props.publicacao)}</p>
+          {url && (
+            <p className="sub">
+              <a className="link" href={url} target="_blank" rel="noreferrer">
+                Abrir #{props.publicacao.workItemId} no Boards
+              </a>
+            </p>
+          )}
           <p className="rotulo">Quando o card voltar do time, registre o resultado.</p>
           <div className="acoes votos">
             <button className="btn-sec" type="button" disabled={Boolean(props.ocupado)} onClick={() => props.aoVoto('passou')}>
@@ -517,15 +571,49 @@ function Publicar(props: {
 }
 
 function FormPublicar(props: Parameters<typeof Publicar>[0]) {
+  const [aviso, setAviso] = useState<'pendentes' | 'duplicar' | null>(null)
+  const duplicaria = props.publicacao?.acao === 'criar' && props.acao === 'criar'
+
+  useEffect(() => {
+    setAviso(null)
+  }, [props.acao, props.pendentes])
+
+  function pedir() {
+    if (props.pendentes > 0) {
+      setAviso('pendentes')
+      return
+    }
+    if (duplicaria) {
+      setAviso('duplicar')
+      return
+    }
+    props.aoPublicar()
+  }
+
+  function seguirPendentes() {
+    if (duplicaria) {
+      setAviso('duplicar')
+      return
+    }
+    setAviso(null)
+    props.aoPublicar()
+  }
+
+  function escolherComentar() {
+    props.setAcao('comentar')
+    if (!props.cardId && props.cardSugerido) props.setCardId(String(props.cardSugerido))
+  }
+
+  const n = props.pendentes
   return (
     <>
       <p className="sub">Criar abre um card novo. Comentar menciona o responsável e não mexe na descrição.</p>
       <div className="escolha">
-        <button type="button" className="btn-sec" aria-pressed={props.acao === 'comentar'} onClick={() => props.setAcao('comentar')}>
-          Comentar em card
-        </button>
         <button type="button" className="btn-sec" aria-pressed={props.acao === 'criar'} onClick={() => props.setAcao('criar')}>
           Criar card
+        </button>
+        <button type="button" className="btn-sec" aria-pressed={props.acao === 'comentar'} onClick={escolherComentar}>
+          Comentar em card
         </button>
       </div>
       {props.acao === 'comentar' ? (
@@ -556,9 +644,46 @@ function FormPublicar(props: Parameters<typeof Publicar>[0]) {
           </div>
         </>
       )}
-      <AcaoPrimaria type="button" disabled={Boolean(props.ocupado) || (props.acao === 'comentar' ? !props.cardId : !props.projeto.trim())} onClick={props.aoPublicar}>
-        {props.ocupado === 'Publicando' ? <ShinyText text="Publicando" /> : 'Publicar no Azure Boards'}
-      </AcaoPrimaria>
+      {aviso === 'pendentes' && (
+        <div className="confirma" role="group" aria-label="Achados pendentes">
+          <p>
+            {n === 1 ? 'Há 1 achado sem decisão. Publicar agora deixa ele de fora do card.' : `Há ${n} achados sem decisão. Publicar agora deixa eles de fora do card.`}
+          </p>
+          <div className="acoes">
+            <button className="btn" type="button" disabled={Boolean(props.ocupado)} onClick={seguirPendentes}>
+              Publicar mesmo assim
+            </button>
+            <button
+              className="btn-texto"
+              type="button"
+              onClick={() => {
+                setAviso(null)
+                document.getElementById('achados')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+            >
+              Voltar aos achados
+            </button>
+          </div>
+        </div>
+      )}
+      {aviso === 'duplicar' && (
+        <div className="confirma" role="group" aria-label="Card já criado">
+          <p>Esta story já criou o card #{props.publicacao?.workItemId}. Publicar de novo abre outro card.</p>
+          <div className="acoes">
+            <button className="btn" type="button" disabled={Boolean(props.ocupado)} onClick={() => { setAviso(null); props.aoPublicar() }}>
+              Criar outro card
+            </button>
+            <button className="btn-texto" type="button" onClick={() => setAviso(null)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+      {!aviso && (
+        <AcaoPrimaria type="button" disabled={Boolean(props.ocupado) || (props.acao === 'comentar' ? !props.cardId : !props.projeto.trim())} onClick={pedir}>
+          {props.ocupado === 'Publicando' ? <ShinyText text="Publicando" /> : 'Publicar no Azure Boards'}
+        </AcaoPrimaria>
+      )}
     </>
   )
 }

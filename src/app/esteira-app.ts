@@ -30,7 +30,7 @@ import { AJUSTES_INICIAIS, STORY_VAZIA } from '../shared/tipos'
 import type { Dependencias } from '../ports'
 import { escolherArquivos } from '../core/arquivos-relevantes'
 import { aplicarContrato } from '../core/contrato'
-import { diffStory, storiesIguais } from '../core/diff-story'
+import { comMarcaDoAchado, diffStory, storiesIguais } from '../core/diff-story'
 import { fluxoPadrao, fluxoRadarRapido, fluxoSoConfrontos, validarFluxo } from '../core/fluxo-padrao'
 import {
   agruparSinais,
@@ -45,7 +45,7 @@ import {
 } from '../core/radar'
 import { extrairMencoes, resolverEscopo } from '../core/mentoes'
 import { prefiltrarBacklog } from '../core/prefiltro-backlog'
-import { montarComentario } from '../core/publicacao'
+import { descricaoDoCard, montarComentario } from '../core/publicacao'
 import { dataMesesAtras, novoId } from '../core/texto'
 import { definirModulos, modulosParaRegenerar } from '../core/wiki-plano'
 import { criarAzureReal } from '../adapters/azure-devops'
@@ -766,10 +766,16 @@ export class EsteiraApp {
     const achado = story.achados.find((item) => item.id === achadoId)
     if (!achado || achado.estado !== 'pendente') throw new Error('Esse achado não está pendente.')
     const ajustes = await this.ajustes()
+    const instrucao =
+      achado.tipo === 'nao-encontrei'
+        ? 'Não trate o achado como fato. Acrescente a linha "- Pergunta em aberto: ..." com o texto do achado. Não invente prova.'
+        : achado.semProva
+          ? 'Aplique o achado na story. Mantenha o modelo. O trecho novo termina com [sem prova]. Não invente prova.'
+          : 'Aplique o achado na story. Mantenha o modelo. Não invente prova.'
     const resposta = await (await this.clienteClaude()).run({
       papel: 'aplicar',
       blocoId: 'aplicar-achado',
-      instrucao: 'Aplique o achado na story. Mantenha o modelo. Não invente prova.',
+      instrucao,
       ideia: story.ideia,
       modelo: ajustes.modeloStory,
       story: story.story,
@@ -781,12 +787,12 @@ export class EsteiraApp {
       timeoutMs: ajustes.timeoutBlocoMs,
     })
     const saida = interpretarSaida(resposta.json)
-    const depois: StoryTexto = {
+    const depois = comMarcaDoAchado(achado, {
       titulo: saida.story?.titulo?.trim() || story.story.titulo,
       corpo: saida.story?.corpo?.trim() || story.story.corpo,
       descricao: saida.story?.descricao?.trim() || story.story.descricao,
       criteriosDeAceite: saida.story?.criteriosDeAceite?.trim() || story.story.criteriosDeAceite,
-    }
+    })
     if (storiesIguais(story.story, depois)) throw new Error('O ajuste não mudou a story.')
     story.diffPendente = { achadoId, antes: story.story, depois, linhas: diffStory(story.story, depois) }
     story.atualizadaEm = this.deps.agora().toISOString()
@@ -853,7 +859,7 @@ export class EsteiraApp {
         projeto: pedido.projeto,
         tipo: ajustes.tipoWorkItem,
         titulo: story.story.titulo || story.ideia,
-        descricao: story.story.corpo || story.story.descricao,
+        descricao: descricaoDoCard(story.story),
         criterios: story.story.criteriosDeAceite,
         campoDescricao: ajustes.campoDescricao,
         campoCriterios: ajustes.campoCriterios,

@@ -110,16 +110,14 @@ export function AjustesView({ estado, recarregar, aoConexoes }: { estado: Estado
             <span>Tipo</span>
             <input value={tipo} onChange={(evento) => setTipo(evento.target.value)} />
           </label>
-          <div className="linha">
-            <label className="campo">
-              <span>Campo da descrição</span>
-              <input value={campoDescricao} onChange={(evento) => setCampoDescricao(evento.target.value)} />
-            </label>
-            <label className="campo">
-              <span>Campo dos critérios</span>
-              <input value={campoCriterios} onChange={(evento) => setCampoCriterios(evento.target.value)} />
-            </label>
-          </div>
+          <label className="campo">
+            <span>Campo da descrição</span>
+            <input value={campoDescricao} onChange={(evento) => setCampoDescricao(evento.target.value)} spellCheck={false} />
+          </label>
+          <label className="campo">
+            <span>Campo dos critérios</span>
+            <input value={campoCriterios} onChange={(evento) => setCampoCriterios(evento.target.value)} spellCheck={false} />
+          </label>
           <div className="linha">
             <label className="campo">
               <span>Área padrão</span>

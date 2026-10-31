@@ -116,12 +116,7 @@ async function semearExemplo(app: EsteiraApp): Promise<void> {
     'Permitir estorno parcial de um PIX já liquidado, sem passar do valor original.',
     'pix',
   )
-  const palpite = story.achados.find((achado) => achado.semProva)
-  if (palpite) {
-    await app.aceitarAchado(story.id, palpite.id)
-    await app.aprovarDiff(story.id)
-  }
-  const pendente = (await app.obterStory(story.id)).achados.find((achado) => achado.estado === 'pendente')
+  const pendente = story.achados.find((achado) => achado.estado === 'pendente' && !achado.semProva)
   if (pendente) await app.descartarAchado(story.id, pendente.id)
   await app.publicar(story.id, { acao: 'comentar', workItemId: 1300 })
 }
