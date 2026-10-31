@@ -269,6 +269,9 @@ describe('limites de caminho e host', () => {
     expect(() => validarOrgUrl('https://evil.example/org')).toThrow(/dev\.azure\.com/)
     expect(() => validarOrgUrl('https://fintech@dev.azure.com/fintech')).toThrow(/token/)
     expect(() => validarBranch('main;rm')).toThrow(/Branch/)
+    expect(() => validarBranch('-main')).toThrow(/Branch/)
+    expect(() => validarBranch('--upload-pack=x')).toThrow(/Branch/)
+    expect(validarBranch('feature/estorno-parcial')).toBe('feature/estorno-parcial')
     expect(() => caminhoSeguro('/dados/repos', '../segredo')).toThrow(/fora/)
   })
 
@@ -288,5 +291,6 @@ describe('limites de caminho e host', () => {
     expect(texto).not.toContain('dXNlcjpwYXQ')
     expect(texto).toContain('[redigido]')
     expect(redigirSegredo('https://usuario:segredo@example.com/org')).not.toContain('segredo')
+    expect(redigirSegredo('fatal: proxy http://ana:segredo-proxy@proxy:8080')).not.toContain('segredo-proxy')
   })
 })

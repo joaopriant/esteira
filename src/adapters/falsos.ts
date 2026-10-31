@@ -44,6 +44,14 @@ async function mapaHashes(dest: string): Promise<Map<string, string>> {
   return mapa
 }
 
+// Segura o clone só no `npm run dev:ui` com ESTEIRA_FAKE=1, para a coluna Clone
+// mostrar o avanço. O teste constrói o modo falso sem essa variável e não espera.
+export async function pausaCloneExemplo(aoProgredir?: (linha: string) => void): Promise<void> {
+  if (process.env.ESTEIRA_FAKE !== '1') return
+  aoProgredir?.('Receiving objects: 42% (120/286)')
+  await new Promise((resolve) => setTimeout(resolve, 12_000))
+}
+
 export function criarGitFalso(fixturesDir: string, raizRepos: string): GitPort {
   const hashes = new Map<string, Map<string, string>>()
   function destino(dest: string): string {
@@ -51,11 +59,12 @@ export function criarGitFalso(fixturesDir: string, raizRepos: string): GitPort {
     return caminhoSeguro(raizRepos, relativo || '.')
   }
   return {
-    async clone({ url, dest }) {
+    async clone({ url, dest, aoProgredir }) {
       const nome = path.basename(new URL(url).pathname)
       const pasta = destino(dest)
       await copiarPasta(path.join(fixturesDir, nome), pasta)
       hashes.set(pasta, await mapaHashes(pasta))
+      await pausaCloneExemplo(aoProgredir)
     },
     async atualizar({ dest }) {
       const pasta = destino(dest)

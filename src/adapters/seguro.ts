@@ -51,7 +51,8 @@ export function validarRemoto(valor: string): URL {
 }
 
 export function validarBranch(branch: string): string {
-  if (!/^[A-Za-z0-9._/-]+$/.test(branch) || branch.includes('..') || branch.startsWith('/') || branch.endsWith('/')) {
+  // Um nome que começa com - vira opção em `git pull origin -branch`.
+  if (!/^[A-Za-z0-9._/-]+$/.test(branch) || branch.includes('..') || branch.startsWith('-') || branch.startsWith('/') || branch.endsWith('/')) {
     throw new Error(`Branch inválida: ${branch}`)
   }
   return branch
@@ -93,6 +94,6 @@ export function redigirSegredo(texto: string): string {
   return texto
     .replace(/Authorization:\s*Basic\s+\S+/gi, 'Authorization: Basic [redigido]')
     .replace(/Bearer\s+\S+/gi, 'Bearer [redigido]')
-    .replace(/https:\/\/[^:\s/]+:[^@\s/]+@/gi, 'https://[redigido]@')
+    .replace(/(https?:\/\/)[^:\s/]+:[^@\s/]+@/gi, '$1[redigido]@')
     .slice(0, 500)
 }

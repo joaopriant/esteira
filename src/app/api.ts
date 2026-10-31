@@ -16,6 +16,7 @@ const esquemas: Record<string, z.ZodTypeAny> = {
   conectar: z.object({ orgUrl: z.string().min(8).max(200), pat: z.string().min(1).max(256) }),
   desconectar: vazio,
   listarRepositorios: vazio,
+  andamentoClone: vazio,
   salvarSelecao: z.object({
     ids: z.array(z.string().max(80)).max(100),
     branches: z.record(z.string().max(80), z.string().max(200)).optional(),
@@ -144,6 +145,8 @@ async function executar(app: EsteiraApp, canal: string, corpo: unknown): Promise
       return { ok: true }
     case 'listarRepositorios':
       return app.listarRepositoriosRemotos()
+    case 'andamentoClone':
+      return app.andamentoClone()
     case 'salvarSelecao':
       return app.salvarSelecao(dados.ids, dados.branches ?? {})
     case 'atualizarRepositorios':

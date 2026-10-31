@@ -2,6 +2,7 @@ import type { WorkItem } from '../shared/tipos'
 import type { AzurePort } from '../ports'
 import { textoEmHtml } from '../core/publicacao'
 import { dataMesesAtras } from '../core/texto'
+import { RedeDoSistema } from './rede'
 import { validarOrgUrl } from './seguro'
 
 // Categoria Completed nos processos Agile, Scrum e CMMI
@@ -291,7 +292,8 @@ function sdkDosClientes(git: ClientesOficiais['git'], wit: ClientesOficiais['wit
 async function abrirClienteOficial(org: string, pat: string): Promise<ClientesOficiais> {
   const azdev = await import('azure-devops-node-api')
   const auth = azdev.getPersonalAccessTokenHandler(pat)
-  const conexao = new azdev.WebApi(org, auth)
+  // O SDK usa o https do Node, que não lê o proxy nem a loja de certificados do Windows.
+  const conexao = new azdev.WebApi(org, auth, await RedeDoSistema.opcoesPara(org))
   const git = await conexao.getGitApi()
   const wit = await conexao.getWorkItemTrackingApi()
   return { git, wit }

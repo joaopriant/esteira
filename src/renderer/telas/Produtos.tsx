@@ -20,6 +20,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState('')
+  const [andamento, setAndamento] = useState<Record<string, string>>({})
 
   useEffect(() => {
     let vivo = true
@@ -50,6 +51,36 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
       vivo = false
     }
   }, [estado.produtos])
+
+  useEffect(() => {
+    if (ocupado !== 'Clonando' && ocupado !== 'Atualizando') {
+      setAndamento({})
+      return
+    }
+    let vivo = true
+    let emVoo = false
+    const ler = () => {
+      if (emVoo) return
+      emVoo = true
+      void chamar<{ id: string; progresso: string }[]>('andamentoClone')
+        .then((listaAndamento) => {
+          if (!vivo) return
+          setAndamento(Object.fromEntries(listaAndamento.map((item) => [item.id, item.progresso])))
+        })
+        .catch(() => {
+          /* o botão continua ocupado; a coluna mostra o último texto */
+        })
+        .finally(() => {
+          emVoo = false
+        })
+    }
+    ler()
+    const timer = setInterval(ler, 1000)
+    return () => {
+      vivo = false
+      clearInterval(timer)
+    }
+  }, [ocupado])
 
   const lista = remotos.length > 0 ? remotos : estado.repositorios
   const local = new Map(estado.repositorios.map((repo) => [repo.id, repo]))
@@ -122,7 +153,7 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
                       aria-label={`Branch de ${repo.nome}`}
                     />
                   </td>
-                  <td>{rotuloClone(daqui)}</td>
+                  <td>{rotuloClone(daqui, andamento[repo.id])}</td>
                 </tr>
               )
             })}
@@ -204,7 +235,8 @@ export function ProdutosView({ estado, recarregar }: { estado: EstadoApp; recarr
   )
 }
 
-function rotuloClone(repo: Repositorio | undefined): string {
+function rotuloClone(repo: Repositorio | undefined, progresso?: string): string {
+  if (progresso) return progresso
   if (!repo || !repo.selecionado) return 'fora'
   if (repo.estado === 'pronto') return repo.ultimoCommit ? `pronto · ${repo.ultimoCommit.slice(0, 7)}` : 'pronto'
   if (repo.estado === 'clonando') return 'clonando'
