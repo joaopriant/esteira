@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node"],
     "lib": ["ES2022"]
   },
@@ -25,6 +26,8 @@
     "vite.browser.config.ts",
     "electron.vite.config.ts",
     "electron-builder.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "scripts/exigir-assinatura.ts",
+    "scripts/conferir-app-update.ts"
   ]
 }

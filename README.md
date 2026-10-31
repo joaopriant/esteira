@@ -23,9 +23,11 @@ npm run dist:win
 
 O instalador sai em `release/`, com o nome `Esteira-Setup-<versão>.exe`. Ele instala para o seu usuário, sem pedir elevação. O atalho se chama Esteira.
 
-O mesmo comando roda no GitHub Actions, no job `instalador-windows`, sem certificado. A tag `v` mais a `version` do `package.json` (por exemplo `v0.1.0`) dispara o workflow `release`: build do Windows e GitHub Release. Esse workflow roda na tag, e o job de pull request continua só gerando o `.exe` de verificação.
+O mesmo comando roda no GitHub Actions, no job `instalador-windows`, sem certificado. Esse job só gera o `.exe` de verificação do pull request.
 
-O repositório é privado. O `.exe` fica na Release da empresa.
+A tag `v` mais a `version` do `package.json` (por exemplo `v0.1.0`), num commit que já está na `main`, dispara o workflow `release`. Ele assina o instalador e abre um **rascunho** da GitHub Release. O rascunho não fica público sozinho: alguém com permissão publica quando quiser. Sem certificado completo, ou com segredo pela metade, esse job falha e não publica.
+
+Antes da primeira tag, crie o environment **`esteira-release`** em Settings → Environments, com pelo menos um revisor obrigatório, e grave os segredos de assinatura nesse environment. O workflow espera a aprovação e só então lê esses segredos. Se o environment ainda não existir, o GitHub cria um vazio, sem aprovação. Num repositório privado, revisor obrigatório pede GitHub Pro, Team ou Enterprise.
 
 ## Atualização
 
@@ -38,13 +40,13 @@ O feed é um diretório HTTPS com três arquivos da Release: `latest.yml`, o `.e
 
 A variável ganha do arquivo. A URL é `https`, sem usuário e senha. Um query string (por exemplo o SAS de leitura de um container) fica só nessa máquina.
 
-O app instalado fala com esse diretório. O repositório é privado, e a permissão do GitHub que lê o anexo de uma Release também lê o código (`contents: read`). O token que publica a Release fica no GitHub Actions e não entra no binário. O endereço `https://feed.esteira.invalid/updates/` dentro do instalador não resolve: ele só segura o lugar para o empacotador gerar o `latest.yml`. Quem serve o feed é o endereço configurado na máquina, um blob da empresa ou um HTTPS interno. Depois de cada Release, copie os três arquivos para esse diretório, por cima dos anteriores.
+O app instalado fala com esse diretório. Num repositório privado, a permissão do GitHub que lê o anexo de uma Release também lê o código (`contents: read`). O token que publica o rascunho fica no GitHub Actions e não entra no binário. O endereço `https://feed.esteira.invalid/updates/` dentro do instalador não resolve: ele só segura o lugar para o empacotador gerar o `latest.yml`. Quem serve o feed é o endereço configurado na máquina, um blob da empresa ou um HTTPS interno. Depois de cada Release, copie os três arquivos para esse diretório, por cima dos anteriores.
 
 ## Assinatura do instalador
 
-Sem segredo de certificado no repositório, o build segue sem assinatura e o job `instalador-windows` continua passando. Nesse estado o SmartScreen mostra editor desconhecido e pode bloquear o arquivo. O AppLocker da empresa também pode barrar. A TI libera o `.exe`, ou o certificado entra nos segredos.
+Sem as variáveis de certificado, o `npm run dist:win` local e o job `instalador-windows` seguem sem assinatura. Nesse estado o SmartScreen mostra editor desconhecido e pode bloquear o arquivo. O AppLocker da empresa também pode barrar. A TI libera o `.exe`, ou o certificado entra no environment `esteira-release`.
 
-O workflow `release` assina quando um dos conjuntos abaixo está completo. Segredo pela metade deixa a assinatura desligada.
+O workflow `release` exige um dos conjuntos abaixo, completo. Falta ou metade faz o job falhar, com o nome do segredo que ficou de fora. O `app-update.yml` do build assinado leva `publisherName`; sem esse nome a atualização não confere o editor do instalador, e o job também falha. No PFX, o electron-builder grava o CN lido do certificado. No Azure, o nome é o `AZURE_TRUSTED_SIGNING_PUBLISHER`.
 
 Certificado Authenticode em `.pfx` exportável. O token físico de um certificado EV não entra no GitHub Actions. Segredos:
 

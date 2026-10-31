@@ -162,11 +162,13 @@ describe('assinatura condicional', () => {
 
   it('liga o pfx só com link e senha, sem copiar a senha para o config', () => {
     expect(AssinaturaWin.modo({ WIN_CSC_LINK: 'Y2VydA==' })).toBe('desligada')
+    expect(() => AssinaturaWin.exigir({ WIN_CSC_LINK: 'Y2VydA==' })).toThrow(/WIN_CSC_KEY_PASSWORD/)
     const env = { WIN_CSC_LINK: 'Y2VydA==', WIN_CSC_KEY_PASSWORD: 'senha-do-pfx' }
     const build = AssinaturaWin.configurar(pacote.build, env)
-    expect(AssinaturaWin.modo(env)).toBe('pfx')
+    expect(AssinaturaWin.exigir(env)).toBe('pfx')
     expect(build.win.signAndEditExecutable).toBe(true)
     expect(build.win.azureSignOptions).toBeUndefined()
+    expect(build.publish[0].publisherName).toBeUndefined()
     expect(JSON.stringify(build)).not.toContain('senha-do-pfx')
     expect(AssinaturaWin.modo({ CSC_LINK: 'Y2VydA==', CSC_KEY_PASSWORD: 'outra' })).toBe('pfx')
   })
@@ -174,9 +176,12 @@ describe('assinatura condicional', () => {
   it('liga o Azure quando o conjunto está completo e esconde o segredo do cliente', () => {
     const incompleto = { ...azure, AZURE_CLIENT_SECRET: '   ' }
     expect(AssinaturaWin.modo(incompleto)).toBe('desligada')
+    expect(() => AssinaturaWin.exigir(incompleto)).toThrow(/AZURE_CLIENT_SECRET/)
+    expect(() => AssinaturaWin.exigir({})).toThrow(/certificado completo/)
     const build = AssinaturaWin.configurar(pacote.build, { ...azure, WIN_CSC_LINK: 'Y2VydA==', WIN_CSC_KEY_PASSWORD: 'senha-do-pfx' })
-    expect(AssinaturaWin.modo(azure)).toBe('azure')
+    expect(AssinaturaWin.exigir(azure)).toBe('azure')
     expect(build.win.signAndEditExecutable).toBe(true)
+    expect(build.publish[0].publisherName).toEqual(['CN=Esteira'])
     expect(build.win.azureSignOptions).toEqual({
       publisherName: 'CN=Esteira',
       endpoint: 'https://eus.codesigning.azure.net',
@@ -185,6 +190,7 @@ describe('assinatura condicional', () => {
     })
     expect(JSON.stringify(build)).not.toContain('segredo-do-cliente')
     expect(JSON.stringify(build)).not.toContain('senha-do-pfx')
+    expect(() => AssinaturaWin.exigir({ ...azure, WIN_CSC_LINK: 'Y2VydA==' })).toThrow(/PFX sem senha/)
   })
 
   it('o workflow de release declara cada segredo que liga a assinatura', () => {
@@ -193,6 +199,28 @@ describe('assinatura condicional', () => {
       expect(texto).toContain(chave)
     }
     expect(texto).not.toContain('pull_request')
+    expect(texto).not.toContain('--clobber')
+    expect(texto).toContain('--draft')
+    expect(texto).toContain('environment: esteira-release')
+    expect(texto).toContain('merge-base --is-ancestor')
+    expect(texto).toContain('persist-credentials: false')
+    expect(texto).toContain('exigir-assinatura.ts')
+    expect(texto).toContain('conferir-app-update.ts')
+    expect(texto.split('jobs:')[0]).not.toContain('contents: write')
+    expect(texto).toContain('contents: write')
+  })
+
+  it('lê o publisherName do app-update.yml e recusa arquivo sem editor', () => {
+    const comEditor = `provider: generic
+url: https://feed.esteira.invalid/updates/
+publisherName:
+  - CN=Esteira
+`
+    expect(AssinaturaWin.publisherNameDe(comEditor)).toBe('CN=Esteira')
+    expect(AssinaturaWin.publisherNameDe('publisherName:\n  - "CN=Esteira, Ltda"\n')).toBe('CN=Esteira, Ltda')
+    expect(AssinaturaWin.publisherNameDe('publisherName: null\n')).toBeNull()
+    expect(AssinaturaWin.publisherNameDe('publisherName: []\n')).toBeNull()
+    expect(AssinaturaWin.publisherNameDe('provider: generic\n')).toBeNull()
   })
 
   it('o config carregado pelo electron-builder segue o ambiente', () => {
